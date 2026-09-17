@@ -110,8 +110,11 @@ export const validateDocument = (doc: unknown): MindMapDocument => {
 
   // Validate viewport
   const vp = d.viewport as Record<string, unknown>;
-  if (!vp || typeof vp.x !== 'number' || typeof vp.y !== 'number' || typeof vp.zoom !== 'number') {
-    throw new Error('Document viewport is malformed.');
+  if (!vp || 
+      typeof vp.x !== 'number' || !Number.isFinite(vp.x) || 
+      typeof vp.y !== 'number' || !Number.isFinite(vp.y) || 
+      typeof vp.zoom !== 'number' || !Number.isFinite(vp.zoom) || vp.zoom <= 0) {
+    throw new Error('Document viewport is malformed or invalid.');
   }
 
   return {

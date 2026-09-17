@@ -15,6 +15,7 @@ import type {
 import type { MindMapNode, MindMapEdge } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeTwoWayDocument, findNonCollidingPosition, resolveNodeLayoutSide } from '../utils/layoutUtils';
+import { templates } from '../templates/definitions';
 
 export type HistorySnapshot = {
   nodes: MindMapNode[];
@@ -98,26 +99,26 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     const { nodes, edges, history, historyIndex } = get();
     
     // Strip volatile state for history comparison and storage
-    const stripVolatile = (n: MindMapNode) => {
+    const stripVolatileNodeState = (n: MindMapNode) => {
       const { selected, dragging, resizing, measured, width, height, ...rest } = n;
-      return rest;
+      return rest as MindMapNode;
     };
     
-    const strippedNodes = nodes.map(stripVolatile);
+    const strippedNodes = nodes.map(stripVolatileNodeState);
     
     // Only commit if there is a change
     const currentSnapshot = history[historyIndex];
     if (
       currentSnapshot &&
-      JSON.stringify(currentSnapshot.nodes.map(stripVolatile)) === JSON.stringify(strippedNodes) &&
+      JSON.stringify(currentSnapshot.nodes.map(stripVolatileNodeState)) === JSON.stringify(strippedNodes) &&
       JSON.stringify(currentSnapshot.edges) === JSON.stringify(edges)
     ) {
       return;
     }
 
     const newSnapshot = {
-      // Deep copy nodes and edges for snapshot
-      nodes: JSON.parse(JSON.stringify(nodes)),
+      // Deep copy semantic nodes and edges for snapshot
+      nodes: JSON.parse(JSON.stringify(strippedNodes)),
       edges: JSON.parse(JSON.stringify(edges))
     };
 
@@ -289,11 +290,13 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   },
 
   createChildNode: (parentId: string) => {
-    const { nodes, edges } = get();
+    const { nodes, edges, templateId } = get();
     const parentNode = nodes.find(n => n.id === parentId);
     if (!parentNode) return;
 
     const root = nodes.find(n => n.type === 'main') || nodes[0];
+    const currentTemplate = templates.find(t => t.id === templateId);
+    const layoutType = currentTemplate?.layoutType || 'two-way';
     
     let leftCount = 0;
     let rightCount = 0;
@@ -306,9 +309,10 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
         else if (child?.data?.layoutSide === 'right') rightCount++;
       });
     }
-    const layoutSide = parentNode.id === root?.id 
+    
+    const layoutSide = parentNode.id === root?.id && layoutType === 'two-way'
       ? (leftCount <= rightCount ? 'left' : 'right')
-      : resolveNodeLayoutSide(parentId, nodes, edges, 'two-way'); // Using two-way as default for resolution logic here, though technically it depends on layoutType which we don't store. But the prompt says for two-way: parent side = left -> child gets layoutSide = left.
+      : resolveNodeLayoutSide(parentId, nodes, edges, layoutType);
 
     const isLeft = layoutSide === 'left';
     const offsetX = isLeft ? -200 : 200;
@@ -344,7 +348,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   },
 
   createSiblingNode: (nodeId: string) => {
-    const { nodes, edges } = get();
+    const { nodes, edges, templateId } = get();
     const targetNode = nodes.find(n => n.id === nodeId);
     if (!targetNode) return;
 
@@ -356,8 +360,11 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
       return;
     }
 
+    const currentTemplate = templates.find(t => t.id === templateId);
+    const layoutType = currentTemplate?.layoutType || 'two-way';
+
     const parentId = parentEdge.source;
-    const layoutSide = resolveNodeLayoutSide(targetNode.id, nodes, edges, 'two-way');
+    const layoutSide = resolveNodeLayoutSide(targetNode.id, nodes, edges, layoutType);
     
     const preferredX = targetNode.position.x;
     const preferredY = targetNode.position.y + 80;

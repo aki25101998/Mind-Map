@@ -43,12 +43,14 @@ export interface StylePreset {
   edgeStyle?: Partial<EdgeData>;
 }
 
+export type LayoutType = 'two-way' | 'one-way' | 'free' | 'brace' | 'org' | 'tree' | 'flow' | 'radial';
+
 export interface Template {
   id: string;
   name: string;
   category: TemplateCategory;
   description: string;
-  layoutType: 'two-way' | 'one-way' | 'free' | 'brace' | 'org' | 'tree' | 'flow' | 'radial';
+  layoutType: LayoutType;
   stylePreset?: StylePreset;
   defaultNodes: MindMapNode[];
   defaultEdges: MindMapEdge[];

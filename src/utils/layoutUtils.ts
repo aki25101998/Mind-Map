@@ -1,4 +1,4 @@
-import type { MindMapNode, MindMapEdge } from '../types';
+import type { MindMapNode, MindMapEdge, LayoutType } from '../types';
 
 export type LayoutSide = 'left' | 'right' | 'center';
 
@@ -9,7 +9,7 @@ export const resolveNodeLayoutSide = (
   nodeId: string,
   nodes: MindMapNode[],
   edges: MindMapEdge[],
-  layoutType: string
+  layoutType: LayoutType
 ): LayoutSide | undefined => {
   if (layoutType !== 'two-way') {
     const node = nodes.find(n => n.id === nodeId);
@@ -93,28 +93,31 @@ export const findNonCollidingPosition = (
     });
   };
 
-  let currentX = preferredX;
-  let currentY = preferredY;
+  if (!isColliding(preferredX, preferredY)) {
+    return { x: preferredX, y: preferredY };
+  }
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    if (!isColliding(currentX, currentY)) {
-      return { x: currentX, y: currentY };
+  const SEARCH_STEP = 80;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const radius = attempt * SEARCH_STEP;
+
+    // Try +Y
+    if (!isColliding(preferredX, preferredY + radius)) {
+      return { x: preferredX, y: preferredY + radius };
     }
-
-    // Try +80
-    if (!isColliding(currentX, currentY + 80)) {
-      return { x: currentX, y: currentY + 80 };
+    // Try -Y
+    if (!isColliding(preferredX, preferredY - radius)) {
+      return { x: preferredX, y: preferredY - radius };
     }
-
-    // Try -80
-    if (!isColliding(currentX, currentY - 80)) {
-      return { x: currentX, y: currentY - 80 };
+    // Try +X
+    if (!isColliding(preferredX + radius, preferredY)) {
+      return { x: preferredX + radius, y: preferredY };
     }
-
-    // Move outward for next iteration
-    // e.g. 1st attempt -> already tried y, y+80, y-80
-    // so we can increment currentX or currentY for the next base
-    currentY += 160 * (attempt % 2 === 0 ? 1 : -1);
+    // Try -X
+    if (!isColliding(preferredX - radius, preferredY)) {
+      return { x: preferredX - radius, y: preferredY };
+    }
   }
 
   // If no position found, place at preferred
@@ -156,7 +159,16 @@ export const normalizeTwoWayDocument = (nodes: MindMapNode[], edges: MindMapEdge
   });
 
   return nodes.map(n => {
-    const side = nodeSides.get(n.id);
+    let side = nodeSides.get(n.id);
+    
+    // Disconnected node fallback
+    if (!side && n.type !== 'main') {
+      side = n.data?.layoutSide as LayoutSide | undefined;
+      if (side !== 'left' && side !== 'right') {
+        side = n.position.x < (rootNode.position.x || 0) ? 'left' : 'right';
+      }
+    }
+
     if (side && n.data?.layoutSide !== side) {
       return {
         ...n,
