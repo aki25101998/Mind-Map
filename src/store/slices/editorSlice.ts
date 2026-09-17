@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { MindMapState, EditorSlice, SyncStatus } from './types';
+import type { MindMapState, EditorSlice, SyncStatus, ContextMenuState } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> = (set, get) => ({
@@ -10,6 +10,8 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
   saveError: null, // Legacy compatibility
   syncStatus: 'idle',
   isDragging: false,
+  editingNodeId: null,
+  contextMenu: null,
 
   setIsSaving: (saving: boolean) => {
     set({ isSaving: saving, syncStatus: saving ? 'saving' : 'saved' });
@@ -25,6 +27,14 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
 
   setIsDragging: (isDragging: boolean) => {
     set({ isDragging });
+  },
+
+  setEditingNodeId: (id: string | null) => {
+    set({ editingNodeId: id });
+  },
+
+  setContextMenu: (menu: ContextMenuState | null) => {
+    set({ contextMenu: menu });
   },
 
   setSelectedNodes: (ids: string[]) => {

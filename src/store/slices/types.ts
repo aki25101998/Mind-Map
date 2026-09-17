@@ -33,6 +33,7 @@ export interface NodeEdgeSlice {
   setViewport: (viewport: Viewport) => void;
   createChildNode: (parentId: string) => void;
   createSiblingNode: (nodeId: string) => void;
+  toggleCollapse: (nodeId: string) => void;
 }
 
 export interface HistorySlice {
@@ -45,6 +46,13 @@ export interface HistorySlice {
 
 export type SyncStatus = 'idle' | 'saving' | 'saved' | 'error' | 'offline';
 
+export interface ContextMenuState {
+  x: number;
+  y: number;
+  target: 'canvas' | 'node';
+  id?: string;
+}
+
 export interface EditorSlice {
   selectedNodeIds: string[];
   clipboardNodes: MindMapNode[];
@@ -53,10 +61,14 @@ export interface EditorSlice {
   saveError: string | null; // Keep for backward compatibility
   syncStatus: SyncStatus;
   isDragging: boolean;
+  editingNodeId: string | null;
+  contextMenu: ContextMenuState | null;
   setIsSaving: (saving: boolean) => void;
   setSaveError: (error: string | null) => void;
   setSyncStatus: (status: SyncStatus) => void;
   setIsDragging: (isDragging: boolean) => void;
+  setEditingNodeId: (id: string | null) => void;
+  setContextMenu: (menu: ContextMenuState | null) => void;
   setSelectedNodes: (ids: string[]) => void;
   duplicateSelected: () => void;
   copySelected: () => void;

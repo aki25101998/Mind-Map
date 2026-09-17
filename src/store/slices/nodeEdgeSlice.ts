@@ -9,6 +9,7 @@ import {
 import type { MindMapNode, MindMapEdge } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import { findNonCollidingPosition, resolveNodeLayoutSide, getLayoutType } from '../../utils/layoutUtils';
+import { getDescendants } from '../../utils/graphUtils';
 
 export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSlice> = (set, get) => ({
   nodes: [],
@@ -149,7 +150,8 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     set({ 
       nodes: [...nodes.map(n => ({...n, selected: false})), newNode], 
       edges: [...edges, newEdge],
-      selectedNodeIds: [newId]
+      selectedNodeIds: [newId],
+      editingNodeId: newId
     });
     get().commitHistory();
   },
@@ -197,7 +199,39 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     set({ 
       nodes: [...nodes.map(n => ({...n, selected: false})), newNode], 
       edges: [...edges, newEdge],
-      selectedNodeIds: [newId]
+      selectedNodeIds: [newId],
+      editingNodeId: newId
+    });
+    get().commitHistory();
+  },
+
+  toggleCollapse: (nodeId) => {
+    const { nodes, edges } = get();
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    const isCollapsed = !node.data.collapsed;
+    const { descendantNodes, descendantEdges } = getDescendants(nodeId, nodes, edges);
+    
+    const descendantNodeIds = new Set(descendantNodes.map(n => n.id));
+    const descendantEdgeIds = new Set(descendantEdges.map(e => e.id));
+
+    set({
+      nodes: nodes.map(n => {
+        if (n.id === nodeId) {
+          return { ...n, data: { ...n.data, collapsed: isCollapsed } };
+        }
+        if (descendantNodeIds.has(n.id)) {
+          return { ...n, hidden: isCollapsed };
+        }
+        return n;
+      }),
+      edges: edges.map(e => {
+        if (descendantEdgeIds.has(e.id)) {
+          return { ...e, hidden: isCollapsed };
+        }
+        return e;
+      })
     });
     get().commitHistory();
   },

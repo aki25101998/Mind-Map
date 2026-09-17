@@ -11,7 +11,11 @@ export interface NodeData extends Record<string, unknown> {
   borderRadius?: number;
   textColor?: string;
   fontSize?: number;
+  textAlign?: 'left' | 'center' | 'right';
   fontWeight?: string | number;
+  shape?: 'rectangle' | 'rounded' | 'ellipse' | 'text';
+  collapsed?: boolean;
+  tags?: string[];
   icon?: string;
   emoji?: string;
   note?: string;
@@ -29,6 +33,9 @@ export interface EdgeData extends Record<string, unknown> {
   arrowEnd?: boolean;
   strokeColor?: string;
   strokeWidth?: number;
+  opacity?: number;
+  dashed?: boolean;
+  relationship?: boolean;
 }
 
 export type MindMapEdge = Edge<EdgeData> & {

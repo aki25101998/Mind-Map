@@ -15,6 +15,7 @@ import { BasicNode } from './nodes/BasicNode';
 import { RoundedNode } from './nodes/RoundedNode';
 import { TextNode } from './nodes/TextNode';
 import { CustomMindMapEdge } from './edges/MindMapEdge';
+import { ContextMenu } from '../editor/ContextMenu';
 import { v4 as uuidv4 } from 'uuid';
 
 const nodeTypes: NodeTypes = {
@@ -50,7 +51,9 @@ const CanvasInner = () => {
     addNode,
     commitHistory,
     documentId,
-    setIsDragging
+    setIsDragging,
+    setEditingNodeId,
+    setContextMenu
   } = useMindMapStore();
   
   const { setViewport: rfSetViewport, screenToFlowPosition } = useReactFlow();
@@ -68,6 +71,9 @@ const CanvasInner = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept if user is typing in an input
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        if (e.key === 'Escape') {
+          setEditingNodeId(null);
+        }
         return;
       }
 
@@ -95,12 +101,20 @@ const CanvasInner = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         e.preventDefault();
         setSelectedNodes(nodes.map(n => n.id));
+      } else if (e.key === 'F2' || e.key === ' ') {
+        if (selectedNodeIds.length === 1) {
+          e.preventDefault();
+          setEditingNodeId(selectedNodeIds[0]);
+        }
+      } else if (e.key === 'Escape') {
+        setSelectedNodes([]);
+        setEditingNodeId(null);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, nodes, createChildNode, createSiblingNode, deleteSelected, undo, redo, copySelected, pasteFromClipboard, duplicateSelected, setSelectedNodes]);
+  }, [selectedNodeIds, nodes, createChildNode, createSiblingNode, deleteSelected, undo, redo, copySelected, pasteFromClipboard, duplicateSelected, setSelectedNodes, setEditingNodeId]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -114,6 +128,22 @@ const CanvasInner = () => {
       });
     }
   }, [screenToFlowPosition, addNode]);
+
+  const onNodeContextMenu = useCallback(
+    (e: React.MouseEvent | MouseEvent, node: any) => {
+      e.preventDefault();
+      setContextMenu({ x: e.clientX, y: e.clientY, target: 'node', id: node.id });
+    },
+    [setContextMenu]
+  );
+
+  const onPaneContextMenu = useCallback(
+    (e: React.MouseEvent | MouseEvent) => {
+      e.preventDefault();
+      setContextMenu({ x: e.clientX, y: e.clientY, target: 'canvas' });
+    },
+    [setContextMenu]
+  );
 
   return (
     <ReactFlow
@@ -129,6 +159,9 @@ const CanvasInner = () => {
       }}
       onMoveEnd={(_, vp) => setViewport(vp)}
       onDoubleClick={handleDoubleClick}
+      onNodeContextMenu={onNodeContextMenu}
+      onPaneContextMenu={onPaneContextMenu}
+      onPaneClick={() => setContextMenu(null)}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       deleteKeyCode={null}
@@ -146,6 +179,7 @@ const CanvasInner = () => {
       <MiniMap zoomable pannable nodeColor={(node) => {
         return node.data?.backgroundColor as string || 'var(--node-bg-default)';
       }} />
+      <ContextMenu />
     </ReactFlow>
   );
 };

@@ -21,6 +21,8 @@ export const CustomMindMapEdge = (props: EdgeProps<MindMapEdge>) => {
     ...props.style,
     stroke: data?.strokeColor || (selected ? 'var(--accent)' : 'var(--node-border-default)'),
     strokeWidth: data?.strokeWidth || (selected ? 3 : 2),
+    strokeDasharray: data?.dashed ? '5, 5' : undefined,
+    opacity: data?.opacity ?? 1,
   };
 
   const pathParams = {

@@ -3,14 +3,17 @@ import { Handle, Position } from '@xyflow/react';
 import type { NodeProps, Node } from '@xyflow/react';
 import { useMindMapStore } from '../../store/useMindMapStore';
 import type { NodeData } from '../../types';
+import { NodeFloatingToolbar } from './NodeFloatingToolbar';
 
 export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'>>) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse } = useMindMapStore();
+  const edges = useMindMapStore(state => state.edges);
+  const hasChildren = edges.some(e => e.source === id);
+  const isEditing = editingNodeId === id;
   const [label, setLabel] = useState(data.label);
-  const { updateNodeData } = useMindMapStore();
 
   const handleBlur = () => {
-    setIsEditing(false);
+    setEditingNodeId(null);
     if (label !== data.label) {
       updateNodeData(id, { label });
     }
@@ -29,7 +32,9 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
   };
 
   return (
-    <div style={style} onDoubleClick={() => setIsEditing(true)}>
+    <>
+      <NodeFloatingToolbar nodeId={id} isVisible={selected && !isEditing} nodeType="text" />
+      <div style={style} onDoubleClick={() => setEditingNodeId(id)}>
       {isEditing ? (
         <input 
           autoFocus
@@ -40,7 +45,7 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
             if (e.key === 'Enter') handleBlur();
             if (e.key === 'Escape') {
               setLabel(data.label);
-              setIsEditing(false);
+              setEditingNodeId(null);
             }
           }}
           style={{ 
@@ -55,6 +60,21 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
       <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Top} id="top-src" style={{ opacity: 0 }} />
       
+      {hasChildren && !isEditing && (
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleCollapse(id); }}
+          style={{
+            position: 'absolute', right: '-12px', top: '50%', transform: 'translateY(-50%)',
+            background: 'var(--panel-bg)', border: '1px solid var(--panel-border)',
+            borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', zIndex: 10, color: 'var(--text-primary)'
+          }}
+        >
+          {data.collapsed ? '+' : '-'}
+        </button>
+      )}
+
       <Handle type="target" position={Position.Right} id="right" style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Right} id="right-src" style={{ opacity: 0 }} />
       
@@ -64,5 +84,6 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
       <Handle type="target" position={Position.Left} id="left" style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Left} id="left-src" style={{ opacity: 0 }} />
     </div>
+    </>
   );
 };
