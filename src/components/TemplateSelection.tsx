@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import type { MindMapDocument } from '../types';
 import { templates } from '../templates/definitions';
 import { cloneTemplate } from '../templates/templateUtils';
+
+
 import { useMindMapStore } from '../store/useMindMapStore';
 import { getAllDocuments, deleteDocument } from '../persistence/idb';
 import { v4 as uuidv4 } from 'uuid';
@@ -11,7 +14,7 @@ import { RoundedNode } from '../canvas/nodes/RoundedNode';
 import { TextNode } from '../canvas/nodes/TextNode';
 import { CustomMindMapEdge } from '../canvas/edges/MindMapEdge';
 import { FileText, Trash2 } from 'lucide-react';
-import type { MindMapDocument } from '../types';
+import { validateDocument } from '../utils/validation';
 
 const nodeTypes = { main: MainNode, basic: BasicNode, rounded: RoundedNode, text: TextNode };
 const edgeTypes = { 'mindmap-edge': CustomMindMapEdge };
@@ -19,6 +22,7 @@ const edgeTypes = { 'mindmap-edge': CustomMindMapEdge };
 export const TemplateSelection = () => {
   const { loadDocument } = useMindMapStore();
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
+  const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
 
   const loadRecentDocs = async () => {
     const docs = await getAllDocuments();
@@ -35,12 +39,19 @@ export const TemplateSelection = () => {
 
     const { nodes, edges } = cloneTemplate(template);
     const newDocId = uuidv4();
+    const now = Date.now();
 
-    loadDocument(newDocId, `New ${template.name}`, nodes, edges, { x: 0, y: 0, zoom: 1 }, template.id);
+    loadDocument(newDocId, templateId === 'blank' ? 'Untitled Mind Map' : `New ${template.name}`, nodes, edges, { x: 0, y: 0, zoom: 1 }, template.id, now, now);
   };
 
   const handleOpenDoc = (doc: MindMapDocument) => {
-    loadDocument(doc.id, doc.title, doc.nodes, doc.edges, doc.viewport, doc.templateId);
+    try {
+      const validDoc = validateDocument(doc);
+      loadDocument(validDoc.id, validDoc.title, validDoc.nodes, validDoc.edges, validDoc.viewport, validDoc.templateId, validDoc.createdAt, validDoc.updatedAt);
+    } catch (err) {
+      console.error('Failed to load document:', err);
+      alert('This document is corrupted and cannot be loaded.');
+    }
   };
 
   const handleDeleteDoc = async (e: React.MouseEvent, id: string) => {
@@ -49,6 +60,8 @@ export const TemplateSelection = () => {
     loadRecentDocs();
   };
 
+  const previewTemplate = templates.find(t => t.id === previewTemplateId);
+
   return (
     <div style={{
       width: '100vw', height: '100vh', background: 'var(--canvas-bg)',
@@ -56,6 +69,20 @@ export const TemplateSelection = () => {
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
+        <h1 style={{ marginBottom: '40px', fontSize: '32px' }}>My Mind Maps</h1>
+        
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '40px' }}>
+          <button 
+            onClick={() => handleSelectTemplate('blank')}
+            style={{ 
+              padding: '16px 24px', borderRadius: '12px', background: 'var(--accent)', 
+              color: '#fff', border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' 
+            }}
+          >
+            + Blank Canvas
+          </button>
+        </div>
+
         {documents.length > 0 && (
           <div style={{ marginBottom: '60px' }}>
             <h2 style={{ marginBottom: '24px' }}>Recent Maps</h2>
@@ -71,7 +98,7 @@ export const TemplateSelection = () => {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <FileText size={24} color="var(--accent)" />
-                    <button onClick={(e) => handleDeleteDoc(e, doc.id)} style={{ background: 'transparent', color: 'var(--node-color-red)', padding: '4px' }}>
+                    <button onClick={(e) => handleDeleteDoc(e, doc.id)} style={{ background: 'transparent', color: 'var(--node-color-red)', padding: '4px', border: 'none', cursor: 'pointer' }}>
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -85,12 +112,12 @@ export const TemplateSelection = () => {
           </div>
         )}
 
-        <h2 style={{ marginBottom: '24px' }}>Create from template</h2>
+        <h2 style={{ marginBottom: '24px' }}>Create from Template</h2>
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px'
         }}>
-          {templates.map(template => (
-            <div key={template.id} onClick={() => handleSelectTemplate(template.id)} style={{
+          {templates.filter(t => t.id !== 'blank').map(template => (
+            <div key={template.id} onClick={() => setPreviewTemplateId(template.id)} style={{
               background: 'var(--panel-bg)', borderRadius: '12px', padding: '24px',
               cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', border: '1px solid var(--panel-border)'
             }}>
@@ -122,6 +149,53 @@ export const TemplateSelection = () => {
           ))}
         </div>
       </div>
+
+      {previewTemplate && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', 
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            background: 'var(--panel-bg)', borderRadius: '16px', width: '90vw', maxWidth: '800px',
+            height: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            border: '1px solid var(--panel-border)', boxShadow: 'var(--shadow)'
+          }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2 style={{ margin: '0 0 8px 0' }}>{previewTemplate.name}</h2>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{previewTemplate.description}</p>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  onClick={() => setPreviewTemplateId(null)} 
+                  style={{ padding: '8px 16px', borderRadius: '8px', background: 'transparent', border: '1px solid var(--panel-border)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => handleSelectTemplate(previewTemplate.id)} 
+                  style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--accent)', border: 'none', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  Use Template
+                </button>
+              </div>
+            </div>
+            <div style={{ flex: 1, background: 'var(--canvas-bg)', position: 'relative' }}>
+              <ReactFlow
+                nodes={previewTemplate.defaultNodes}
+                edges={previewTemplate.defaultEdges}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                fitView
+                panOnDrag={true}
+                zoomOnScroll={true}
+                elementsSelectable={false}
+                proOptions={{ hideAttribution: true }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

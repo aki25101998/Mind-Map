@@ -47,17 +47,19 @@ const CanvasInner = () => {
     undo,
     redo,
     addNode,
-    commitHistory
+    commitHistory,
+    documentId
   } = useMindMapStore();
   
   const { setViewport: rfSetViewport, screenToFlowPosition } = useReactFlow();
 
-  // Restore viewport on mount
+  // Restore viewport on document load
   useEffect(() => {
     if (viewport) {
       rfSetViewport(viewport);
     }
-  }, [viewport, rfSetViewport]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentId, rfSetViewport]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -119,10 +121,11 @@ const CanvasInner = () => {
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onNodeDragStop={() => commitHistory()}
-      onMove={(_, vp) => setViewport(vp)}
+      onMoveEnd={(_, vp) => setViewport(vp)}
       onDoubleClick={handleDoubleClick}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
+      deleteKeyCode={null}
       defaultEdgeOptions={{ type: 'mindmap-edge' }}
       minZoom={0.1}
       maxZoom={4}

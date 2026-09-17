@@ -26,6 +26,8 @@ export interface MindMapState {
   documentId: string | null;
   documentTitle: string;
   templateId: string | undefined;
+  createdAt: number;
+  updatedAt: number;
 
   // History
   history: HistorySnapshot[];
@@ -39,6 +41,7 @@ export interface MindMapState {
   clipboardNodes: MindMapNode[];
   clipboardEdges: MindMapEdge[];
   isSaving: boolean;
+  saveError: string | null;
 
   // Actions
   onNodesChange: (changes: NodeChange<MindMapNode>[]) => void;
@@ -51,8 +54,9 @@ export interface MindMapState {
   updateNodeData: (id: string, data: Partial<MindMapNode['data']>) => void;
   updateEdge: (id: string, data: Partial<MindMapEdge>) => void;
   setViewport: (viewport: Viewport) => void;
-  loadDocument: (id: string, title: string, nodes: MindMapNode[], edges: MindMapEdge[], viewport: Viewport, templateId?: string) => void;
+  loadDocument: (id: string, title: string, nodes: MindMapNode[], edges: MindMapEdge[], viewport: Viewport, templateId?: string, createdAt?: number, updatedAt?: number) => void;
   setIsSaving: (saving: boolean) => void;
+  setSaveError: (error: string | null) => void;
   setTitle: (title: string) => void;
   
   // Selection
@@ -75,6 +79,8 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   documentId: null,
   documentTitle: 'Untitled Mind Map',
   templateId: undefined,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
 
   history: [],
   historyIndex: -1,
@@ -83,6 +89,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   clipboardNodes: [],
   clipboardEdges: [],
   isSaving: false,
+  saveError: null,
 
   commitHistory: () => {
     const { nodes, edges, history, historyIndex } = get();
@@ -148,22 +155,11 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     const selectedIds = newNodes.filter(n => n.selected).map(n => n.id);
     
     set({ nodes: newNodes, selectedNodeIds: selectedIds });
-
-    // Handle deletion history. Positioning history is handled manually via onNodeDragStop in canvas to avoid spam.
-    const isDeletion = changes.some(c => c.type === 'remove');
-    if (isDeletion) {
-      get().commitHistory();
-    }
   },
 
   onEdgesChange: (changes: EdgeChange<MindMapEdge>[]) => {
     const newEdges = applyEdgeChanges(changes, get().edges) as MindMapEdge[];
     set({ edges: newEdges });
-    
-    const isDeletion = changes.some(c => c.type === 'remove');
-    if (isDeletion) {
-      get().commitHistory();
-    }
   },
 
   onConnect: (connection: Connection) => {
@@ -171,7 +167,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
       ...connection, 
       id: uuidv4(), 
       type: 'mindmap-edge',
-      data: { data: { edgeStyle: 'curved' } }
+      data: { edgeStyle: 'curved' }
     } as any, get().edges) as MindMapEdge[];
     set({ edges: newEdges });
     get().commitHistory();
@@ -234,7 +230,8 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     set({ viewport });
   },
 
-  loadDocument: (id, title, nodes, edges, viewport, templateId) => {
+  loadDocument: (id, title, nodes, edges, viewport, templateId, createdAt, updatedAt) => {
+    const now = Date.now();
     set({ 
       documentId: id, 
       documentTitle: title, 
@@ -242,6 +239,8 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
       edges, 
       viewport,
       templateId,
+      createdAt: createdAt || now,
+      updatedAt: updatedAt || now,
       history: [{ nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) }],
       historyIndex: 0,
       selectedNodeIds: [],
@@ -250,6 +249,10 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
 
   setIsSaving: (saving: boolean) => {
     set({ isSaving: saving });
+  },
+  
+  setSaveError: (error: string | null) => {
+    set({ saveError: error });
   },
   
   setTitle: (title: string) => {
@@ -268,11 +271,15 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     const parentNode = nodes.find(n => n.id === parentId);
     if (!parentNode) return;
 
+    const root = nodes.find(n => n.type === 'main') || nodes[0];
+    const isLeft = parentNode.id !== root?.id && parentNode.position.x < root.position.x;
+    const offsetX = isLeft ? -200 : 200;
+
     const newId = uuidv4();
     const newNode: MindMapNode = {
       id: newId,
       type: 'basic',
-      position: { x: parentNode.position.x + 200, y: parentNode.position.y },
+      position: { x: parentNode.position.x + offsetX, y: parentNode.position.y },
       data: { label: 'New Topic' },
       selected: true
     };
@@ -311,7 +318,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     const newNode: MindMapNode = {
       id: newId,
       type: targetNode.type,
-      position: { x: targetNode.position.x, y: targetNode.position.y + 100 },
+      position: { x: targetNode.position.x, y: targetNode.position.y + 80 },
       data: { ...targetNode.data, label: 'New Topic' },
       selected: true
     };
@@ -333,27 +340,35 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   },
 
   duplicateSelected: () => {
-    const { nodes, selectedNodeIds } = get();
+    const { nodes, edges, selectedNodeIds } = get();
     if (selectedNodeIds.length === 0) return;
 
-    const newNodes: MindMapNode[] = [];
+    const idMap: Record<string, string> = {};
     const newIds: string[] = [];
 
-    nodes.forEach(n => {
-      if (selectedNodeIds.includes(n.id)) {
-        const newId = uuidv4();
-        newIds.push(newId);
-        newNodes.push({
-          ...n,
-          id: newId,
-          position: { x: n.position.x + 50, y: n.position.y + 50 },
-          selected: true
-        });
-      }
+    const newNodes = nodes.filter(n => selectedNodeIds.includes(n.id)).map(n => {
+      const newId = uuidv4();
+      idMap[n.id] = newId;
+      newIds.push(newId);
+      return {
+        ...n,
+        id: newId,
+        position: { x: n.position.x + 50, y: n.position.y + 50 },
+        selected: true
+      };
     });
+
+    const selectedEdges = edges.filter(e => selectedNodeIds.includes(e.source) && selectedNodeIds.includes(e.target));
+    const newEdges = selectedEdges.map(e => ({
+      ...e,
+      id: uuidv4(),
+      source: idMap[e.source],
+      target: idMap[e.target]
+    }));
 
     set({ 
       nodes: [...nodes.map(n => ({...n, selected: false})), ...newNodes],
+      edges: [...edges, ...newEdges],
       selectedNodeIds: newIds
     });
     get().commitHistory();

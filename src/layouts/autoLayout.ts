@@ -81,19 +81,77 @@ const applyTwoWay = (nodes: MindMapNode[], edges: MindMapEdge[]): MindMapNode[] 
   // Find root
   const root = nodes.find(n => n.type === 'main') || nodes[0];
   
-  // Very simplistic two-way separation based on current X position relative to root
-  const leftNodes = nodes.filter(n => n.id !== root.id && n.position.x < root.position.x);
-  const rightNodes = nodes.filter(n => n.id !== root.id && n.position.x >= root.position.x);
+  // Build adjacency list for walking
+  const adjList = new Map<string, string[]>();
+  edges.forEach(e => {
+    if (!adjList.has(e.source)) adjList.set(e.source, []);
+    adjList.get(e.source)!.push(e.target);
+  });
 
-  const leftLayout = applyDagre(leftNodes, edges.filter(e => leftNodes.some(n => n.id === e.target)), { direction: 'RL' });
-  const rightLayout = applyDagre(rightNodes, edges.filter(e => rightNodes.some(n => n.id === e.target)), { direction: 'LR' });
+  const leftNodeIds = new Set<string>();
+  const rightNodeIds = new Set<string>();
 
-  // Re-adjust offsets
-  const leftOffset = -200;
-  const rightOffset = 200;
+  // Determine sides for immediate children
+  const immediateChildren = adjList.get(root.id) || [];
+  immediateChildren.forEach(childId => {
+    const childNode = nodes.find(n => n.id === childId);
+    if (!childNode) return;
+    
+    // Check layoutSide or fallback to current X position relative to root
+    const side = (childNode.data?.layoutSide as string) || (childNode.position.x < root.position.x ? 'left' : 'right');
+    
+    // BFS to add all descendants to the same side
+    const queue = [childId];
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+      if (side === 'left') leftNodeIds.add(curr);
+      else rightNodeIds.add(curr);
+      
+      const children = adjList.get(curr) || [];
+      queue.push(...children);
+    }
+  });
 
-  const finalLeft = leftLayout.map(n => ({ ...n, position: { x: n.position.x + leftOffset, y: n.position.y } }));
-  const finalRight = rightLayout.map(n => ({ ...n, position: { x: n.position.x + rightOffset, y: n.position.y } }));
+  // What about disconnected nodes? Keep them based on their X position or default to right
+  nodes.forEach(n => {
+    if (n.id !== root.id && !leftNodeIds.has(n.id) && !rightNodeIds.has(n.id)) {
+      if (n.position.x < root.position.x) leftNodeIds.add(n.id);
+      else rightNodeIds.add(n.id);
+    }
+  });
+
+  const leftNodes = nodes.filter(n => leftNodeIds.has(n.id));
+  const rightNodes = nodes.filter(n => rightNodeIds.has(n.id));
+
+  const leftNodesWithRoot = [root, ...leftNodes];
+  const rightNodesWithRoot = [root, ...rightNodes];
+
+  const leftEdges = edges.filter(e => leftNodeIds.has(e.target));
+  const rightEdges = edges.filter(e => rightNodeIds.has(e.target));
+
+  const leftLayout = applyDagre(leftNodesWithRoot, leftEdges, { direction: 'RL', ranksep: 120, nodesep: 60 });
+  const rightLayout = applyDagre(rightNodesWithRoot, rightEdges, { direction: 'LR', ranksep: 120, nodesep: 60 });
+
+  const leftRootLayout = leftLayout.find(n => n.id === root.id) || root;
+  const rightRootLayout = rightLayout.find(n => n.id === root.id) || root;
+
+  // Shift all left layout nodes so that root is at (0,0)
+  const finalLeft = leftLayout.filter(n => n.id !== root.id).map(n => ({
+    ...n,
+    position: {
+      x: n.position.x - leftRootLayout.position.x,
+      y: n.position.y - leftRootLayout.position.y
+    }
+  }));
+
+  // Shift all right layout nodes so that root is at (0,0)
+  const finalRight = rightLayout.filter(n => n.id !== root.id).map(n => ({
+    ...n,
+    position: {
+      x: n.position.x - rightRootLayout.position.x,
+      y: n.position.y - rightRootLayout.position.y
+    }
+  }));
 
   return [{ ...root, position: { x: 0, y: 0 } }, ...finalLeft, ...finalRight];
 };

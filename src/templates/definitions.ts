@@ -26,10 +26,10 @@ export const templates: Template[] = [
       { id: 'right-2', type: 'basic', position: { x: 300, y: 80 }, data: { label: 'Right Topic 2', backgroundColor: 'var(--node-color-green)', color: '#fff' } },
     ],
     defaultEdges: [
-      { id: 'e-r-l1', source: 'root', target: 'left-1', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e-r-l2', source: 'root', target: 'left-2', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e-r-r1', source: 'root', target: 'right-1', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e-r-r2', source: 'root', target: 'right-2', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
+      { id: 'e-r-l1', source: 'root', target: 'left-1', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e-r-l2', source: 'root', target: 'left-2', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e-r-r1', source: 'root', target: 'right-1', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e-r-r2', source: 'root', target: 'right-2', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
     ]
   },
   {
@@ -48,12 +48,12 @@ export const templates: Template[] = [
       { id: 'b2-2', type: 'basic', position: { x: 600, y: 120 }, data: { label: 'Topic 4', backgroundColor: 'var(--node-bg-default)' } },
     ],
     defaultEdges: [
-      { id: 'e1', source: 'root', target: 'b1', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e2', source: 'b1', target: 'b1-1', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e3', source: 'b1', target: 'b1-2', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e4', source: 'root', target: 'b2', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e5', source: 'b2', target: 'b2-1', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e6', source: 'b2', target: 'b2-2', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
+      { id: 'e1', source: 'root', target: 'b1', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e2', source: 'b1', target: 'b1-1', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e3', source: 'b1', target: 'b1-2', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e4', source: 'root', target: 'b2', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e5', source: 'b2', target: 'b2-1', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e6', source: 'b2', target: 'b2-2', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
     ]
   },
   {
@@ -70,10 +70,10 @@ export const templates: Template[] = [
       { id: 'n4', type: 'rounded', position: { x: -250, y: -100 }, data: { label: 'Idea 4' } },
     ],
     defaultEdges: [
-      { id: 'e1', source: 'root', target: 'n1', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight' } } },
-      { id: 'e2', source: 'root', target: 'n2', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight' } } },
-      { id: 'e3', source: 'root', target: 'n3', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight' } } },
-      { id: 'e4', source: 'root', target: 'n4', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight' } } },
+      { id: 'e1', source: 'root', target: 'n1', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
+      { id: 'e2', source: 'root', target: 'n2', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
+      { id: 'e3', source: 'root', target: 'n3', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
+      { id: 'e4', source: 'root', target: 'n4', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
     ]
   },
   {
@@ -92,12 +92,12 @@ export const templates: Template[] = [
       { id: 'p2-2', type: 'text', position: { x: 400, y: 140 }, data: { label: 'Sub 4' } },
     ],
     defaultEdges: [
-      { id: 'e1', source: 'root', target: 'p1', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'e2', source: 'p1', target: 'p1-1', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'e3', source: 'p1', target: 'p1-2', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'e4', source: 'root', target: 'p2', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'e5', source: 'p2', target: 'p2-1', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'e6', source: 'p2', target: 'p2-2', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
+      { id: 'e1', source: 'root', target: 'p1', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'e2', source: 'p1', target: 'p1-1', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'e3', source: 'p1', target: 'p1-2', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'e4', source: 'root', target: 'p2', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'e5', source: 'p2', target: 'p2-1', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'e6', source: 'p2', target: 'p2-2', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
     ]
   },
   {
@@ -116,12 +116,12 @@ export const templates: Template[] = [
       { id: 'e4', type: 'basic', position: { x: 300, y: 240 }, data: { label: 'Employee 4' } },
     ],
     defaultEdges: [
-      { id: 'ee1', source: 'root', target: 'm1', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'ee2', source: 'root', target: 'm2', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'ee3', source: 'm1', target: 'e1', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'ee4', source: 'm1', target: 'e2', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'ee5', source: 'm2', target: 'e3', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
-      { id: 'ee6', source: 'm2', target: 'e4', type: 'mindmap-edge', data: { data: { edgeStyle: 'orthogonal' } } },
+      { id: 'ee1', source: 'root', target: 'm1', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'ee2', source: 'root', target: 'm2', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'ee3', source: 'm1', target: 'e1', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'ee4', source: 'm1', target: 'e2', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'ee5', source: 'm2', target: 'e3', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
+      { id: 'ee6', source: 'm2', target: 'e4', type: 'mindmap-edge', data: { edgeStyle: 'orthogonal' } },
     ]
   },
   {
@@ -139,11 +139,11 @@ export const templates: Template[] = [
       { id: 'b1', type: 'basic', position: { x: 150, y: 240 }, data: { label: 'B1' } },
     ],
     defaultEdges: [
-      { id: 'e-r-a', source: 'root', target: 'a', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e-r-b', source: 'root', target: 'b', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e-a-1', source: 'a', target: 'a1', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e-a-2', source: 'a', target: 'a2', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
-      { id: 'e-b-1', source: 'b', target: 'b1', type: 'mindmap-edge', data: { data: { edgeStyle: 'curved' } } },
+      { id: 'e-r-a', source: 'root', target: 'a', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e-r-b', source: 'root', target: 'b', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e-a-1', source: 'a', target: 'a1', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e-a-2', source: 'a', target: 'a2', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
+      { id: 'e-b-1', source: 'b', target: 'b1', type: 'mindmap-edge', data: { edgeStyle: 'curved' } },
     ]
   },
   {
@@ -160,10 +160,10 @@ export const templates: Template[] = [
       { id: 'end', type: 'rounded', position: { x: 800, y: 0 }, data: { label: 'End', backgroundColor: 'var(--node-color-red)', color: '#fff' } },
     ],
     defaultEdges: [
-      { id: 'e1', source: 'start', target: 's1', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight', arrowEnd: true } } },
-      { id: 'e2', source: 's1', target: 's2', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight', arrowEnd: true } } },
-      { id: 'e3', source: 's2', target: 'd1', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight', arrowEnd: true } } },
-      { id: 'e4', source: 'd1', target: 'end', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight', arrowEnd: true } } },
+      { id: 'e1', source: 'start', target: 's1', type: 'mindmap-edge', data: { edgeStyle: 'straight', arrowEnd: true } },
+      { id: 'e2', source: 's1', target: 's2', type: 'mindmap-edge', data: { edgeStyle: 'straight', arrowEnd: true } },
+      { id: 'e3', source: 's2', target: 'd1', type: 'mindmap-edge', data: { edgeStyle: 'straight', arrowEnd: true } },
+      { id: 'e4', source: 'd1', target: 'end', type: 'mindmap-edge', data: { edgeStyle: 'straight', arrowEnd: true } },
     ]
   },
   {
@@ -182,10 +182,10 @@ export const templates: Template[] = [
       { id: 'n6', type: 'text', position: { x: 140, y: 140 }, data: { label: 'Idea 6' } },
     ],
     defaultEdges: [
-      { id: 'e1', source: 'root', target: 'n1', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight' } } },
-      { id: 'e2', source: 'root', target: 'n2', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight' } } },
-      { id: 'e3', source: 'root', target: 'n3', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight' } } },
-      { id: 'e4', source: 'root', target: 'n4', type: 'mindmap-edge', data: { data: { edgeStyle: 'straight' } } },
+      { id: 'e1', source: 'root', target: 'n1', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
+      { id: 'e2', source: 'root', target: 'n2', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
+      { id: 'e3', source: 'root', target: 'n3', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
+      { id: 'e4', source: 'root', target: 'n4', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
       { id: 'e5', source: 'root', target: 'n5', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
       { id: 'e6', source: 'root', target: 'n6', type: 'mindmap-edge', data: { edgeStyle: 'straight' } },
     ]

@@ -4,7 +4,7 @@ import { exportToJSON } from '../utils/exportUtils';
 import { Undo, Redo, Download, Share2, ChevronLeft } from 'lucide-react';
 
 export const TopToolbar = () => {
-  const { documentTitle, setTitle, undo, redo, isSaving, nodes, edges, viewport, documentId, templateId } = useMindMapStore();
+  const { documentTitle, setTitle, undo, redo, isSaving, saveError, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt } = useMindMapStore();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentTitle);
 
@@ -19,7 +19,7 @@ export const TopToolbar = () => {
 
   const handleExport = () => {
     if (!documentId) return;
-    exportToJSON({ id: documentId, title: documentTitle, nodes, edges, viewport, templateId, createdAt: Date.now(), updatedAt: Date.now() });
+    exportToJSON({ id: documentId, title: documentTitle, nodes, edges, viewport, templateId, createdAt, updatedAt });
   };
 
   return (
@@ -70,8 +70,8 @@ export const TopToolbar = () => {
         border: '1px solid var(--panel-border)', pointerEvents: 'auto',
         boxShadow: 'var(--shadow)', display: 'flex', gap: '8px', alignItems: 'center'
       }}>
-        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginRight: '8px' }}>
-          {isSaving ? 'Saving...' : 'Saved'}
+        <div style={{ fontSize: '12px', color: saveError ? 'var(--node-color-red)' : 'var(--text-secondary)', marginRight: '8px' }}>
+          {saveError ? saveError : (isSaving ? 'Saving...' : 'Saved')}
         </div>
         <button 
           onClick={handleExport}

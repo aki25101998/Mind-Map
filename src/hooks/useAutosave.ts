@@ -11,7 +11,9 @@ export const useAutosave = () => {
     edges, 
     viewport, 
     templateId, 
-    setIsSaving 
+    createdAt,
+    setIsSaving,
+    setSaveError
   } = useMindMapStore();
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -34,14 +36,16 @@ export const useAutosave = () => {
         edges,
         viewport,
         templateId,
-        createdAt: Date.now(), // Real implementation would track this properly
+        createdAt,
         updatedAt: Date.now(),
       };
 
       try {
         await saveDocument(doc);
+        setSaveError(null);
       } catch (err) {
         console.error('Failed to autosave document:', err);
+        setSaveError('Save failed');
       } finally {
         setIsSaving(false);
       }
@@ -50,5 +54,5 @@ export const useAutosave = () => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [documentId, documentTitle, nodes, edges, viewport, templateId]); // trigger on any of these changes
+  }, [documentId, documentTitle, nodes, edges, viewport, templateId, createdAt, setIsSaving, setSaveError]); // trigger on any of these changes
 };
