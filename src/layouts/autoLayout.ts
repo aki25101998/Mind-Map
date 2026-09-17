@@ -1,5 +1,6 @@
 import dagre from 'dagre';
 import type { MindMapNode, MindMapEdge } from '../types';
+import { resolveNodeLayoutSide } from '../utils/layoutUtils';
 
 interface LayoutOptions {
   direction?: 'TB' | 'LR' | 'RL' | 'BT';
@@ -91,38 +92,14 @@ const applyTwoWay = (nodes: MindMapNode[], edges: MindMapEdge[]): MindMapNode[] 
   const leftNodeIds = new Set<string>();
   const rightNodeIds = new Set<string>();
 
-  // Determine sides for immediate children
-  const immediateChildren = adjList.get(root.id) || [];
-  immediateChildren.forEach(childId => {
-    const childNode = nodes.find(n => n.id === childId);
-    if (!childNode) return;
-    
-    // Check layoutSide or fallback to current X position relative to root
-    const side = (childNode.data?.layoutSide as string) || (childNode.position.x < root.position.x ? 'left' : 'right');
-    
-    // BFS to add all descendants to the same side
-    const queue = [childId];
-    while (queue.length > 0) {
-      const curr = queue.shift()!;
-      if (side === 'left') leftNodeIds.add(curr);
-      else rightNodeIds.add(curr);
-      
-      const children = adjList.get(curr) || [];
-      queue.push(...children);
-    }
-  });
-
-  // What about disconnected nodes? Keep them based on their X position or default to right
   nodes.forEach(n => {
-    if (n.id !== root.id && !leftNodeIds.has(n.id) && !rightNodeIds.has(n.id)) {
-      if (n.data?.layoutSide === 'left') {
-        leftNodeIds.add(n.id);
-      } else if (n.data?.layoutSide === 'right') {
-        rightNodeIds.add(n.id);
-      } else {
-        if (n.position.x < root.position.x) leftNodeIds.add(n.id);
-        else rightNodeIds.add(n.id);
-      }
+    if (n.id === root.id) return;
+    const side = resolveNodeLayoutSide(n.id, nodes, edges, 'two-way');
+    if (side === 'left') {
+      leftNodeIds.add(n.id);
+    } else {
+      // Default everything else to right
+      rightNodeIds.add(n.id);
     }
   });
 

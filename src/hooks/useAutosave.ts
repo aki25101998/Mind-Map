@@ -19,6 +19,7 @@ export const useAutosave = () => {
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveRequestIdRef = useRef<number>(0);
+  const savePromiseRef = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     if (!documentId) return;
@@ -31,7 +32,7 @@ export const useAutosave = () => {
     setIsSaving(true);
     const currentSaveRequestId = ++saveRequestIdRef.current;
 
-    timeoutRef.current = setTimeout(async () => {
+    timeoutRef.current = setTimeout(() => {
       const now = Date.now();
       const doc: MindMapDocument = {
         id: documentId,
@@ -44,21 +45,26 @@ export const useAutosave = () => {
         updatedAt: now,
       };
 
-      try {
-        await saveDocument(doc);
-        // Only update state if this is the most recent save request
-        if (saveRequestIdRef.current === currentSaveRequestId) {
-          setSaveError(null);
-          setUpdatedAt(now);
-          setIsSaving(false);
+      savePromiseRef.current = savePromiseRef.current.then(async () => {
+        try {
+          await saveDocument(doc);
+          // Only update state if this is the most recent save request
+          if (saveRequestIdRef.current === currentSaveRequestId) {
+            setSaveError(null);
+            setUpdatedAt(now);
+            setIsSaving(false);
+          }
+        } catch (err) {
+          console.error('Failed to autosave document:', err);
+          if (saveRequestIdRef.current === currentSaveRequestId) {
+            setSaveError('Save failed');
+            setIsSaving(false);
+          }
         }
-      } catch (err) {
-        console.error('Failed to autosave document:', err);
-        if (saveRequestIdRef.current === currentSaveRequestId) {
-          setSaveError('Save failed');
-          setIsSaving(false);
-        }
-      }
+      }).catch(err => {
+        // Prevent promise chain from breaking
+        console.error('Error in save queue', err);
+      });
     }, 1000); // 1s debounce
 
     return () => {

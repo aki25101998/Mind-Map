@@ -58,11 +58,10 @@ export const cloneTemplate = (template: Template) => {
 
   const edges: MindMapEdge[] = template.defaultEdges.map(e => {
     // Merge preset edge style but let specific edge data override
-    const presetEdgeStyleData = stylePreset?.edgeStyle?.data || {};
+    const presetEdgeStyleData = stylePreset?.edgeStyle || {};
     const explicitEdgeStyleData = e.data || {};
     
     return {
-      ...(stylePreset?.edgeStyle || {}),
       ...e,
       id: uuidv4(),
       source: idMap[e.source],

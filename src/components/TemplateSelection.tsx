@@ -62,6 +62,28 @@ export const TemplateSelection = () => {
 
   const previewTemplate = templates.find(t => t.id === previewTemplateId);
 
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        const validDoc = validateDocument(json);
+        // Create a new ID to avoid overwriting existing
+        const newId = uuidv4();
+        loadDocument(newId, validDoc.title, validDoc.nodes, validDoc.edges, validDoc.viewport, validDoc.templateId, validDoc.createdAt, Date.now());
+      } catch (err) {
+        console.error('Failed to import document:', err);
+        alert('Invalid Mind Map file: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    e.target.value = '';
+  };
+
   return (
     <div style={{
       width: '100vw', height: '100vh', background: 'var(--canvas-bg)',
@@ -81,6 +103,20 @@ export const TemplateSelection = () => {
           >
             + Blank Canvas
           </button>
+          
+          <label style={{ 
+            padding: '16px 24px', borderRadius: '12px', background: 'var(--panel-bg)', 
+            color: 'var(--text-primary)', border: '1px solid var(--panel-border)', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            Import Mind Map
+            <input 
+              type="file" 
+              accept=".json" 
+              onChange={handleImport} 
+              style={{ display: 'none' }} 
+            />
+          </label>
         </div>
 
         {documents.length > 0 && (

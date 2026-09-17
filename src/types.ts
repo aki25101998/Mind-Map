@@ -40,7 +40,7 @@ export type TemplateCategory = 'Mind Map' | 'Hierarchy' | 'Organization' | 'Proc
 export interface StylePreset {
   rootStyle?: Partial<NodeData>;
   branchStyles?: Partial<NodeData>[];
-  edgeStyle?: Partial<MindMapEdge>;
+  edgeStyle?: Partial<EdgeData>;
 }
 
 export interface Template {

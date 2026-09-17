@@ -14,6 +14,7 @@ import type {
 } from '@xyflow/react';
 import type { MindMapNode, MindMapEdge } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizeTwoWayDocument, findNonCollidingPosition, resolveNodeLayoutSide } from '../utils/layoutUtils';
 
 export type HistorySnapshot = {
   nodes: MindMapNode[];
@@ -95,11 +96,20 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
 
   commitHistory: () => {
     const { nodes, edges, history, historyIndex } = get();
+    
+    // Strip volatile state for history comparison and storage
+    const stripVolatile = (n: MindMapNode) => {
+      const { selected, dragging, resizing, measured, width, height, ...rest } = n;
+      return rest;
+    };
+    
+    const strippedNodes = nodes.map(stripVolatile);
+    
     // Only commit if there is a change
     const currentSnapshot = history[historyIndex];
     if (
       currentSnapshot &&
-      JSON.stringify(currentSnapshot.nodes) === JSON.stringify(nodes) &&
+      JSON.stringify(currentSnapshot.nodes.map(stripVolatile)) === JSON.stringify(strippedNodes) &&
       JSON.stringify(currentSnapshot.edges) === JSON.stringify(edges)
     ) {
       return;
@@ -234,16 +244,22 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
 
   loadDocument: (id, title, nodes, edges, viewport, templateId, createdAt, updatedAt) => {
     const now = Date.now();
+    let finalNodes = nodes;
+    
+    if (templateId === 'two-way') {
+      finalNodes = normalizeTwoWayDocument(nodes, edges);
+    }
+    
     set({ 
       documentId: id, 
       documentTitle: title, 
-      nodes, 
+      nodes: finalNodes, 
       edges, 
       viewport,
       templateId,
       createdAt: createdAt ?? now,
       updatedAt: updatedAt ?? now,
-      history: [{ nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) }],
+      history: [{ nodes: JSON.parse(JSON.stringify(finalNodes)), edges: JSON.parse(JSON.stringify(edges)) }],
       historyIndex: 0,
       selectedNodeIds: [],
     });
@@ -279,33 +295,28 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
 
     const root = nodes.find(n => n.type === 'main') || nodes[0];
     
-    let layoutSide = parentNode.data?.layoutSide;
+    let leftCount = 0;
+    let rightCount = 0;
     
     if (parentNode.id === root?.id) {
       const rootEdges = edges.filter(e => e.source === root.id);
-      let leftCount = 0;
-      let rightCount = 0;
       rootEdges.forEach(e => {
         const child = nodes.find(n => n.id === e.target);
         if (child?.data?.layoutSide === 'left') leftCount++;
         else if (child?.data?.layoutSide === 'right') rightCount++;
       });
-      layoutSide = leftCount <= rightCount ? 'left' : 'right';
     }
+    const layoutSide = parentNode.id === root?.id 
+      ? (leftCount <= rightCount ? 'left' : 'right')
+      : resolveNodeLayoutSide(parentId, nodes, edges, 'two-way'); // Using two-way as default for resolution logic here, though technically it depends on layoutType which we don't store. But the prompt says for two-way: parent side = left -> child gets layoutSide = left.
 
-    const isLeft = layoutSide === 'left' || (!layoutSide && parentNode.position.x < root?.position.x);
+    const isLeft = layoutSide === 'left';
     const offsetX = isLeft ? -200 : 200;
     
-    let newX = parentNode.position.x + offsetX;
-    let newY = parentNode.position.y;
+    const preferredX = parentNode.position.x + offsetX;
+    const preferredY = parentNode.position.y;
     
-    const checkCollision = (x: number, y: number) => {
-      return nodes.some(n => Math.abs(n.position.x - x) < 80 && Math.abs(n.position.y - y) < 40);
-    };
-    
-    while (checkCollision(newX, newY)) {
-      newY += 80;
-    }
+    const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, nodes);
 
     const newId = uuidv4();
     const newNode: MindMapNode = {
@@ -346,18 +357,12 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     }
 
     const parentId = parentEdge.source;
-    const layoutSide = targetNode.data?.layoutSide;
+    const layoutSide = resolveNodeLayoutSide(targetNode.id, nodes, edges, 'two-way');
     
-    let newX = targetNode.position.x;
-    let newY = targetNode.position.y + 80;
+    const preferredX = targetNode.position.x;
+    const preferredY = targetNode.position.y + 80;
     
-    const checkCollision = (x: number, y: number) => {
-      return nodes.some(n => Math.abs(n.position.x - x) < 80 && Math.abs(n.position.y - y) < 40);
-    };
-    
-    while (checkCollision(newX, newY)) {
-      newY += 80;
-    }
+    const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, nodes);
 
     const newId = uuidv4();
     const newNode: MindMapNode = {

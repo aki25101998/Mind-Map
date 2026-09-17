@@ -26,7 +26,7 @@ export const templates: Template[] = [
         { backgroundColor: 'var(--node-color-blue)', color: '#fff' },
         { backgroundColor: 'var(--node-color-green)', color: '#fff' }
       ],
-      edgeStyle: { data: { edgeStyle: 'curved' } }
+      edgeStyle: { edgeStyle: 'curved' }
     },
     defaultNodes: [
       { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Main Idea', layoutSide: 'center' } },
@@ -54,7 +54,7 @@ export const templates: Template[] = [
         { backgroundColor: 'var(--node-color-cyan)' },
         { backgroundColor: 'var(--node-color-teal)' }
       ],
-      edgeStyle: { data: { edgeStyle: 'curved' } }
+      edgeStyle: { edgeStyle: 'curved' }
     },
     defaultNodes: [
       { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Main' } },
@@ -102,7 +102,7 @@ export const templates: Template[] = [
     layoutType: 'brace',
     stylePreset: {
       rootStyle: { backgroundColor: 'var(--node-color-teal)', color: '#fff' },
-      edgeStyle: { data: { edgeStyle: 'orthogonal' } }
+      edgeStyle: { edgeStyle: 'orthogonal' }
     },
     defaultNodes: [
       { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Whole' } },
@@ -133,7 +133,7 @@ export const templates: Template[] = [
       branchStyles: [
         { backgroundColor: 'var(--node-color-cyan)' }
       ],
-      edgeStyle: { data: { edgeStyle: 'orthogonal' } }
+      edgeStyle: { edgeStyle: 'orthogonal' }
     },
     defaultNodes: [
       { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'CEO' } },
@@ -165,7 +165,7 @@ export const templates: Template[] = [
         { backgroundColor: 'var(--node-color-blue)', color: '#fff' },
         { backgroundColor: 'var(--node-color-green)', color: '#fff' }
       ],
-      edgeStyle: { data: { edgeStyle: 'curved' } }
+      edgeStyle: { edgeStyle: 'curved' }
     },
     defaultNodes: [
       { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } },
@@ -190,7 +190,7 @@ export const templates: Template[] = [
     description: 'A sequential process map.',
     layoutType: 'flow',
     stylePreset: {
-      edgeStyle: { data: { edgeStyle: 'straight', arrowEnd: true } }
+      edgeStyle: { edgeStyle: 'straight', arrowEnd: true }
     },
     defaultNodes: [
       { id: 'start', type: 'rounded', position: { x: 0, y: 0 }, data: { label: 'Start', backgroundColor: 'var(--node-color-green)', color: '#fff' } },
@@ -214,7 +214,7 @@ export const templates: Template[] = [
     layoutType: 'radial',
     stylePreset: {
       rootStyle: { backgroundColor: 'var(--node-color-orange)', color: '#fff' },
-      edgeStyle: { data: { edgeStyle: 'straight' } }
+      edgeStyle: { edgeStyle: 'straight' }
     },
     defaultNodes: [
       { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Main Idea' } },
