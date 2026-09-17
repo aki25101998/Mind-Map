@@ -14,8 +14,7 @@ import type {
 } from '@xyflow/react';
 import type { MindMapNode, MindMapEdge } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { normalizeTwoWayDocument, findNonCollidingPosition, resolveNodeLayoutSide } from '../utils/layoutUtils';
-import { templates } from '../templates/definitions';
+import { normalizeTwoWayDocument, findNonCollidingPosition, resolveNodeLayoutSide, getLayoutType } from '../utils/layoutUtils';
 
 export type HistorySnapshot = {
   nodes: MindMapNode[];
@@ -74,6 +73,19 @@ export interface MindMapState {
   pasteFromClipboard: () => void;
 }
 
+export const createHistorySnapshot = (nodes: MindMapNode[], edges: MindMapEdge[]): HistorySnapshot => {
+  const strippedNodes = nodes.map(n => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+    const { selected, dragging, resizing, measured, width, height, ...rest } = n;
+    return rest as MindMapNode;
+  });
+
+  return {
+    nodes: JSON.parse(JSON.stringify(strippedNodes)),
+    edges: JSON.parse(JSON.stringify(edges))
+  };
+};
+
 const MAX_HISTORY = 50;
 
 export const useMindMapStore = create<MindMapState>((set, get) => ({
@@ -98,29 +110,16 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   commitHistory: () => {
     const { nodes, edges, history, historyIndex } = get();
     
-    // Strip volatile state for history comparison and storage
-    const stripVolatileNodeState = (n: MindMapNode) => {
-      const { selected, dragging, resizing, measured, width, height, ...rest } = n;
-      return rest as MindMapNode;
-    };
-    
-    const strippedNodes = nodes.map(stripVolatileNodeState);
-    
-    // Only commit if there is a change
+    const newSnapshot = createHistorySnapshot(nodes, edges);
     const currentSnapshot = history[historyIndex];
+
     if (
       currentSnapshot &&
-      JSON.stringify(currentSnapshot.nodes.map(stripVolatileNodeState)) === JSON.stringify(strippedNodes) &&
-      JSON.stringify(currentSnapshot.edges) === JSON.stringify(edges)
+      JSON.stringify(currentSnapshot.nodes) === JSON.stringify(newSnapshot.nodes) &&
+      JSON.stringify(currentSnapshot.edges) === JSON.stringify(newSnapshot.edges)
     ) {
       return;
     }
-
-    const newSnapshot = {
-      // Deep copy semantic nodes and edges for snapshot
-      nodes: JSON.parse(JSON.stringify(strippedNodes)),
-      edges: JSON.parse(JSON.stringify(edges))
-    };
 
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newSnapshot);
@@ -247,7 +246,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     const now = Date.now();
     let finalNodes = nodes;
     
-    if (templateId === 'two-way') {
+    if (getLayoutType(templateId) === 'two-way') {
       finalNodes = normalizeTwoWayDocument(nodes, edges);
     }
     
@@ -260,7 +259,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
       templateId,
       createdAt: createdAt ?? now,
       updatedAt: updatedAt ?? now,
-      history: [{ nodes: JSON.parse(JSON.stringify(finalNodes)), edges: JSON.parse(JSON.stringify(edges)) }],
+      history: [createHistorySnapshot(finalNodes, edges)],
       historyIndex: 0,
       selectedNodeIds: [],
     });
@@ -295,8 +294,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     if (!parentNode) return;
 
     const root = nodes.find(n => n.type === 'main') || nodes[0];
-    const currentTemplate = templates.find(t => t.id === templateId);
-    const layoutType = currentTemplate?.layoutType || 'two-way';
+    const layoutType = getLayoutType(templateId);
     
     let leftCount = 0;
     let rightCount = 0;
@@ -360,8 +358,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
       return;
     }
 
-    const currentTemplate = templates.find(t => t.id === templateId);
-    const layoutType = currentTemplate?.layoutType || 'two-way';
+    const layoutType = getLayoutType(templateId);
 
     const parentId = parentEdge.source;
     const layoutSide = resolveNodeLayoutSide(targetNode.id, nodes, edges, layoutType);

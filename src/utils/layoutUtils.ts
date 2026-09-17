@@ -1,6 +1,13 @@
 import type { MindMapNode, MindMapEdge, LayoutType } from '../types';
+import { templates } from '../templates/definitions';
 
 export type LayoutSide = 'left' | 'right' | 'center';
+
+export const getLayoutType = (templateId?: string): LayoutType => {
+  if (!templateId) return 'free';
+  const template = templates.find(t => t.id === templateId);
+  return template?.layoutType || 'free';
+};
 
 /**
  * Resolves the logical layout side of a node in a Two-way layout.
@@ -11,6 +18,9 @@ export const resolveNodeLayoutSide = (
   edges: MindMapEdge[],
   layoutType: LayoutType
 ): LayoutSide | undefined => {
+  if (layoutType === 'free') {
+    return undefined;
+  }
   if (layoutType !== 'two-way') {
     const node = nodes.find(n => n.id === nodeId);
     return node?.data?.layoutSide as LayoutSide | undefined;
