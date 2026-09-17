@@ -49,7 +49,8 @@ const CanvasInner = () => {
     redo,
     addNode,
     commitHistory,
-    documentId
+    documentId,
+    setIsDragging
   } = useMindMapStore();
   
   const { setViewport: rfSetViewport, screenToFlowPosition } = useReactFlow();
@@ -121,7 +122,11 @@ const CanvasInner = () => {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
-      onNodeDragStop={() => commitHistory()}
+      onNodeDragStart={() => setIsDragging(true)}
+      onNodeDragStop={() => {
+        setIsDragging(false);
+        commitHistory();
+      }}
       onMoveEnd={(_, vp) => setViewport(vp)}
       onDoubleClick={handleDoubleClick}
       nodeTypes={nodeTypes}
