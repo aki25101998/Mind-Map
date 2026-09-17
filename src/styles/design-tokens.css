@@ -1,56 +1,71 @@
 :root {
-  /* Colors - Dark Theme */
-  --canvas-bg: #1e1e1e;
-  --panel-bg: #2d2d2d;
-  --panel-border: #3d3d3d;
+  /* Layout */
+  --z-toolbar: 100;
+  --z-modal: 1000;
   
-  --text-primary: #ffffff;
-  --text-secondary: #aaaaaa;
-  
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  
-  /* Node defaults */
-  --node-bg-default: #2d2d2d;
-  --node-border-default: #444444;
-  --node-text-default: #ffffff;
-  
-  /* Node Colors Palette */
-  --node-color-orange: #f97316;
-  --node-color-blue: #3b82f6;
-  --node-color-green: #22c55e;
-  --node-color-yellow: #eab308;
-  --node-color-red: #ef4444;
-  --node-color-purple: #a855f7;
+  /* Radii */
+  --panel-radius: 12px;
 
-  /* UI Dimensions */
-  --toolbar-height: 50px;
-  --panel-radius: 8px;
+  /* Light Theme Defaults */
+  --canvas-bg: #f8f9fa;
+  --panel-bg: #ffffff;
+  --panel-border: #e9ecef;
   
-  /* Z-indices */
-  --z-canvas: 1;
-  --z-toolbar: 10;
-  --z-modal: 100;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  
+  --node-bg-default: #ffffff;
+  --node-border-default: #dee2e6;
+  --node-text-default: #212529;
+  
+  --accent: #0d6efd;
+  --accent-bg: rgba(13, 110, 253, 0.1);
+  --accent-border: #0d6efd;
+
+  --social-bg: #f1f3f5;
+  --shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+  /* Mind Map Node Colors */
+  --node-color-orange: #fd7e14;
+  --node-color-purple: #6f42c1;
+  --node-color-red: #dc3545;
+  --node-color-blue: #0d6efd;
+  --node-color-green: #198754;
+  --node-color-yellow: #ffc107;
+  --node-color-teal: #20c997;
+  --node-color-cyan: #0dcaf0;
+  --node-color-gray: #adb5bd;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--canvas-bg);
-  color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  overflow: hidden;
-}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas-bg: #121212;
+    --panel-bg: #1e1e1e;
+    --panel-border: #2d2d2d;
+    
+    --text-primary: #f8f9fa;
+    --text-secondary: #adb5bd;
+    
+    --node-bg-default: #2d2d2d;
+    --node-border-default: #495057;
+    --node-text-default: #f8f9fa;
 
-/* Base resets */
-* {
-  box-sizing: border-box;
-}
+    --accent: #3b82f6;
+    --accent-bg: rgba(59, 130, 246, 0.2);
+    --accent-border: #3b82f6;
 
-button {
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  font-family: inherit;
+    --social-bg: #2d2d2d;
+    --shadow: 0 4px 12px rgba(0,0,0,0.5);
+
+    /* Mind Map Node Colors (Darker Variants) */
+    --node-color-orange: #d97706;
+    --node-color-purple: #7c3aed;
+    --node-color-red: #dc2626;
+    --node-color-blue: #2563eb;
+    --node-color-green: #16a34a;
+    --node-color-yellow: #ca8a04;
+    --node-color-teal: #0d9488;
+    --node-color-cyan: #0891b2;
+    --node-color-gray: #4b5563;
+  }
 }

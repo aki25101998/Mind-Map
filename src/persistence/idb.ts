@@ -1,5 +1,6 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { MindMapDocument } from '../types';
+import { openDB } from 'idb';
+import type { DBSchema, IDBPDatabase } from 'idb';
+import type { MindMapDocument } from '../types';
 
 interface MyDB extends DBSchema {
   documents: {

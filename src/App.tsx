@@ -1,12 +1,15 @@
-import React from 'react';
 import { MindMapCanvas } from './canvas/MindMapCanvas';
 import { useMindMapStore } from './store/useMindMapStore';
 import { TemplateSelection } from './components/TemplateSelection';
 import { TopToolbar } from './editor/TopToolbar';
 import { BottomToolbar } from './editor/BottomToolbar';
+import { useAutosave } from './hooks/useAutosave';
 
 function App() {
-  const { documentId, loadDocument } = useMindMapStore();
+  const { documentId } = useMindMapStore();
+  
+  // Initialize autosave
+  useAutosave();
 
   if (!documentId) {
     return <TemplateSelection />;

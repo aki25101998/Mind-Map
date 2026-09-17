@@ -1,14 +1,15 @@
-import type { Node, Edge } from '@xyflow/react';
+import type { Node, Edge, Viewport } from '@xyflow/react';
 
-export type NodeType = 'main' | 'basic' | 'rounded' | 'text';
+export type MindMapNodeType = 'main' | 'basic' | 'rounded' | 'text';
 
-export interface NodeData {
+export interface NodeData extends Record<string, unknown> {
   label: string;
   color?: string;
   backgroundColor?: string;
   borderColor?: string;
   borderWidth?: number;
   borderRadius?: number;
+  textColor?: string;
   fontSize?: number;
   fontWeight?: string | number;
   icon?: string;
@@ -17,18 +18,37 @@ export interface NodeData {
   url?: string;
 }
 
-export type MindMapNode = Node<NodeData, NodeType>;
+export type MindMapNode = Node<NodeData, MindMapNodeType>;
 
-export interface MindMapEdge extends Edge {
-  type?: 'smooth' | 'straight' | 'orthogonal';
+export type MindMapEdgeStyle = 'curved' | 'straight' | 'orthogonal';
+
+export interface EdgeData extends Record<string, unknown> {
+  edgeStyle?: MindMapEdgeStyle;
+  arrowStart?: boolean;
+  arrowEnd?: boolean;
+  strokeColor?: string;
+  strokeWidth?: number;
+}
+
+export type MindMapEdge = Edge<EdgeData> & {
+  type?: 'mindmap-edge';
+};
+
+export type TemplateCategory = 'Mind Map' | 'Hierarchy' | 'Organization' | 'Process' | 'Brainstorm';
+
+export interface StylePreset {
+  rootStyle?: Partial<NodeData>;
+  branchStyles?: Partial<NodeData>[];
+  edgeStyle?: Partial<MindMapEdge>;
 }
 
 export interface Template {
   id: string;
   name: string;
-  category: string;
+  category: TemplateCategory;
   description: string;
-  layoutType: 'two-way' | 'one-way' | 'tree' | 'free' | 'brace' | 'org' | 'radial';
+  layoutType: 'two-way' | 'one-way' | 'free' | 'brace' | 'org' | 'tree' | 'flow' | 'radial';
+  stylePreset?: StylePreset;
   defaultNodes: MindMapNode[];
   defaultEdges: MindMapEdge[];
 }
@@ -38,7 +58,7 @@ export interface MindMapDocument {
   title: string;
   nodes: MindMapNode[];
   edges: MindMapEdge[];
-  viewport: { x: number; y: number; zoom: number };
+  viewport: Viewport;
   templateId?: string;
   createdAt: number;
   updatedAt: number;
