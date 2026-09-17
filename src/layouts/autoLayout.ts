@@ -115,8 +115,14 @@ const applyTwoWay = (nodes: MindMapNode[], edges: MindMapEdge[]): MindMapNode[] 
   // What about disconnected nodes? Keep them based on their X position or default to right
   nodes.forEach(n => {
     if (n.id !== root.id && !leftNodeIds.has(n.id) && !rightNodeIds.has(n.id)) {
-      if (n.position.x < root.position.x) leftNodeIds.add(n.id);
-      else rightNodeIds.add(n.id);
+      if (n.data?.layoutSide === 'left') {
+        leftNodeIds.add(n.id);
+      } else if (n.data?.layoutSide === 'right') {
+        rightNodeIds.add(n.id);
+      } else {
+        if (n.position.x < root.position.x) leftNodeIds.add(n.id);
+        else rightNodeIds.add(n.id);
+      }
     }
   });
 

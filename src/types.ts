@@ -16,6 +16,7 @@ export interface NodeData extends Record<string, unknown> {
   emoji?: string;
   note?: string;
   url?: string;
+  layoutSide?: 'left' | 'right' | 'center';
 }
 
 export type MindMapNode = Node<NodeData, MindMapNodeType>;

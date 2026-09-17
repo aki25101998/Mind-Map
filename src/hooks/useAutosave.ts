@@ -13,10 +13,12 @@ export const useAutosave = () => {
     templateId, 
     createdAt,
     setIsSaving,
-    setSaveError
+    setSaveError,
+    setUpdatedAt
   } = useMindMapStore();
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveRequestIdRef = useRef<number>(0);
 
   useEffect(() => {
     if (!documentId) return;
@@ -27,8 +29,10 @@ export const useAutosave = () => {
     }
 
     setIsSaving(true);
+    const currentSaveRequestId = ++saveRequestIdRef.current;
 
     timeoutRef.current = setTimeout(async () => {
+      const now = Date.now();
       const doc: MindMapDocument = {
         id: documentId,
         title: documentTitle,
@@ -37,22 +41,28 @@ export const useAutosave = () => {
         viewport,
         templateId,
         createdAt,
-        updatedAt: Date.now(),
+        updatedAt: now,
       };
 
       try {
         await saveDocument(doc);
-        setSaveError(null);
+        // Only update state if this is the most recent save request
+        if (saveRequestIdRef.current === currentSaveRequestId) {
+          setSaveError(null);
+          setUpdatedAt(now);
+          setIsSaving(false);
+        }
       } catch (err) {
         console.error('Failed to autosave document:', err);
-        setSaveError('Save failed');
-      } finally {
-        setIsSaving(false);
+        if (saveRequestIdRef.current === currentSaveRequestId) {
+          setSaveError('Save failed');
+          setIsSaving(false);
+        }
       }
     }, 1000); // 1s debounce
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [documentId, documentTitle, nodes, edges, viewport, templateId, createdAt, setIsSaving, setSaveError]); // trigger on any of these changes
+  }, [documentId, documentTitle, nodes, edges, viewport, templateId, createdAt, setIsSaving, setSaveError, setUpdatedAt]); // trigger on any of these changes
 };

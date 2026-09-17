@@ -7,6 +7,7 @@ import {
 } from '@xyflow/react';
 import type {
   Connection, 
+  Edge,
   EdgeChange, 
   NodeChange, 
   Viewport
@@ -57,6 +58,7 @@ export interface MindMapState {
   loadDocument: (id: string, title: string, nodes: MindMapNode[], edges: MindMapEdge[], viewport: Viewport, templateId?: string, createdAt?: number, updatedAt?: number) => void;
   setIsSaving: (saving: boolean) => void;
   setSaveError: (error: string | null) => void;
+  setUpdatedAt: (timestamp: number) => void;
   setTitle: (title: string) => void;
   
   // Selection
@@ -168,7 +170,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
       id: uuidv4(), 
       type: 'mindmap-edge',
       data: { edgeStyle: 'curved' }
-    } as any, get().edges) as MindMapEdge[];
+    } as Edge, get().edges) as MindMapEdge[];
     set({ edges: newEdges });
     get().commitHistory();
   },
@@ -239,8 +241,8 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
       edges, 
       viewport,
       templateId,
-      createdAt: createdAt || now,
-      updatedAt: updatedAt || now,
+      createdAt: createdAt ?? now,
+      updatedAt: updatedAt ?? now,
       history: [{ nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) }],
       historyIndex: 0,
       selectedNodeIds: [],
@@ -253,6 +255,10 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   
   setSaveError: (error: string | null) => {
     set({ saveError: error });
+  },
+
+  setUpdatedAt: (timestamp: number) => {
+    set({ updatedAt: timestamp });
   },
   
   setTitle: (title: string) => {
@@ -272,15 +278,41 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     if (!parentNode) return;
 
     const root = nodes.find(n => n.type === 'main') || nodes[0];
-    const isLeft = parentNode.id !== root?.id && parentNode.position.x < root.position.x;
+    
+    let layoutSide = parentNode.data?.layoutSide;
+    
+    if (parentNode.id === root?.id) {
+      const rootEdges = edges.filter(e => e.source === root.id);
+      let leftCount = 0;
+      let rightCount = 0;
+      rootEdges.forEach(e => {
+        const child = nodes.find(n => n.id === e.target);
+        if (child?.data?.layoutSide === 'left') leftCount++;
+        else if (child?.data?.layoutSide === 'right') rightCount++;
+      });
+      layoutSide = leftCount <= rightCount ? 'left' : 'right';
+    }
+
+    const isLeft = layoutSide === 'left' || (!layoutSide && parentNode.position.x < root?.position.x);
     const offsetX = isLeft ? -200 : 200;
+    
+    let newX = parentNode.position.x + offsetX;
+    let newY = parentNode.position.y;
+    
+    const checkCollision = (x: number, y: number) => {
+      return nodes.some(n => Math.abs(n.position.x - x) < 80 && Math.abs(n.position.y - y) < 40);
+    };
+    
+    while (checkCollision(newX, newY)) {
+      newY += 80;
+    }
 
     const newId = uuidv4();
     const newNode: MindMapNode = {
       id: newId,
       type: 'basic',
-      position: { x: parentNode.position.x + offsetX, y: parentNode.position.y },
-      data: { label: 'New Topic' },
+      position: { x: newX, y: newY },
+      data: { label: 'New Topic', ...(layoutSide ? { layoutSide } : {}) },
       selected: true
     };
 
@@ -314,12 +346,25 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     }
 
     const parentId = parentEdge.source;
+    const layoutSide = targetNode.data?.layoutSide;
+    
+    let newX = targetNode.position.x;
+    let newY = targetNode.position.y + 80;
+    
+    const checkCollision = (x: number, y: number) => {
+      return nodes.some(n => Math.abs(n.position.x - x) < 80 && Math.abs(n.position.y - y) < 40);
+    };
+    
+    while (checkCollision(newX, newY)) {
+      newY += 80;
+    }
+
     const newId = uuidv4();
     const newNode: MindMapNode = {
       id: newId,
       type: targetNode.type,
-      position: { x: targetNode.position.x, y: targetNode.position.y + 80 },
-      data: { ...targetNode.data, label: 'New Topic' },
+      position: { x: newX, y: newY },
+      data: { ...targetNode.data, label: 'New Topic', ...(layoutSide ? { layoutSide } : {}) },
       selected: true
     };
 
