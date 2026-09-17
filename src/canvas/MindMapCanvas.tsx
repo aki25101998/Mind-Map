@@ -5,7 +5,8 @@ import {
   Controls, 
   MiniMap, 
   useReactFlow, 
-  SelectionMode
+  SelectionMode,
+  ReactFlowProvider
 } from '@xyflow/react';
 import type { NodeTypes, EdgeTypes } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
@@ -147,7 +148,9 @@ const CanvasInner = () => {
 export const MindMapCanvas = () => {
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      <CanvasInner />
+      <ReactFlowProvider>
+        <CanvasInner />
+      </ReactFlowProvider>
     </div>
   );
 };
