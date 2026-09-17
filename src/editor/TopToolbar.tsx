@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { exportToJSON } from '../utils/exportUtils';
-import { Undo, Redo, Download, Share2, ChevronLeft } from 'lucide-react';
+import { Undo, Redo, Download, Share2, ChevronLeft, LayoutTemplate } from 'lucide-react';
 
 export const TopToolbar = () => {
-  const { documentTitle, setTitle, undo, redo, syncStatus, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt } = useMindMapStore();
+  const { documentTitle, setTitle, undo, redo, syncStatus, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt, autoLayout } = useMindMapStore();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentTitle);
 
@@ -73,6 +73,12 @@ export const TopToolbar = () => {
         <div style={{ fontSize: '12px', color: syncStatus === 'error' || syncStatus === 'offline' ? 'var(--node-color-red)' : 'var(--text-secondary)', marginRight: '8px' }}>
           {syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Sync failed' : syncStatus === 'offline' ? 'Offline' : 'Saved'}
         </div>
+        <button 
+          onClick={autoLayout}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', background: 'var(--node-bg-default)', color: 'var(--text-primary)' }}
+        >
+          <LayoutTemplate size={16} /> Auto Layout
+        </button>
         <button 
           onClick={handleExport}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', background: 'var(--node-bg-default)', color: 'var(--text-primary)' }}

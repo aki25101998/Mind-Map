@@ -34,6 +34,7 @@ export interface NodeEdgeSlice {
   createChildNode: (parentId: string) => void;
   createSiblingNode: (nodeId: string) => void;
   toggleCollapse: (nodeId: string) => void;
+  autoLayout: () => void;
 }
 
 export interface HistorySlice {

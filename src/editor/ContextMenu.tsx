@@ -14,6 +14,7 @@ export const ContextMenu = () => {
     pasteFromClipboard, 
     deleteSelected,
     addNode,
+    autoLayout,
     nodes,
     setSelectedNodes
   } = useMindMapStore();
@@ -88,6 +89,7 @@ export const ContextMenu = () => {
           <button className="menu-item" onClick={handleNewNode}>New node</button>
           <button className="menu-item" onClick={handlePaste}>Paste</button>
           <hr style={{ margin: '4px 0', borderColor: 'var(--panel-border)' }} />
+          <button className="menu-item" onClick={() => handleAction(autoLayout)}>Auto layout</button>
           <button className="menu-item" onClick={handleSelectAll}>Select all</button>
           <button className="menu-item" onClick={handleFitView}>Fit view</button>
         </>

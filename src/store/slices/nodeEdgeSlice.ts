@@ -8,7 +8,7 @@ import {
 } from '@xyflow/react';
 import type { MindMapNode, MindMapEdge } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
-import { findNonCollidingPosition, resolveNodeLayoutSide, getLayoutType } from '../../utils/layoutUtils';
+import { findNonCollidingPosition, resolveNodeLayoutSide, getLayoutType, applyAutoLayout } from '../../utils/layoutUtils';
 import { getDescendants } from '../../utils/graphUtils';
 
 export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSlice> = (set, get) => ({
@@ -233,6 +233,18 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
         return e;
       })
     });
+    get().commitHistory();
+  },
+
+  autoLayout: () => {
+    const { nodes, edges, templateId } = get();
+    const layoutType = getLayoutType(templateId);
+    
+    // Fit view after state update if we had access to ReactFlow, 
+    // but since we are in store, we just update positions.
+    const layoutedNodes = applyAutoLayout(nodes, edges, layoutType);
+    
+    set({ nodes: layoutedNodes });
     get().commitHistory();
   },
 });
