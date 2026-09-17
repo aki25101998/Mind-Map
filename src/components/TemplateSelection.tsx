@@ -24,13 +24,20 @@ export const TemplateSelection = () => {
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
 
-  const loadRecentDocs = async () => {
-    const docs = await getAllDocuments();
-    setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
+  const loadRecentDocs = () => {
+    getAllDocuments().then(docs => {
+      setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
+    });
   };
 
   useEffect(() => {
-    loadRecentDocs();
+    let mounted = true;
+    getAllDocuments().then(docs => {
+      if (mounted) {
+        setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
+      }
+    });
+    return () => { mounted = false; };
   }, []);
 
   const handleSelectTemplate = (templateId: string) => {
@@ -47,7 +54,7 @@ export const TemplateSelection = () => {
   const handleOpenDoc = (doc: MindMapDocument) => {
     try {
       const validDoc = validateDocument(doc);
-      loadDocument(validDoc.id, validDoc.title, validDoc.nodes, validDoc.edges, validDoc.viewport, validDoc.templateId, validDoc.createdAt, validDoc.updatedAt);
+      loadDocument(validDoc.id, validDoc.title, validDoc.nodes, validDoc.edges, validDoc.viewport, validDoc.templateId || 'blank', validDoc.createdAt, validDoc.updatedAt);
     } catch (err) {
       console.error('Failed to load document:', err);
       alert('This document is corrupted and cannot be loaded.');
@@ -73,7 +80,7 @@ export const TemplateSelection = () => {
         const validDoc = validateDocument(json);
         // Create a new ID to avoid overwriting existing
         const newId = uuidv4();
-        loadDocument(newId, validDoc.title, validDoc.nodes, validDoc.edges, validDoc.viewport, validDoc.templateId, validDoc.createdAt, Date.now());
+        loadDocument(newId, validDoc.title, validDoc.nodes, validDoc.edges, validDoc.viewport, validDoc.templateId || 'blank', validDoc.createdAt, Date.now());
       } catch (err) {
         console.error('Failed to import document:', err);
         alert('Invalid Mind Map file: ' + (err instanceof Error ? err.message : 'Unknown error'));

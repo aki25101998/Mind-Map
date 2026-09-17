@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { exportToJSON } from '../utils/exportUtils';
-import { Undo, Redo, Download, Share2, ChevronLeft, LayoutTemplate } from 'lucide-react';
+import { Undo, Redo, Download, Share2, Menu, LayoutTemplate } from 'lucide-react';
 
-export const TopToolbar = () => {
+interface TopToolbarProps {
+  onMenuClick?: () => void;
+}
+
+export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   const { documentTitle, setTitle, undo, redo, syncStatus, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt, autoLayout } = useMindMapStore();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentTitle);
@@ -34,11 +38,11 @@ export const TopToolbar = () => {
         boxShadow: 'var(--shadow)', display: 'flex', alignItems: 'center', gap: '16px'
       }}>
         <button 
-          title="Back to Dashboard (Not Implemented)"
-          style={{ display: 'flex', alignItems: 'center', background: 'transparent', color: 'var(--text-primary)', padding: 0 }}
-          disabled
+          onClick={onMenuClick}
+          title="Open Document Sidebar"
+          style={{ display: 'flex', alignItems: 'center', background: 'transparent', color: 'var(--text-primary)', padding: 0, cursor: 'pointer', border: 'none' }}
         >
-          <ChevronLeft size={20} />
+          <Menu size={20} />
         </button>
         <div style={{ width: '1px', height: '20px', background: 'var(--panel-border)' }} />
         <div style={{ display: 'flex', gap: '4px' }}>

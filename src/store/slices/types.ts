@@ -12,7 +12,17 @@ export interface DocumentSlice {
   templateId: string | undefined;
   createdAt: number;
   updatedAt: number;
-  loadDocument: (id: string, title: string, nodes: MindMapNode[], edges: MindMapEdge[], viewport: Viewport, templateId?: string, createdAt?: number, updatedAt?: number) => void;
+  loadDocument: (
+    id: string, 
+    title: string, 
+    nodes: MindMapNode[], 
+    edges: MindMapEdge[], 
+    viewport: Viewport,
+    templateId: string,
+    createdAt: number,
+    updatedAt: number
+  ) => void;
+  closeDocument: () => void;
   setUpdatedAt: (timestamp: number) => void;
   setTitle: (title: string) => void;
 }

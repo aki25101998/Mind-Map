@@ -39,5 +39,23 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       historyIndex: 0,
       selectedNodeIds: [],
     });
+  },
+
+  closeDocument: () => {
+    set({
+      documentId: null,
+      documentTitle: 'Untitled Mind Map',
+      templateId: undefined,
+      nodes: [],
+      edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      history: [],
+      historyIndex: 0,
+      selectedNodeIds: [],
+      editingNodeId: null,
+      contextMenu: null,
+    });
   }
 });

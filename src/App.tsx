@@ -3,10 +3,13 @@ import { useMindMapStore } from './store/useMindMapStore';
 import { TemplateSelection } from './components/TemplateSelection';
 import { TopToolbar } from './editor/TopToolbar';
 import { BottomToolbar } from './editor/BottomToolbar';
+import { DocumentSidebar } from './components/DocumentSidebar';
 import { useAutosave } from './hooks/useAutosave';
+import { useState } from 'react';
 
 function App() {
   const { documentId } = useMindMapStore();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Initialize autosave
   useAutosave();
@@ -17,8 +20,9 @@ function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <DocumentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <main style={{ flex: 1, position: 'relative' }}>
-        <TopToolbar />
+        <TopToolbar onMenuClick={() => setIsSidebarOpen(true)} />
         <MindMapCanvas />
         <BottomToolbar />
       </main>
