@@ -30,6 +30,7 @@ export interface DocumentSlice {
 export interface NodeEdgeSlice {
   nodes: MindMapNode[];
   edges: MindMapEdge[];
+  hasChildrenMap: Record<string, boolean>;
   viewport: Viewport;
   onNodesChange: (changes: NodeChange<MindMapNode>[]) => void;
   onEdgesChange: (changes: EdgeChange<MindMapEdge>[]) => void;

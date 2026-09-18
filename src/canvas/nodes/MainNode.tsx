@@ -15,7 +15,7 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
       toggleCollapse: state.toggleCollapse
     }))
   );
-  const hasChildren = useMindMapStore(state => state.edges.some(e => e.source === id));
+  const hasChildren = useMindMapStore(state => state.hasChildrenMap[id] || false);
   const isEditing = editingNodeId === id;
   const [label, setLabel] = useState(data.label);
 

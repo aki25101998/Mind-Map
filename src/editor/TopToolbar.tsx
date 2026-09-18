@@ -26,7 +26,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   
-  const { getNodes } = useReactFlow();
+  const { getNodes, fitView } = useReactFlow();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -136,7 +136,12 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           {syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Sync failed' : syncStatus === 'offline' ? 'Offline' : 'Saved'}
         </div>
         <button 
-          onClick={autoLayout}
+          onClick={() => {
+            autoLayout();
+            setTimeout(() => {
+              fitView({ duration: 300, padding: 0.1 });
+            }, 50);
+          }}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', background: 'var(--node-bg-default)', color: 'var(--text-primary)' }}
         >
           <LayoutTemplate size={16} /> Auto Layout

@@ -11,9 +11,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { findNonCollidingPosition, resolveNodeLayoutSide, getLayoutType, applyAutoLayout } from '../../utils/layoutUtils';
 import { getDescendants } from '../../utils/graphUtils';
 
+const computeHasChildrenMap = (edges: MindMapEdge[]) => {
+  const map: Record<string, boolean> = {};
+  edges.forEach(e => {
+    map[e.source] = true;
+  });
+  return map;
+};
+
 export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSlice> = (set, get) => ({
   nodes: [],
   edges: [],
+  hasChildrenMap: {},
   viewport: { x: 0, y: 0, zoom: 1 },
 
   onNodesChange: (changes) => {
@@ -46,7 +55,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
 
   onEdgesChange: (changes) => {
     const newEdges = applyEdgeChanges(changes, get().edges) as MindMapEdge[];
-    set({ edges: newEdges });
+    set({ edges: newEdges, hasChildrenMap: computeHasChildrenMap(newEdges) });
   },
 
   onConnect: (connection) => {
@@ -56,7 +65,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
       type: 'mindmap-edge',
       data: { edgeStyle: 'curved' }
     }, get().edges) as MindMapEdge[];
-    set({ edges: newEdges });
+    set({ edges: newEdges, hasChildrenMap: computeHasChildrenMap(newEdges) });
     get().commitHistory();
   },
 
@@ -66,7 +75,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   },
 
   setEdges: (edges) => {
-    set({ edges });
+    set({ edges, hasChildrenMap: computeHasChildrenMap(edges) });
     get().commitHistory();
   },
 
@@ -85,7 +94,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     
     const remainingEdges = edges.filter(e => !edgesToRemove.some(re => re.id === e.id));
 
-    set({ nodes: remainingNodes, edges: remainingEdges, selectedNodeIds: [] });
+    set({ nodes: remainingNodes, edges: remainingEdges, hasChildrenMap: computeHasChildrenMap(remainingEdges), selectedNodeIds: [] });
     get().commitHistory();
   },
 
@@ -105,30 +114,35 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
         return node;
       }),
       edges: newEdges,
+      hasChildrenMap: computeHasChildrenMap(newEdges)
     });
     get().commitHistory();
   },
 
   updateEdge: (id, data) => {
+    const newEdges = get().edges.map((edge) => {
+      if (edge.id === id) {
+        return { ...edge, ...data };
+      }
+      return edge;
+    });
     set({
-      edges: get().edges.map((edge) => {
-        if (edge.id === id) {
-          return { ...edge, ...data };
-        }
-        return edge;
-      }),
+      edges: newEdges,
+      hasChildrenMap: computeHasChildrenMap(newEdges)
     });
     get().commitHistory();
   },
 
   updateOutgoingEdges: (sourceId, data) => {
+    const newEdges = get().edges.map((edge) => {
+      if (edge.source === sourceId) {
+        return { ...edge, data: { ...edge.data, ...data } };
+      }
+      return edge;
+    });
     set({
-      edges: get().edges.map((edge) => {
-        if (edge.source === sourceId) {
-          return { ...edge, data: { ...edge.data, ...data } };
-        }
-        return edge;
-      }),
+      edges: newEdges,
+      hasChildrenMap: computeHasChildrenMap(newEdges)
     });
     get().commitHistory();
   },
@@ -186,9 +200,11 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
       data: { edgeStyle: 'curved' }
     };
 
+    const newEdges = [...edges, newEdge];
     set({ 
       nodes: [...nodes.map(n => ({...n, selected: false})), newNode], 
-      edges: [...edges, newEdge],
+      edges: newEdges,
+      hasChildrenMap: computeHasChildrenMap(newEdges),
       selectedNodeIds: [newId],
       editingNodeId: newId
     });
@@ -235,9 +251,11 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
       data: { edgeStyle: 'curved' }
     };
 
+    const newEdges = [...edges, newEdge];
     set({ 
       nodes: [...nodes.map(n => ({...n, selected: false})), newNode], 
-      edges: [...edges, newEdge],
+      edges: newEdges,
+      hasChildrenMap: computeHasChildrenMap(newEdges),
       selectedNodeIds: [newId],
       editingNodeId: newId
     });
@@ -255,6 +273,13 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     const descendantNodeIds = new Set(descendantNodes.map(n => n.id));
     const descendantEdgeIds = new Set(descendantEdges.map(e => e.id));
 
+    const newEdges = edges.map(e => {
+      if (descendantEdgeIds.has(e.id)) {
+        return { ...e, hidden: isCollapsed };
+      }
+      return e;
+    });
+
     set({
       nodes: nodes.map(n => {
         if (n.id === nodeId) {
@@ -265,12 +290,8 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
         }
         return n;
       }),
-      edges: edges.map(e => {
-        if (descendantEdgeIds.has(e.id)) {
-          return { ...e, hidden: isCollapsed };
-        }
-        return e;
-      })
+      edges: newEdges,
+      hasChildrenMap: computeHasChildrenMap(newEdges)
     });
     get().commitHistory();
   },
