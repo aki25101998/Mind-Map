@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import {
   ReactFlow, 
   Background,
@@ -6,7 +6,9 @@ import {
   MiniMap, 
   useReactFlow, 
   SelectionMode,
-  type Node
+  applyNodeChanges,
+  type Node,
+  type NodeChange
 } from '@xyflow/react';
 import type { NodeTypes, EdgeTypes } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
@@ -19,6 +21,7 @@ import { CustomMindMapEdge } from './edges/MindMapEdge';
 import { ContextMenu } from '../editor/ContextMenu';
 import { CommandPalette } from '../components/CommandPalette';
 import { v4 as uuidv4 } from 'uuid';
+import type { MindMapNode } from '../types';
 
 const nodeTypes: NodeTypes = {
   main: MainNode,
@@ -83,6 +86,33 @@ const CanvasInner = () => {
   })));
   
   const dragInitialPositions = useRef<Record<string, { x: number, y: number }>>({});
+  const isDraggingRef = useRef(false);
+  const draggingNodeIds = useRef<Set<string>>(new Set());
+  
+  const [localNodes, setLocalNodes] = useState<MindMapNode[]>(nodes);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setLocalNodes(nodes);
+    } else {
+      setLocalNodes(prevLocal => 
+        nodes.map(globalNode => {
+          if (draggingNodeIds.current.has(globalNode.id)) {
+            const localNode = prevLocal.find(ln => ln.id === globalNode.id);
+            if (localNode) {
+              return { ...globalNode, position: localNode.position };
+            }
+          }
+          return globalNode;
+        })
+      );
+    }
+  }, [nodes]);
+
+  const handleNodesChange = useCallback((changes: NodeChange<MindMapNode>[]) => {
+    setLocalNodes(nds => applyNodeChanges(changes, nds) as MindMapNode[]);
+    onNodesChange(changes);
+  }, [onNodesChange]);
   
   const { setViewport: rfSetViewport, screenToFlowPosition } = useReactFlow();
 
@@ -173,20 +203,29 @@ const CanvasInner = () => {
     [setContextMenu]
   );
 
-  const onNodeDragStart = useCallback((_e: React.MouseEvent | MouseEvent | TouchEvent, _node: Node, nodes: Node[]) => {
+  const onNodeDragStart = useCallback((_e: React.MouseEvent | MouseEvent | TouchEvent, _node: Node, draggedNodes: Node[]) => {
     setIsDragging(true);
+    isDraggingRef.current = true;
+    
     const initialPositions: Record<string, { x: number, y: number }> = {};
-    nodes.forEach(n => {
+    const ids = new Set<string>();
+    
+    draggedNodes.forEach(n => {
       initialPositions[n.id] = { ...n.position };
+      ids.add(n.id);
     });
+    
     dragInitialPositions.current = initialPositions;
+    draggingNodeIds.current = ids;
   }, [setIsDragging]);
 
-  const onNodeDragStop = useCallback((_e: React.MouseEvent | MouseEvent | TouchEvent, _node: Node, nodes: Node[]) => {
+  const onNodeDragStop = useCallback((_e: React.MouseEvent | MouseEvent | TouchEvent, _node: Node, draggedNodes: Node[]) => {
     setIsDragging(false);
+    isDraggingRef.current = false;
+    draggingNodeIds.current.clear();
     
     let moved = false;
-    for (const n of nodes) {
+    for (const n of draggedNodes) {
       const initial = dragInitialPositions.current[n.id];
       if (initial && (initial.x !== n.position.x || initial.y !== n.position.y)) {
         moved = true;
@@ -203,9 +242,9 @@ const CanvasInner = () => {
 
   return (
     <ReactFlow
-      nodes={nodes}
+      nodes={localNodes}
       edges={edges}
-      onNodesChange={onNodesChange}
+      onNodesChange={handleNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onNodeDragStart={onNodeDragStart}
