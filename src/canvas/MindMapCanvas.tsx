@@ -130,7 +130,7 @@ const CanvasInner = () => {
   }, [screenToFlowPosition, addNode]);
 
   const onNodeContextMenu = useCallback(
-    (e: React.MouseEvent | MouseEvent, node: any) => {
+    (e: React.MouseEvent | MouseEvent, node: { id: string }) => {
       e.preventDefault();
       setContextMenu({ x: e.clientX, y: e.clientY, target: 'node', id: node.id });
     },

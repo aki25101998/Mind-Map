@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useReactFlow } from '@xyflow/react';
+import type { MindMapNode } from '../types';
 import { Search, MapPin } from 'lucide-react';
 
 export const CommandPalette = () => {
@@ -33,7 +34,7 @@ export const CommandPalette = () => {
     setIsOpen(false);
   }, []);
 
-  const handleSelectNode = useCallback((node: any) => {
+  const handleSelectNode = useCallback((node: MindMapNode) => {
     handleClose();
     setSelectedNodes([node.id]);
     setEditingNodeId(node.id);
