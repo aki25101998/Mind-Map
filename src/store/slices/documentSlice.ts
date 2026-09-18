@@ -38,6 +38,8 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       history: [createHistorySnapshot(finalNodes, edges)],
       historyIndex: 0,
       selectedNodeIds: [],
+      editingNodeId: null,
+      contextMenu: null,
     });
   },
 

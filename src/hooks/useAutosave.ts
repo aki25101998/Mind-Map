@@ -12,14 +12,38 @@ export const useAutosave = () => {
 
   useEffect(() => {
     const unsubscribe = useMindMapStore.subscribe((state, prevState) => {
+      // Handle document switch or close: immediately flush save for the old document
+      if (prevState.documentId && state.documentId !== prevState.documentId) {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+        
+        const docToSave: MindMapDocument = {
+          id: prevState.documentId,
+          title: prevState.documentTitle,
+          nodes: prevState.nodes,
+          edges: prevState.edges,
+          viewport: prevState.viewport,
+          templateId: prevState.templateId,
+          createdAt: prevState.createdAt,
+          updatedAt: Date.now(),
+        };
+
+        savePromiseRef.current = savePromiseRef.current
+          .then(() => saveDocument(docToSave))
+          .catch(err => console.error('Failed to flush save old document:', err));
+      }
+
       if (!state.documentId) return;
 
       const isDocumentChanged = 
-        state.historyIndex !== prevState.historyIndex || 
+        state.documentId === prevState.documentId && // Only auto-save if we are still on the same doc
+        (state.historyIndex !== prevState.historyIndex || 
         state.documentTitle !== prevState.documentTitle ||
         state.viewport.x !== prevState.viewport.x ||
         state.viewport.y !== prevState.viewport.y ||
-        state.viewport.zoom !== prevState.viewport.zoom;
+        state.viewport.zoom !== prevState.viewport.zoom);
 
       if (isDocumentChanged && !state.isDragging) {
         if (timeoutRef.current) {
@@ -28,10 +52,14 @@ export const useAutosave = () => {
 
         state.setSyncStatus('saving');
         const currentSaveRequestId = ++saveRequestIdRef.current;
+        const currentDocId = state.documentId;
 
         timeoutRef.current = setTimeout(() => {
           // Re-fetch current state to ensure we save the absolute latest
           const currentState = useMindMapStore.getState();
+          // Abort if the document was switched while the timeout was pending
+          if (currentState.documentId !== currentDocId) return;
+          
           const now = Date.now();
           
           const doc: MindMapDocument = {
@@ -50,13 +78,18 @@ export const useAutosave = () => {
               await saveDocument(doc);
               if (saveRequestIdRef.current === currentSaveRequestId) {
                 const finalState = useMindMapStore.getState();
-                finalState.setUpdatedAt(now);
-                finalState.setSyncStatus('saved');
+                if (finalState.documentId === currentDocId) {
+                  finalState.setUpdatedAt(now);
+                  finalState.setSyncStatus('saved');
+                }
               }
             } catch (err) {
               console.error('Failed to autosave document:', err);
               if (saveRequestIdRef.current === currentSaveRequestId) {
-                useMindMapStore.getState().setSyncStatus('error');
+                const finalState = useMindMapStore.getState();
+                if (finalState.documentId === currentDocId) {
+                  finalState.setSyncStatus('error');
+                }
               }
             }
           }).catch(err => {

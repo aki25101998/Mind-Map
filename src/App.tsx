@@ -7,9 +7,10 @@ import { DocumentSidebar } from './components/DocumentSidebar';
 import { useAutosave } from './hooks/useAutosave';
 import { useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
-  const { documentId } = useMindMapStore();
+  const { documentId, closeDocument } = useMindMapStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Initialize autosave
@@ -23,11 +24,13 @@ function App() {
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <DocumentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <ReactFlowProvider>
-        <main style={{ flex: 1, position: 'relative' }}>
-          <TopToolbar onMenuClick={() => setIsSidebarOpen(true)} />
-          <MindMapCanvas />
-          <BottomToolbar />
-        </main>
+        <ErrorBoundary documentId={documentId} onReset={closeDocument}>
+          <main style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+            <TopToolbar onMenuClick={() => setIsSidebarOpen(true)} />
+            <MindMapCanvas />
+            <BottomToolbar />
+          </main>
+        </ErrorBoundary>
       </ReactFlowProvider>
     </div>
   );

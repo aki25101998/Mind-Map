@@ -26,15 +26,25 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   viewport: { x: 0, y: 0, zoom: 1 },
 
   onNodesChange: (changes) => {
-    // Lọc bỏ position change trong lúc đang drag (transient state)
-    // Cho React Flow tự xử lý UI, tránh gọi set() mỗi frame
+    const currentNodes = get().nodes;
+
+    // Silently track measured dimensions without triggering Zustand set() / re-render loop
+    changes.forEach((c) => {
+      if (c.type === 'dimensions' && c.dimensions) {
+        const target = currentNodes.find((n) => n.id === c.id);
+        if (target) {
+          target.measured = { ...c.dimensions };
+        }
+      }
+    });
+
+    // Filter out position change during dragging (transient state) and dimensions changes
     const validChanges = changes.filter(
-      (c) => !(c.type === 'position' && c.dragging)
+      (c) => !(c.type === 'position' && c.dragging) && c.type !== 'dimensions'
     );
 
     if (validChanges.length === 0) return;
 
-    const currentNodes = get().nodes;
     const newNodes = applyNodeChanges(validChanges, currentNodes) as MindMapNode[];
     
     // Update selection state

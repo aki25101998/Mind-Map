@@ -5,7 +5,7 @@ import { cloneTemplate } from '../templates/templateUtils';
 
 
 import { useMindMapStore } from '../store/useMindMapStore';
-import { getAllDocuments, deleteDocument } from '../persistence/idb';
+import { getAllDocuments, deleteDocument, saveDocument } from '../persistence/idb';
 import { v4 as uuidv4 } from 'uuid';
 import { ReactFlow } from '@xyflow/react';
 import { MainNode } from '../canvas/nodes/MainNode';
@@ -40,15 +40,27 @@ export const TemplateSelection = () => {
     return () => { mounted = false; };
   }, []);
 
-  const handleSelectTemplate = (templateId: string) => {
+  const handleSelectTemplate = async (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (!template) return;
 
     const { nodes, edges } = cloneTemplate(template);
     const newDocId = uuidv4();
     const now = Date.now();
+    
+    const doc: MindMapDocument = {
+      id: newDocId,
+      title: templateId === 'blank' ? 'Untitled Mind Map' : `New ${template.name}`,
+      nodes,
+      edges,
+      viewport: { x: 0, y: 0, zoom: 1 },
+      templateId: template.id,
+      createdAt: now,
+      updatedAt: now
+    };
 
-    loadDocument(newDocId, templateId === 'blank' ? 'Untitled Mind Map' : `New ${template.name}`, nodes, edges, { x: 0, y: 0, zoom: 1 }, template.id, now, now);
+    await saveDocument(doc);
+    loadDocument(doc.id, doc.title, doc.nodes, doc.edges, doc.viewport, doc.templateId || 'blank', doc.createdAt, doc.updatedAt);
   };
 
   const handleOpenDoc = (doc: MindMapDocument) => {
@@ -74,13 +86,26 @@ export const TemplateSelection = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
         const validDoc = validateDocument(json);
         // Create a new ID to avoid overwriting existing
         const newId = uuidv4();
-        loadDocument(newId, validDoc.title, validDoc.nodes, validDoc.edges, validDoc.viewport, validDoc.templateId || 'blank', validDoc.createdAt, Date.now());
+        
+        const importedDoc: MindMapDocument = {
+          id: newId,
+          title: validDoc.title,
+          nodes: validDoc.nodes,
+          edges: validDoc.edges,
+          viewport: validDoc.viewport,
+          templateId: validDoc.templateId || 'blank',
+          createdAt: validDoc.createdAt,
+          updatedAt: Date.now()
+        };
+        
+        await saveDocument(importedDoc);
+        loadDocument(importedDoc.id, importedDoc.title, importedDoc.nodes, importedDoc.edges, importedDoc.viewport, importedDoc.templateId || 'blank', importedDoc.createdAt, importedDoc.updatedAt);
       } catch (err) {
         console.error('Failed to import document:', err);
         alert('Invalid Mind Map file: ' + (err instanceof Error ? err.message : 'Unknown error'));

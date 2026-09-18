@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import {
   ReactFlow, 
   Background,
@@ -34,6 +34,10 @@ const nodeTypes: NodeTypes = {
 const edgeTypes: EdgeTypes = {
   'mindmap-edge': CustomMindMapEdge,
 };
+
+const DEFAULT_EDGE_OPTIONS = { type: 'mindmap-edge' };
+const SNAP_GRID: [number, number] = [15, 15];
+const PRO_OPTIONS = { hideAttribution: true };
 
 const CanvasInner = () => {
   const { 
@@ -93,13 +97,13 @@ const CanvasInner = () => {
   
   const [toolbarState, setToolbarState] = useState<{ nodeId: string, position: { x: number, y: number } } | null>(null);
 
-  const { setViewport: rfSetViewport, screenToFlowPosition, setNodes: rfSetNodes } = useReactFlow();
+  const { setViewport: rfSetViewport, screenToFlowPosition, fitView } = useReactFlow();
 
   useEffect(() => {
     if (selectedNodeIds.length === 1 && !editingNodeId) {
       const selectedId = selectedNodeIds[0];
       if (toolbarState?.nodeId !== selectedId) {
-        const node = nodes.find(n => n.id === selectedId);
+        const node = (nodes || []).find(n => n.id === selectedId);
         if (node) {
           setToolbarState({ 
             nodeId: selectedId, 
@@ -113,25 +117,30 @@ const CanvasInner = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNodeIds, editingNodeId]);
 
+  // Clean toolbar if target node was removed
   useEffect(() => {
-    if (!isDraggingRef.current) {
-      const flowNodes: Node[] = [...nodes] as Node[];
-      if (toolbarState) {
-        flowNodes.push({
-          id: 'floating-toolbar',
-          type: 'toolbar',
-          position: toolbarState.position,
-          data: { targetNodeId: toolbarState.nodeId },
-          draggable: true,
-          selectable: false,
-          zIndex: 1000
-        });
-      }
-      rfSetNodes(flowNodes);
+    if (toolbarState && !(nodes || []).some(n => n.id === toolbarState.nodeId)) {
+      setToolbarState(null);
     }
-  }, [nodes, toolbarState, rfSetNodes]);
+  }, [nodes, toolbarState]);
 
-  const handleNodesChange = useCallback((changes: NodeChange<MindMapNode>[]) => {
+  const flowNodes = useMemo(() => {
+    const fn: Node[] = [...(nodes || [])] as Node[];
+    if (toolbarState) {
+      fn.push({
+        id: 'floating-toolbar',
+        type: 'toolbar',
+        position: toolbarState.position,
+        data: { targetNodeId: toolbarState.nodeId },
+        draggable: true,
+        selectable: false,
+        zIndex: 1000
+      });
+    }
+    return fn;
+  }, [nodes, toolbarState]);
+
+  const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     const toolbarChanges = changes.filter(c => (c as any).id === 'floating-toolbar');
     const otherChanges = changes.filter(c => (c as any).id !== 'floating-toolbar');
 
@@ -146,18 +155,22 @@ const CanvasInner = () => {
     });
 
     if (otherChanges.length > 0) {
-      onNodesChange(otherChanges);
+      onNodesChange(otherChanges as NodeChange<MindMapNode>[]);
     }
   }, [onNodesChange]);
 
-
-  // Restore viewport on document load
+  // Restore viewport or auto-fit on document load
   useEffect(() => {
-    if (viewport) {
+    if (viewport && (viewport.x !== 0 || viewport.y !== 0 || viewport.zoom !== 1)) {
       rfSetViewport(viewport);
+    } else {
+      const timer = setTimeout(() => {
+        fitView({ padding: 0.2 });
+      }, 50);
+      return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentId, rfSetViewport]);
+  }, [documentId, rfSetViewport, fitView]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -272,24 +285,32 @@ const CanvasInner = () => {
     dragInitialPositions.current = {};
   }, [commitHistory, setIsDragging]);
 
+  const onMoveEnd = useCallback((_: any, vp: any) => {
+    setViewport(vp);
+  }, [setViewport]);
+
+  const onPaneClick = useCallback(() => {
+    setContextMenu(null);
+  }, [setContextMenu]);
+
   return (
     <ReactFlow
-      defaultNodes={nodes}
+      nodes={flowNodes}
       edges={edges}
       onNodesChange={handleNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onNodeDragStart={onNodeDragStart}
       onNodeDragStop={onNodeDragStop}
-      onMoveEnd={(_, vp) => setViewport(vp)}
+      onMoveEnd={onMoveEnd}
       onDoubleClick={handleDoubleClick}
       onNodeContextMenu={onNodeContextMenu}
       onPaneContextMenu={onPaneContextMenu}
-      onPaneClick={() => setContextMenu(null)}
+      onPaneClick={onPaneClick}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       deleteKeyCode={null}
-      defaultEdgeOptions={{ type: 'mindmap-edge' }}
+      defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
       minZoom={0.1}
       maxZoom={4}
       colorMode="dark"
@@ -297,8 +318,8 @@ const CanvasInner = () => {
       selectionMode={SelectionMode.Partial}
       selectionOnDrag
       snapToGrid={false}
-      snapGrid={[15, 15]}
-      proOptions={{ hideAttribution: true }}
+      snapGrid={SNAP_GRID}
+      proOptions={PRO_OPTIONS}
     >
       <Background gap={15} size={1} color="var(--node-border-default)" />
       <Controls showInteractive={false} position="bottom-right" />
@@ -312,9 +333,10 @@ const CanvasInner = () => {
 };
 
 export const MindMapCanvas = () => {
+  const documentId = useMindMapStore(state => state.documentId);
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      <CanvasInner />
+      {documentId && <CanvasInner key={documentId} />}
     </div>
   );
 };
