@@ -43,7 +43,6 @@ const CanvasInner = () => {
   const { 
     nodes, 
     edges, 
-    viewport,
     onNodesChange, 
     onEdgesChange, 
     onConnect,
@@ -60,7 +59,6 @@ const CanvasInner = () => {
     redo,
     addNode,
     commitHistory,
-    documentId,
     setIsDragging,
     setEditingNodeId,
     editingNodeId,
@@ -68,7 +66,6 @@ const CanvasInner = () => {
   } = useMindMapStore(useShallow(state => ({
     nodes: state.nodes,
     edges: state.edges,
-    viewport: state.viewport,
     onNodesChange: state.onNodesChange,
     onEdgesChange: state.onEdgesChange,
     onConnect: state.onConnect,
@@ -85,7 +82,6 @@ const CanvasInner = () => {
     redo: state.redo,
     addNode: state.addNode,
     commitHistory: state.commitHistory,
-    documentId: state.documentId,
     setIsDragging: state.setIsDragging,
     setEditingNodeId: state.setEditingNodeId,
     editingNodeId: state.editingNodeId,
@@ -159,18 +155,23 @@ const CanvasInner = () => {
     }
   }, [onNodesChange]);
 
+  const initialized = useRef(false);
+
   // Restore viewport or auto-fit on document load
   useEffect(() => {
-    if (viewport && (viewport.x !== 0 || viewport.y !== 0 || viewport.zoom !== 1)) {
-      rfSetViewport(viewport);
+    if (initialized.current) return;
+    initialized.current = true;
+
+    const initialViewport = useMindMapStore.getState().viewport;
+    
+    if (initialViewport && (initialViewport.x !== 0 || initialViewport.y !== 0 || initialViewport.zoom !== 1)) {
+      rfSetViewport(initialViewport);
     } else {
-      const timer = setTimeout(() => {
+      setTimeout(() => {
         fitView({ padding: 0.2 });
       }, 50);
-      return () => clearTimeout(timer);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentId, rfSetViewport, fitView]);
+  }, [rfSetViewport, fitView]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -314,7 +315,11 @@ const CanvasInner = () => {
       minZoom={0.1}
       maxZoom={4}
       colorMode="dark"
-      panOnScroll
+      panOnDrag={true}
+      panOnScroll={false}
+      zoomOnScroll={true}
+      zoomOnPinch={true}
+      zoomOnDoubleClick={false}
       selectionMode={SelectionMode.Partial}
       selectionOnDrag
       snapToGrid={false}

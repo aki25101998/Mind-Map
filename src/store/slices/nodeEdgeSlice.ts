@@ -27,25 +27,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
 
   onNodesChange: (changes) => {
     const currentNodes = get().nodes;
-
-    // Silently track measured dimensions without triggering Zustand set() / re-render loop
-    changes.forEach((c) => {
-      if (c.type === 'dimensions' && c.dimensions) {
-        const target = currentNodes.find((n) => n.id === c.id);
-        if (target) {
-          target.measured = { ...c.dimensions };
-        }
-      }
-    });
-
-    // Filter out position change during dragging (transient state) and dimensions changes
-    const validChanges = changes.filter(
-      (c) => !(c.type === 'position' && c.dragging) && c.type !== 'dimensions'
-    );
-
-    if (validChanges.length === 0) return;
-
-    const newNodes = applyNodeChanges(validChanges, currentNodes) as MindMapNode[];
+    const newNodes = applyNodeChanges(changes, currentNodes) as MindMapNode[];
     
     // Update selection state
     const selectedIds = newNodes.filter(n => n.selected).map(n => n.id);
