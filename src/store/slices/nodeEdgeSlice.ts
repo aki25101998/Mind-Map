@@ -71,6 +71,13 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   },
 
   updateNodeData: (id, data) => {
+    let newEdges = get().edges;
+    if (data.backgroundColor) {
+      newEdges = newEdges.map(e => 
+        e.source === id ? { ...e, data: { ...e.data, strokeColor: data.backgroundColor } } : e
+      );
+    }
+    
     set({
       nodes: get().nodes.map((node) => {
         if (node.id === id) {
@@ -78,6 +85,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
         }
         return node;
       }),
+      edges: newEdges,
     });
     get().commitHistory();
   },
@@ -87,6 +95,18 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
       edges: get().edges.map((edge) => {
         if (edge.id === id) {
           return { ...edge, ...data };
+        }
+        return edge;
+      }),
+    });
+    get().commitHistory();
+  },
+
+  updateOutgoingEdges: (sourceId, data) => {
+    set({
+      edges: get().edges.map((edge) => {
+        if (edge.source === sourceId) {
+          return { ...edge, data: { ...edge.data, ...data } };
         }
         return edge;
       }),

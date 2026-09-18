@@ -9,7 +9,9 @@ import {
   Copy,
   Trash2,
   Plus,
-  ArrowRight
+  ArrowRight,
+  ALargeSmall,
+  Minus
 } from 'lucide-react';
 import { useMindMapStore } from '../../store/useMindMapStore';
 
@@ -26,7 +28,8 @@ export const NodeFloatingToolbar: React.FC<NodeFloatingToolbarProps> = ({ nodeId
     deleteSelected, 
     createChildNode, 
     createSiblingNode,
-    nodes
+    nodes,
+    updateOutgoingEdges
   } = useMindMapStore();
 
   const node = nodes.find(n => n.id === nodeId);
@@ -38,6 +41,16 @@ export const NodeFloatingToolbar: React.FC<NodeFloatingToolbarProps> = ({ nodeId
 
   const handleShapeChange = (shape: 'rectangle' | 'rounded' | 'ellipse' | 'text') => {
     updateNodeData(nodeId, { shape });
+  };
+
+  const handleFontSizeChange = (size: number) => {
+    updateNodeData(nodeId, { fontSize: size });
+  };
+
+  const toggleDashedEdge = () => {
+    const isCurrentlyDashed = node?.data?.dashedEdges ?? false;
+    updateNodeData(nodeId, { dashedEdges: !isCurrentlyDashed });
+    updateOutgoingEdges(nodeId, { dashed: !isCurrentlyDashed });
   };
 
   const buttonStyle = {
@@ -85,6 +98,15 @@ export const NodeFloatingToolbar: React.FC<NodeFloatingToolbarProps> = ({ nodeId
           <button style={buttonStyle} onClick={() => handleShapeChange('rounded')} title="Rounded"><SquareAsterisk size={16} /></button>
           <button style={buttonStyle} onClick={() => handleShapeChange('ellipse')} title="Ellipse"><Circle size={16} /></button>
           <button style={buttonStyle} onClick={() => handleShapeChange('text')} title="Text"><Type size={16} /></button>
+        </div>
+
+        {/* Text & Edge Styles */}
+        <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px' }}>
+          <button style={buttonStyle} onClick={() => handleFontSizeChange(12)} title="Small Text"><ALargeSmall size={14} /></button>
+          <button style={buttonStyle} onClick={() => handleFontSizeChange(14)} title="Medium Text"><ALargeSmall size={16} /></button>
+          <button style={buttonStyle} onClick={() => handleFontSizeChange(18)} title="Large Text"><ALargeSmall size={20} /></button>
+          <div style={{ width: '1px', height: '100%', background: 'var(--panel-border)', margin: '0 4px' }} />
+          <button style={{ ...buttonStyle, background: node?.data?.dashedEdges ? 'var(--node-border-default)' : 'transparent' }} onClick={toggleDashedEdge} title="Toggle Dashed Edge"><Minus size={16} style={{ strokeDasharray: '4 4' }} /></button>
         </div>
 
         {/* Actions */}
