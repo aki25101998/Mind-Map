@@ -91,7 +91,7 @@ export const ContextMenu = () => {
           <hr style={{ margin: '4px 0', borderColor: 'var(--panel-border)' }} />
           <button className="menu-item" onClick={() => handleAction(() => {
             autoLayout();
-            setTimeout(() => fitView({ duration: 300, padding: 0.1 }), 50);
+            setTimeout(() => fitView({ duration: 300, padding: 0.2 }), 50);
           })}>Auto layout</button>
           <button className="menu-item" onClick={handleSelectAll}>Select all</button>
           <button className="menu-item" onClick={handleFitView}>Fit view</button>

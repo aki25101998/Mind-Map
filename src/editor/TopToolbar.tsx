@@ -139,7 +139,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           onClick={() => {
             autoLayout();
             setTimeout(() => {
-              fitView({ duration: 300, padding: 0.1 });
+              fitView({ duration: 300, padding: 0.2 });
             }, 50);
           }}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', background: 'var(--node-bg-default)', color: 'var(--text-primary)' }}

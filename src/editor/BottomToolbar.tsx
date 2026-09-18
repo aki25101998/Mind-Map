@@ -1,23 +1,32 @@
 import { useMindMapStore } from '../store/useMindMapStore';
-import { applyAutoLayout } from '../utils/layoutUtils';
 import { 
   Trash2, 
   Copy,
   Wand2
 } from 'lucide-react';
-import { getLayoutType } from '../utils/layoutUtils';
+
+import { useShallow } from 'zustand/react/shallow';
+import { useReactFlow } from '@xyflow/react';
 
 export const BottomToolbar = () => {
   const { 
-    nodes, edges, setNodes, templateId, 
     selectedNodeIds, deleteSelected, duplicateSelected,
-    updateNodeData
-  } = useMindMapStore();
+    updateNodeData, autoLayout
+  } = useMindMapStore(useShallow(state => ({
+    selectedNodeIds: state.selectedNodeIds,
+    deleteSelected: state.deleteSelected,
+    duplicateSelected: state.duplicateSelected,
+    updateNodeData: state.updateNodeData,
+    autoLayout: state.autoLayout
+  })));
+
+  const { fitView } = useReactFlow();
 
   const handleAutoLayout = () => {
-    const layoutType = getLayoutType(templateId);
-    const layoutedNodes = applyAutoLayout(nodes, edges, layoutType);
-    setNodes(layoutedNodes);
+    autoLayout();
+    setTimeout(() => {
+      fitView({ duration: 300, padding: 0.2 });
+    }, 50);
   };
 
   const handleColorChange = (color: string) => {

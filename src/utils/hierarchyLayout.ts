@@ -254,6 +254,20 @@ export const applyRadialMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]): 
   
   let currentAngle = 0;
   
+  const COLLISION_GAP = 20;
+  const placedNodes: TreeNode[] = [tree];
+
+  const isColliding = (cand: TreeNode, others: TreeNode[]) => {
+    return others.some(existing => {
+      return (
+        cand.x + cand.width + COLLISION_GAP > existing.x &&
+        cand.x - COLLISION_GAP < existing.x + existing.width &&
+        cand.y + cand.height + COLLISION_GAP > existing.y &&
+        cand.y - COLLISION_GAP < existing.y + existing.height
+      );
+    });
+  };
+
   const positionSubtreeRadial = (
     t: TreeNode,
     startAngle: number,
@@ -261,11 +275,19 @@ export const applyRadialMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]): 
     level: number
   ) => {
     if (level > 0) {
-      const currentRadius = level * LEVEL_RADIUS;
+      let currentRadius = level * LEVEL_RADIUS;
       const centerAngle = startAngle + angleRange / 2;
       
       t.x = Math.round(Math.cos(centerAngle) * currentRadius) - t.width / 2;
       t.y = Math.round(Math.sin(centerAngle) * currentRadius) - t.height / 2;
+
+      // Push node outward along its angle until it doesn't collide
+      while (isColliding(t, placedNodes) && currentRadius < 5000) {
+        currentRadius += 30;
+        t.x = Math.round(Math.cos(centerAngle) * currentRadius) - t.width / 2;
+        t.y = Math.round(Math.sin(centerAngle) * currentRadius) - t.height / 2;
+      }
+      placedNodes.push(t);
     }
   
     if (t.children.length === 0) return;

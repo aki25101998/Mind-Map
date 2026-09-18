@@ -27,24 +27,6 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
 
   onNodesChange: (changes) => {
     const currentNodes = get().nodes;
-    
-    // Optimize drag performance:
-    // If these are only position changes during a drag event, mutate directly 
-    // to avoid triggering Zustand updates and React re-renders on every mouse move.
-    const isOnlyDragging = changes.length > 0 && changes.every(c => c.type === 'position' && c.dragging);
-    
-    if (isOnlyDragging) {
-      changes.forEach(c => {
-        if (c.type === 'position' && c.position) {
-          const node = currentNodes.find(n => n.id === c.id);
-          if (node) {
-            node.position = c.position;
-          }
-        }
-      });
-      return;
-    }
-
     const newNodes = applyNodeChanges(changes, currentNodes) as MindMapNode[];
     
     // Update selection state
