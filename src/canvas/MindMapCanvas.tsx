@@ -197,7 +197,7 @@ const CanvasInner = () => {
       panOnScroll
       selectionMode={SelectionMode.Partial}
       selectionOnDrag
-      snapToGrid={true}
+      snapToGrid={false}
       snapGrid={[15, 15]}
       proOptions={{ hideAttribution: true }}
     >
