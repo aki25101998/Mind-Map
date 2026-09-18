@@ -1,10 +1,11 @@
 import { useMindMapStore } from '../store/useMindMapStore';
-import { autoLayout } from '../layouts/autoLayout';
+import { applyAutoLayout } from '../utils/layoutUtils';
 import { 
   Trash2, 
   Copy,
   Wand2
 } from 'lucide-react';
+import { getLayoutType } from '../utils/layoutUtils';
 
 export const BottomToolbar = () => {
   const { 
@@ -14,7 +15,8 @@ export const BottomToolbar = () => {
   } = useMindMapStore();
 
   const handleAutoLayout = () => {
-    const layoutedNodes = autoLayout(nodes, edges, templateId || 'free');
+    const layoutType = getLayoutType(templateId);
+    const layoutedNodes = applyAutoLayout(nodes, edges, layoutType);
     setNodes(layoutedNodes);
   };
 

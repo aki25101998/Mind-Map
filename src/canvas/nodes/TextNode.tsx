@@ -2,13 +2,20 @@ import React, { useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps, Node } from '@xyflow/react';
 import { useMindMapStore } from '../../store/useMindMapStore';
+import { useShallow } from 'zustand/react/shallow';
 import type { NodeData } from '../../types';
 import { NodeFloatingToolbar } from './NodeFloatingToolbar';
 
 export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'>>) => {
-  const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse } = useMindMapStore();
-  const edges = useMindMapStore(state => state.edges);
-  const hasChildren = edges.some(e => e.source === id);
+  const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse } = useMindMapStore(
+    useShallow(state => ({
+      updateNodeData: state.updateNodeData,
+      editingNodeId: state.editingNodeId,
+      setEditingNodeId: state.setEditingNodeId,
+      toggleCollapse: state.toggleCollapse
+    }))
+  );
+  const hasChildren = useMindMapStore(state => state.edges.some(e => e.source === id));
   const isEditing = editingNodeId === id;
   const [label, setLabel] = useState(data.label);
 

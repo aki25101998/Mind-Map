@@ -9,6 +9,7 @@ import {
 } from '@xyflow/react';
 import type { NodeTypes, EdgeTypes } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
+import { useShallow } from 'zustand/react/shallow';
 import { MainNode } from './nodes/MainNode';
 import { BasicNode } from './nodes/BasicNode';
 import { RoundedNode } from './nodes/RoundedNode';
@@ -54,7 +55,31 @@ const CanvasInner = () => {
     setIsDragging,
     setEditingNodeId,
     setContextMenu
-  } = useMindMapStore();
+  } = useMindMapStore(useShallow(state => ({
+    nodes: state.nodes,
+    edges: state.edges,
+    viewport: state.viewport,
+    onNodesChange: state.onNodesChange,
+    onEdgesChange: state.onEdgesChange,
+    onConnect: state.onConnect,
+    setViewport: state.setViewport,
+    setSelectedNodes: state.setSelectedNodes,
+    selectedNodeIds: state.selectedNodeIds,
+    createChildNode: state.createChildNode,
+    createSiblingNode: state.createSiblingNode,
+    deleteSelected: state.deleteSelected,
+    duplicateSelected: state.duplicateSelected,
+    copySelected: state.copySelected,
+    pasteFromClipboard: state.pasteFromClipboard,
+    undo: state.undo,
+    redo: state.redo,
+    addNode: state.addNode,
+    commitHistory: state.commitHistory,
+    documentId: state.documentId,
+    setIsDragging: state.setIsDragging,
+    setEditingNodeId: state.setEditingNodeId,
+    setContextMenu: state.setContextMenu
+  })));
   
   const { setViewport: rfSetViewport, screenToFlowPosition } = useReactFlow();
 
@@ -172,9 +197,11 @@ const CanvasInner = () => {
       panOnScroll
       selectionMode={SelectionMode.Partial}
       selectionOnDrag
+      snapToGrid={true}
+      snapGrid={[15, 15]}
       proOptions={{ hideAttribution: true }}
     >
-      <Background gap={20} size={1} color="var(--node-border-default)" />
+      <Background gap={15} size={1} color="var(--node-border-default)" />
       <Controls showInteractive={false} position="bottom-right" />
       <MiniMap zoomable pannable nodeColor={(node) => {
         return node.data?.backgroundColor as string || 'var(--node-bg-default)';

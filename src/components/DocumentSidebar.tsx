@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
+import { useShallow } from 'zustand/react/shallow';
 import { getAllDocuments, deleteDocument } from '../persistence/idb';
 import type { MindMapDocument } from '../types';
 import { FileText, Home, Plus, Trash2, X } from 'lucide-react';
@@ -11,7 +12,11 @@ interface DocumentSidebarProps {
 }
 
 export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
-  const { documentId, loadDocument, closeDocument } = useMindMapStore();
+  const { documentId, loadDocument, closeDocument } = useMindMapStore(useShallow(state => ({
+    documentId: state.documentId,
+    loadDocument: state.loadDocument,
+    closeDocument: state.closeDocument
+  })));
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
 
   const loadRecentDocs = () => {

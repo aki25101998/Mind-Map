@@ -14,6 +14,7 @@ import {
   Minus
 } from 'lucide-react';
 import { useMindMapStore } from '../../store/useMindMapStore';
+import { useShallow } from 'zustand/react/shallow';
 
 interface NodeFloatingToolbarProps {
   nodeId: string;
@@ -28,11 +29,17 @@ export const NodeFloatingToolbar: React.FC<NodeFloatingToolbarProps> = ({ nodeId
     deleteSelected, 
     createChildNode, 
     createSiblingNode,
-    nodes,
     updateOutgoingEdges
-  } = useMindMapStore();
+  } = useMindMapStore(useShallow(state => ({
+    updateNodeData: state.updateNodeData,
+    duplicateSelected: state.duplicateSelected,
+    deleteSelected: state.deleteSelected,
+    createChildNode: state.createChildNode,
+    createSiblingNode: state.createSiblingNode,
+    updateOutgoingEdges: state.updateOutgoingEdges
+  })));
 
-  const node = nodes.find(n => n.id === nodeId);
+  const node = useMindMapStore(state => state.nodes.find(n => n.id === nodeId));
   if (!node) return null;
 
   const handleColorChange = (color: string) => {

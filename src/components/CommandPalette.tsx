@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useReactFlow } from '@xyflow/react';
 import type { MindMapNode } from '../types';
 import { Search, MapPin } from 'lucide-react';
@@ -9,7 +10,13 @@ export const CommandPalette = () => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   
-  const { nodes, setSelectedNodes, setEditingNodeId } = useMindMapStore();
+  const { setSelectedNodes, setEditingNodeId } = useMindMapStore(useShallow(state => ({
+    setSelectedNodes: state.setSelectedNodes,
+    setEditingNodeId: state.setEditingNodeId
+  })));
+  
+  const nodes = useMindMapStore(state => state.nodes);
+  
   const { setCenter } = useReactFlow();
   
   const inputRef = useRef<HTMLInputElement>(null);

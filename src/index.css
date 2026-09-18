@@ -22,3 +22,35 @@
 .react-flow__node {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
+
+/* Node Handle UX Optimization */
+.react-flow__node .react-flow__handle {
+  opacity: 0 !important;
+  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50%;
+  background: var(--accent) !important;
+  border: 1px solid var(--panel-bg) !important;
+  pointer-events: none; /* Disable handle interaction by default to prevent drag conflict */
+}
+
+/* Show handles and enable interaction on node hover */
+.react-flow__node:hover .react-flow__handle,
+.react-flow__node.selected .react-flow__handle {
+  opacity: 0.5 !important;
+  pointer-events: all;
+}
+
+/* Highlight handle on hover */
+.react-flow__node .react-flow__handle:hover {
+  opacity: 1 !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* During active connection, make handles visible */
+.react-flow__pane.connecting .react-flow__handle {
+  opacity: 0.8 !important;
+  pointer-events: all;
+}

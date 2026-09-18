@@ -1,6 +1,5 @@
 import type { MindMapNode, MindMapEdge, LayoutType } from '../types';
 import { templates } from '../templates/definitions';
-import dagre from 'dagre';
 
 export type LayoutSide = 'left' | 'right' | 'center';
 
@@ -193,6 +192,8 @@ export const normalizeTwoWayDocument = (nodes: MindMapNode[], edges: MindMapEdge
   });
 };
 
+import { applyClassicMindMap, applyTwoWayMindMap, applyRadialMindMap, applyDagreLayout } from './hierarchyLayout';
+
 export const applyAutoLayout = (
   nodes: MindMapNode[],
   edges: MindMapEdge[],
@@ -200,116 +201,22 @@ export const applyAutoLayout = (
 ): MindMapNode[] => {
   if (nodes.length === 0 || layoutType === 'free') return nodes;
 
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-
-  const nodeWidth = 180;
-  const nodeHeight = 60;
-
-  const isTwoWay = layoutType === 'two-way';
-  const isOrg = layoutType === 'org';
-  const direction = isOrg ? 'TB' : 'LR';
-
-  if (!isTwoWay) {
-    dagreGraph.setGraph({ rankdir: direction, ranksep: 80, nodesep: 50 });
-
-    nodes.forEach(node => {
-      if (!node.hidden) {
-        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-      }
-    });
-
-    edges.forEach(edge => {
-      if (!edge.hidden && dagreGraph.hasNode(edge.source) && dagreGraph.hasNode(edge.target)) {
-        dagreGraph.setEdge(edge.source, edge.target);
-      }
-    });
-
-    dagre.layout(dagreGraph);
-
-    return nodes.map(node => {
-      if (node.hidden) return node;
-      const nodeWithPosition = dagreGraph.node(node.id);
-      if (nodeWithPosition) {
-        return {
-          ...node,
-          position: {
-            x: nodeWithPosition.x - nodeWidth / 2,
-            y: nodeWithPosition.y - nodeHeight / 2,
-          },
-        };
-      }
-      return node;
-    });
-  } else {
-    // Two-way layout logic
-    const rootNode = nodes.find(n => n.type === 'main') || nodes[0];
-    if (!rootNode) return nodes;
-
-    const leftGraph = new dagre.graphlib.Graph();
-    leftGraph.setGraph({ rankdir: 'RL', ranksep: 80, nodesep: 50 });
-    leftGraph.setDefaultEdgeLabel(() => ({}));
-
-    const rightGraph = new dagre.graphlib.Graph();
-    rightGraph.setGraph({ rankdir: 'LR', ranksep: 80, nodesep: 50 });
-    rightGraph.setDefaultEdgeLabel(() => ({}));
-
-    leftGraph.setNode(rootNode.id, { width: nodeWidth, height: nodeHeight });
-    rightGraph.setNode(rootNode.id, { width: nodeWidth, height: nodeHeight });
-
-    nodes.forEach(node => {
-      if (node.id === rootNode.id || node.hidden) return;
-      if (node.data?.layoutSide === 'left') {
-        leftGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-      } else {
-        rightGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-      }
-    });
-
-    edges.forEach(edge => {
-      if (edge.hidden) return;
-      if (leftGraph.hasNode(edge.source) && leftGraph.hasNode(edge.target)) {
-        leftGraph.setEdge(edge.source, edge.target);
-      }
-      if (rightGraph.hasNode(edge.source) && rightGraph.hasNode(edge.target)) {
-        rightGraph.setEdge(edge.source, edge.target);
-      }
-    });
-
-    dagre.layout(leftGraph);
-    dagre.layout(rightGraph);
-
-    const rootLeftPos = leftGraph.node(rootNode.id);
-    const rootRightPos = rightGraph.node(rootNode.id);
-
-    return nodes.map(node => {
-      if (node.hidden) return node;
-      if (node.id === rootNode.id) {
-        return { ...node, position: { x: 0, y: 0 } };
-      }
-
-      if (node.data?.layoutSide === 'left') {
-        const pos = leftGraph.node(node.id);
-        if (pos) {
-          const deltaX = pos.x - rootLeftPos.x;
-          const deltaY = pos.y - rootLeftPos.y;
-          return {
-            ...node,
-            position: { x: deltaX - nodeWidth / 2, y: deltaY - nodeHeight / 2 },
-          };
-        }
-      } else {
-        const pos = rightGraph.node(node.id);
-        if (pos) {
-          const deltaX = pos.x - rootRightPos.x;
-          const deltaY = pos.y - rootRightPos.y;
-          return {
-            ...node,
-            position: { x: deltaX - nodeWidth / 2, y: deltaY - nodeHeight / 2 },
-          };
-        }
-      }
-      return node;
-    });
+  switch (layoutType) {
+    case 'tree':
+      return applyClassicMindMap(nodes, edges);
+    case 'two-way':
+      return applyTwoWayMindMap(nodes, edges);
+    case 'radial':
+      return applyRadialMindMap(nodes, edges);
+    case 'org':
+      return applyDagreLayout(nodes, edges, 'TB');
+    case 'flow':
+      return applyDagreLayout(nodes, edges, 'LR');
+    case 'brace':
+      return applyDagreLayout(nodes, edges, 'LR');
+    case 'one-way':
+      return applyClassicMindMap(nodes, edges);
+    default:
+      return applyClassicMindMap(nodes, edges);
   }
 };
