@@ -26,8 +26,16 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   viewport: { x: 0, y: 0, zoom: 1 },
 
   onNodesChange: (changes) => {
+    // Lọc bỏ position change trong lúc đang drag (transient state)
+    // Cho React Flow tự xử lý UI, tránh gọi set() mỗi frame
+    const validChanges = changes.filter(
+      (c) => !(c.type === 'position' && c.dragging)
+    );
+
+    if (validChanges.length === 0) return;
+
     const currentNodes = get().nodes;
-    const newNodes = applyNodeChanges(changes, currentNodes) as MindMapNode[];
+    const newNodes = applyNodeChanges(validChanges, currentNodes) as MindMapNode[];
     
     // Update selection state
     const selectedIds = newNodes.filter(n => n.selected).map(n => n.id);

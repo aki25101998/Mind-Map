@@ -1,11 +1,12 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import {
   ReactFlow, 
   Background,
   Controls,
   MiniMap, 
   useReactFlow, 
-  SelectionMode
+  SelectionMode,
+  type Node
 } from '@xyflow/react';
 import type { NodeTypes, EdgeTypes } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
@@ -80,6 +81,8 @@ const CanvasInner = () => {
     setEditingNodeId: state.setEditingNodeId,
     setContextMenu: state.setContextMenu
   })));
+  
+  const dragInitialPositions = useRef<Record<string, { x: number, y: number }>>({});
   
   const { setViewport: rfSetViewport, screenToFlowPosition } = useReactFlow();
 
@@ -170,6 +173,34 @@ const CanvasInner = () => {
     [setContextMenu]
   );
 
+  const onNodeDragStart = useCallback((_e: React.MouseEvent | MouseEvent | TouchEvent, _node: Node, nodes: Node[]) => {
+    setIsDragging(true);
+    const initialPositions: Record<string, { x: number, y: number }> = {};
+    nodes.forEach(n => {
+      initialPositions[n.id] = { ...n.position };
+    });
+    dragInitialPositions.current = initialPositions;
+  }, [setIsDragging]);
+
+  const onNodeDragStop = useCallback((_e: React.MouseEvent | MouseEvent | TouchEvent, _node: Node, nodes: Node[]) => {
+    setIsDragging(false);
+    
+    let moved = false;
+    for (const n of nodes) {
+      const initial = dragInitialPositions.current[n.id];
+      if (initial && (initial.x !== n.position.x || initial.y !== n.position.y)) {
+        moved = true;
+        break;
+      }
+    }
+
+    if (moved) {
+      commitHistory();
+    }
+    
+    dragInitialPositions.current = {};
+  }, [commitHistory, setIsDragging]);
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -177,11 +208,8 @@ const CanvasInner = () => {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
-      onNodeDragStart={() => setIsDragging(true)}
-      onNodeDragStop={() => {
-        setIsDragging(false);
-        commitHistory();
-      }}
+      onNodeDragStart={onNodeDragStart}
+      onNodeDragStop={onNodeDragStop}
       onMoveEnd={(_, vp) => setViewport(vp)}
       onDoubleClick={handleDoubleClick}
       onNodeContextMenu={onNodeContextMenu}
