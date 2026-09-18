@@ -1,12 +1,11 @@
 import React, { useEffect, useCallback } from 'react';
-import { 
+import {
   ReactFlow, 
-  Background, 
-  Controls, 
+  Background,
+  Controls,
   MiniMap, 
   useReactFlow, 
-  SelectionMode,
-  ReactFlowProvider
+  SelectionMode
 } from '@xyflow/react';
 import type { NodeTypes, EdgeTypes } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
@@ -189,9 +188,7 @@ const CanvasInner = () => {
 export const MindMapCanvas = () => {
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      <ReactFlowProvider>
-        <CanvasInner />
-      </ReactFlowProvider>
+      <CanvasInner />
     </div>
   );
 };
