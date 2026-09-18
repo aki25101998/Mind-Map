@@ -12,6 +12,7 @@ interface TreeNode {
   subtreeHeight: number;
   x: number;
   y: number;
+  weight?: number;
 }
 
 const DEFAULT_WIDTH = 150;
@@ -231,31 +232,61 @@ export const applyRadialMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]): 
   const tree = buildHierarchyTree(nodes, edges, 'radial');
   if (!tree) return nodes;
 
-  tree.x = -(tree.node.measured?.width ?? DEFAULT_WIDTH) / 2;
-  tree.y = -(tree.node.measured?.height ?? DEFAULT_HEIGHT) / 2;
-
-  // Flatten the rest of the nodes level by level
-  let level = 1;
-  const LEVEL_RADIUS = 250;
-  
-  let queue = tree.children;
-  
-  while (queue.length > 0) {
-    const currentRadius = level * LEVEL_RADIUS;
-    const angleStep = (2 * Math.PI) / queue.length;
+  const calculateRadialWeights = (t: TreeNode): number => {
+    t.width = t.node.measured?.width ?? DEFAULT_WIDTH;
+    t.height = t.node.measured?.height ?? DEFAULT_HEIGHT;
     
-    let nextQueue: TreeNode[] = [];
-    
-    queue.forEach((child, index) => {
-      const angle = index * angleStep;
-      child.x = Math.round(Math.cos(angle) * currentRadius) - (child.node.measured?.width ?? DEFAULT_WIDTH) / 2;
-      child.y = Math.round(Math.sin(angle) * currentRadius) - (child.node.measured?.height ?? DEFAULT_HEIGHT) / 2;
-      nextQueue.push(...child.children);
+    let descendants = 0;
+    t.children.forEach(child => {
+      descendants += calculateRadialWeights(child);
     });
+    t.weight = Math.max(1, descendants + 1);
+    return descendants + 1;
+  };
+  
+  calculateRadialWeights(tree);
+
+  tree.x = -(tree.width / 2);
+  tree.y = -(tree.height / 2);
+
+  const LEVEL_RADIUS = 300;
+  const totalWeight = tree.children.reduce((sum, c) => sum + (c.weight || 1), 0);
+  
+  let currentAngle = 0;
+  
+  const positionSubtreeRadial = (
+    t: TreeNode,
+    startAngle: number,
+    angleRange: number,
+    level: number
+  ) => {
+    if (level > 0) {
+      const currentRadius = level * LEVEL_RADIUS;
+      const centerAngle = startAngle + angleRange / 2;
+      
+      t.x = Math.round(Math.cos(centerAngle) * currentRadius) - t.width / 2;
+      t.y = Math.round(Math.sin(centerAngle) * currentRadius) - t.height / 2;
+    }
+  
+    if (t.children.length === 0) return;
+  
+    const tTotalWeight = t.children.reduce((sum, c) => sum + (c.weight || 1), 0);
+    let childStartAngle = startAngle;
     
-    queue = nextQueue;
-    level++;
-  }
+    t.children.forEach(child => {
+      const childWeight = child.weight || 1;
+      const childAngleRange = (childWeight / tTotalWeight) * angleRange;
+      positionSubtreeRadial(child, childStartAngle, childAngleRange, level + 1);
+      childStartAngle += childAngleRange;
+    });
+  };
+
+  tree.children.forEach(child => {
+    const childWeight = child.weight || 1;
+    const childAngleRange = (childWeight / totalWeight) * 2 * Math.PI;
+    positionSubtreeRadial(child, currentAngle, childAngleRange, 1);
+    currentAngle += childAngleRange;
+  });
 
   const flattenTree = (t: TreeNode): MindMapNode[] => {
     return [{ ...t.node, position: { x: t.x, y: t.y } }, ...t.children.flatMap(flattenTree)];

@@ -69,29 +69,30 @@ export const resolveNodeLayoutSide = (
 const NODE_WIDTH = 180;
 const NODE_HEIGHT = 60;
 const COLLISION_GAP = 20;
-const MAX_ATTEMPTS = 50;
 
-/**
- * Finds a non-colliding position close to the preferred position.
- */
 export const findNonCollidingPosition = (
   preferredX: number,
   preferredY: number,
   nodes: MindMapNode[]
 ): { x: number; y: number } => {
+  const candW = NODE_WIDTH;
+  const candH = NODE_HEIGHT;
+
   const isColliding = (x: number, y: number) => {
     return nodes.some(existingNode => {
       const exX = existingNode.position.x;
       const exY = existingNode.position.y;
+      const exW = existingNode.measured?.width ?? NODE_WIDTH;
+      const exH = existingNode.measured?.height ?? NODE_HEIGHT;
       
-      const candidateRight = x + NODE_WIDTH;
+      const candidateRight = x + candW;
       const candidateLeft = x;
-      const candidateBottom = y + NODE_HEIGHT;
+      const candidateBottom = y + candH;
       const candidateTop = y;
 
-      const existingRight = exX + NODE_WIDTH;
+      const existingRight = exX + exW;
       const existingLeft = exX;
-      const existingBottom = exY + NODE_HEIGHT;
+      const existingBottom = exY + exH;
       const existingTop = exY;
 
       return (
@@ -107,30 +108,27 @@ export const findNonCollidingPosition = (
     return { x: preferredX, y: preferredY };
   }
 
-  const SEARCH_STEP = 80;
-
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const radius = attempt * SEARCH_STEP;
-
-    // Try +Y
-    if (!isColliding(preferredX, preferredY + radius)) {
-      return { x: preferredX, y: preferredY + radius };
+  let angle = 0;
+  let radius = 30;
+  const MAX_ATTEMPTS = 300;
+  
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    const testX = preferredX + Math.cos(angle) * radius;
+    const testY = preferredY + Math.sin(angle) * radius;
+    
+    if (!isColliding(testX, testY)) {
+      return { x: Math.round(testX), y: Math.round(testY) };
     }
-    // Try -Y
-    if (!isColliding(preferredX, preferredY - radius)) {
-      return { x: preferredX, y: preferredY - radius };
-    }
-    // Try +X
-    if (!isColliding(preferredX + radius, preferredY)) {
-      return { x: preferredX + radius, y: preferredY };
-    }
-    // Try -X
-    if (!isColliding(preferredX - radius, preferredY)) {
-      return { x: preferredX - radius, y: preferredY };
+    
+    // Spiral search: 30 degrees step, grow radius every full circle
+    angle += Math.PI / 6; 
+    if (angle >= 2 * Math.PI - 0.01) {
+      angle = 0;
+      radius += 40;
     }
   }
 
-  // If no position found, place at preferred
+  // If no position found (extremely rare), place at preferred
   return { x: preferredX, y: preferredY };
 };
 
