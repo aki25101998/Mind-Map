@@ -16,6 +16,7 @@ import { RoundedNode } from './nodes/RoundedNode';
 import { TextNode } from './nodes/TextNode';
 import { CustomMindMapEdge } from './edges/MindMapEdge';
 import { ContextMenu } from '../editor/ContextMenu';
+import { CommandPalette } from '../components/CommandPalette';
 import { v4 as uuidv4 } from 'uuid';
 
 const nodeTypes: NodeTypes = {
@@ -180,6 +181,7 @@ const CanvasInner = () => {
         return node.data?.backgroundColor as string || 'var(--node-bg-default)';
       }} />
       <ContextMenu />
+      <CommandPalette />
     </ReactFlow>
   );
 };
