@@ -1,6 +1,5 @@
 import type { MindMapNode, MindMapEdge, LayoutType } from '../types';
 import dagre from 'dagre';
-import { resolveNodeLayoutSide } from './layoutUtils';
 import type { LayoutSide } from './layoutUtils';
 
 interface TreeNode {
@@ -23,7 +22,7 @@ const RANK_SEP = 80; // Horizontal spacing between parent and child
 export const buildHierarchyTree = (
   nodes: MindMapNode[],
   edges: MindMapEdge[],
-  layoutType: LayoutType
+  _layoutType: LayoutType
 ): TreeNode | null => {
   if (nodes.length === 0) return null;
 
@@ -42,12 +41,7 @@ export const buildHierarchyTree = (
     const node = nodes.find(n => n.id === nodeId);
     if (!node || node.hidden) return null;
 
-    let side = parentSide;
-    if (depth === 1 && layoutType === 'two-way') {
-      side = resolveNodeLayoutSide(nodeId, nodes, edges, layoutType);
-    } else if (!side) {
-      side = 'right'; // Default for classic tree
-    }
+    const side = parentSide || 'right';
 
     const childrenIds = adjList.get(nodeId) || [];
     const children = childrenIds
@@ -77,6 +71,9 @@ export const buildHierarchyTree = (
 };
 
 const calculateSubtreeSizes = (tree: TreeNode) => {
+  tree.width = tree.node.measured?.width ?? DEFAULT_WIDTH;
+  tree.height = tree.node.measured?.height ?? DEFAULT_HEIGHT;
+
   if (tree.children.length === 0) {
     tree.subtreeWidth = tree.width;
     tree.subtreeHeight = tree.height;
@@ -105,7 +102,11 @@ const positionSubtreeRight = (tree: TreeNode, startX: number, startY: number) =>
   tree.x = startX;
   tree.y = startY + (tree.subtreeHeight - tree.height) / 2;
 
-  let currentY = startY;
+  if (tree.children.length === 0) return;
+
+  const childrenTotalHeight = tree.children.reduce((sum, c) => sum + c.subtreeHeight, 0) + (tree.children.length - 1) * NODE_SEP;
+  
+  let currentY = startY + (tree.subtreeHeight - childrenTotalHeight) / 2;
   tree.children.forEach(child => {
     positionSubtreeRight(child, startX + tree.width + RANK_SEP, currentY);
     currentY += child.subtreeHeight + NODE_SEP;
@@ -116,7 +117,11 @@ const positionSubtreeLeft = (tree: TreeNode, endX: number, startY: number) => {
   tree.x = endX - tree.width;
   tree.y = startY + (tree.subtreeHeight - tree.height) / 2;
 
-  let currentY = startY;
+  if (tree.children.length === 0) return;
+
+  const childrenTotalHeight = tree.children.reduce((sum, c) => sum + c.subtreeHeight, 0) + (tree.children.length - 1) * NODE_SEP;
+
+  let currentY = startY + (tree.subtreeHeight - childrenTotalHeight) / 2;
   tree.children.forEach(child => {
     positionSubtreeLeft(child, endX - tree.width - RANK_SEP, currentY);
     currentY += child.subtreeHeight + NODE_SEP;
@@ -124,21 +129,34 @@ const positionSubtreeLeft = (tree: TreeNode, endX: number, startY: number) => {
 };
 
 export const applyClassicMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]): MindMapNode[] => {
-  const tree = buildHierarchyTree(nodes, edges, 'free'); // free fallback makes it one-way right
+  const tree = buildHierarchyTree(nodes, edges, 'free');
   if (!tree) return nodes;
 
   calculateSubtreeSizes(tree);
-  tree.x = 0;
-  tree.y = -tree.height / 2; // Center root around (0,0) vertically
+  tree.x = -(tree.width / 2);
+  tree.y = -(tree.height / 2);
 
-  let currentY = -tree.subtreeHeight / 2;
+  const setSide = (t: TreeNode, side: LayoutSide) => {
+    t.side = side;
+    t.children.forEach(c => setSide(c, side));
+  };
+  tree.side = 'center';
+  tree.children.forEach(c => setSide(c, 'right'));
+
+  const childrenTotalHeight = tree.children.reduce((sum, c) => sum + c.subtreeHeight, 0) + Math.max(0, tree.children.length - 1) * NODE_SEP;
+
+  let currentY = tree.y + (tree.height - childrenTotalHeight) / 2;
   tree.children.forEach(child => {
-    positionSubtreeRight(child, tree.width / 2 + RANK_SEP, currentY);
+    positionSubtreeRight(child, tree.x + tree.width + RANK_SEP, currentY);
     currentY += child.subtreeHeight + NODE_SEP;
   });
 
   const flattenTree = (t: TreeNode): MindMapNode[] => {
-    return [{ ...t.node, position: { x: t.x, y: t.y } }, ...t.children.flatMap(flattenTree)];
+    return [{ 
+      ...t.node, 
+      position: { x: t.x, y: t.y },
+      data: { ...t.node.data, layoutSide: t.side }
+    }, ...t.children.flatMap(flattenTree)];
   };
 
   const layoutedNodesMap = new Map<string, MindMapNode>();
@@ -151,34 +169,56 @@ export const applyTwoWayMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]): 
   const tree = buildHierarchyTree(nodes, edges, 'two-way');
   if (!tree) return nodes;
 
-  const leftChildren = tree.children.filter(c => c.side === 'left');
-  const rightChildren = tree.children.filter(c => c.side !== 'left');
+  calculateSubtreeSizes(tree);
 
-  leftChildren.forEach(calculateSubtreeSizes);
-  rightChildren.forEach(calculateSubtreeSizes);
+  const leftChildren: TreeNode[] = [];
+  const rightChildren: TreeNode[] = [];
+  let leftTotalHeight = 0;
+  let rightTotalHeight = 0;
 
-  const leftTotalHeight = leftChildren.reduce((sum, c, i) => sum + c.subtreeHeight + (i > 0 ? NODE_SEP : 0), 0);
-  const rightTotalHeight = rightChildren.reduce((sum, c, i) => sum + c.subtreeHeight + (i > 0 ? NODE_SEP : 0), 0);
+  // Sort by subtree height descending to balance optimally
+  const sortedChildren = [...tree.children].sort((a, b) => b.subtreeHeight - a.subtreeHeight);
 
-  tree.width = tree.node.measured?.width ?? DEFAULT_WIDTH;
-  tree.height = tree.node.measured?.height ?? DEFAULT_HEIGHT;
-  tree.x = -tree.width / 2;
-  tree.y = -tree.height / 2;
+  sortedChildren.forEach(child => {
+    if (leftTotalHeight <= rightTotalHeight) {
+      leftChildren.push(child);
+      leftTotalHeight += child.subtreeHeight + (leftChildren.length > 1 ? NODE_SEP : 0);
+    } else {
+      rightChildren.push(child);
+      rightTotalHeight += child.subtreeHeight + (rightChildren.length > 1 ? NODE_SEP : 0);
+    }
+  });
 
-  let leftY = -leftTotalHeight / 2;
+  const setSide = (t: TreeNode, side: LayoutSide) => {
+    t.side = side;
+    t.children.forEach(c => setSide(c, side));
+  };
+
+  leftChildren.forEach(c => setSide(c, 'left'));
+  rightChildren.forEach(c => setSide(c, 'right'));
+
+  tree.x = -(tree.width / 2);
+  tree.y = -(tree.height / 2);
+  tree.side = 'center';
+
+  let leftY = tree.y + (tree.height - leftTotalHeight) / 2;
   leftChildren.forEach(child => {
     positionSubtreeLeft(child, tree.x - RANK_SEP, leftY);
     leftY += child.subtreeHeight + NODE_SEP;
   });
 
-  let rightY = -rightTotalHeight / 2;
+  let rightY = tree.y + (tree.height - rightTotalHeight) / 2;
   rightChildren.forEach(child => {
     positionSubtreeRight(child, tree.x + tree.width + RANK_SEP, rightY);
     rightY += child.subtreeHeight + NODE_SEP;
   });
 
   const flattenTree = (t: TreeNode): MindMapNode[] => {
-    return [{ ...t.node, position: { x: t.x, y: t.y } }, ...t.children.flatMap(flattenTree)];
+    return [{ 
+      ...t.node, 
+      position: { x: t.x, y: t.y },
+      data: { ...t.node.data, layoutSide: t.side }
+    }, ...t.children.flatMap(flattenTree)];
   };
 
   const layoutedNodesMap = new Map<string, MindMapNode>();
