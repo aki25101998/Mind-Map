@@ -4,7 +4,7 @@ import type { NodeProps, Node } from '@xyflow/react';
 import { useMindMapStore } from '../../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { NodeData } from '../../types';
-import { NodeFloatingToolbar } from './NodeFloatingToolbar';
+
 
 export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'>>) => {
   const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse } = useMindMapStore(
@@ -40,7 +40,6 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
 
   return (
     <>
-      <NodeFloatingToolbar nodeId={id} isVisible={selected && !isEditing} nodeType="text" />
       <div style={style} onDoubleClick={() => setEditingNodeId(id)}>
       {isEditing ? (
         <input 

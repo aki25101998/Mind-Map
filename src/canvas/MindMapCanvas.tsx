@@ -6,7 +6,6 @@ import {
   MiniMap, 
   useReactFlow, 
   SelectionMode,
-  applyNodeChanges,
   type Node,
   type NodeChange
 } from '@xyflow/react';
@@ -17,6 +16,7 @@ import { MainNode } from './nodes/MainNode';
 import { BasicNode } from './nodes/BasicNode';
 import { RoundedNode } from './nodes/RoundedNode';
 import { TextNode } from './nodes/TextNode';
+import { ToolbarNode } from './nodes/ToolbarNode';
 import { CustomMindMapEdge } from './edges/MindMapEdge';
 import { ContextMenu } from '../editor/ContextMenu';
 import { CommandPalette } from '../components/CommandPalette';
@@ -28,6 +28,7 @@ const nodeTypes: NodeTypes = {
   basic: BasicNode,
   rounded: RoundedNode,
   text: TextNode,
+  toolbar: ToolbarNode,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -58,6 +59,7 @@ const CanvasInner = () => {
     documentId,
     setIsDragging,
     setEditingNodeId,
+    editingNodeId,
     setContextMenu
   } = useMindMapStore(useShallow(state => ({
     nodes: state.nodes,
@@ -82,39 +84,72 @@ const CanvasInner = () => {
     documentId: state.documentId,
     setIsDragging: state.setIsDragging,
     setEditingNodeId: state.setEditingNodeId,
+    editingNodeId: state.editingNodeId,
     setContextMenu: state.setContextMenu
   })));
   
   const dragInitialPositions = useRef<Record<string, { x: number, y: number }>>({});
   const isDraggingRef = useRef(false);
-  const draggingNodeIds = useRef<Set<string>>(new Set());
   
-  const [localNodes, setLocalNodes] = useState<MindMapNode[]>(nodes);
+  const [toolbarState, setToolbarState] = useState<{ nodeId: string, position: { x: number, y: number } } | null>(null);
+
+  const { setViewport: rfSetViewport, screenToFlowPosition, setNodes: rfSetNodes } = useReactFlow();
+
+  useEffect(() => {
+    if (selectedNodeIds.length === 1 && !editingNodeId) {
+      const selectedId = selectedNodeIds[0];
+      if (toolbarState?.nodeId !== selectedId) {
+        const node = nodes.find(n => n.id === selectedId);
+        if (node) {
+          setToolbarState({ 
+            nodeId: selectedId, 
+            position: { x: node.position.x, y: node.position.y - 60 } 
+          });
+        }
+      }
+    } else {
+      setToolbarState(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNodeIds, editingNodeId]);
 
   useEffect(() => {
     if (!isDraggingRef.current) {
-      setLocalNodes(nodes);
-    } else {
-      setLocalNodes(prevLocal => 
-        nodes.map(globalNode => {
-          if (draggingNodeIds.current.has(globalNode.id)) {
-            const localNode = prevLocal.find(ln => ln.id === globalNode.id);
-            if (localNode) {
-              return { ...globalNode, position: localNode.position };
-            }
-          }
-          return globalNode;
-        })
-      );
+      const flowNodes: Node[] = [...nodes] as Node[];
+      if (toolbarState) {
+        flowNodes.push({
+          id: 'floating-toolbar',
+          type: 'toolbar',
+          position: toolbarState.position,
+          data: { targetNodeId: toolbarState.nodeId },
+          draggable: true,
+          selectable: false,
+          zIndex: 1000
+        });
+      }
+      rfSetNodes(flowNodes);
     }
-  }, [nodes]);
+  }, [nodes, toolbarState, rfSetNodes]);
 
   const handleNodesChange = useCallback((changes: NodeChange<MindMapNode>[]) => {
-    setLocalNodes(nds => applyNodeChanges(changes, nds) as MindMapNode[]);
-    onNodesChange(changes);
+    const toolbarChanges = changes.filter(c => (c as any).id === 'floating-toolbar');
+    const otherChanges = changes.filter(c => (c as any).id !== 'floating-toolbar');
+
+    toolbarChanges.forEach(c => {
+      if (c.type === 'position' && c.dragging === false) {
+        if (c.positionAbsolute) {
+          setToolbarState(prev => prev ? { ...prev, position: c.positionAbsolute! } : null);
+        } else if (c.position) {
+          setToolbarState(prev => prev ? { ...prev, position: c.position! } : null);
+        }
+      }
+    });
+
+    if (otherChanges.length > 0) {
+      onNodesChange(otherChanges);
+    }
   }, [onNodesChange]);
-  
-  const { setViewport: rfSetViewport, screenToFlowPosition } = useReactFlow();
+
 
   // Restore viewport on document load
   useEffect(() => {
@@ -208,24 +243,21 @@ const CanvasInner = () => {
     isDraggingRef.current = true;
     
     const initialPositions: Record<string, { x: number, y: number }> = {};
-    const ids = new Set<string>();
-    
     draggedNodes.forEach(n => {
       initialPositions[n.id] = { ...n.position };
-      ids.add(n.id);
     });
     
     dragInitialPositions.current = initialPositions;
-    draggingNodeIds.current = ids;
   }, [setIsDragging]);
 
   const onNodeDragStop = useCallback((_e: React.MouseEvent | MouseEvent | TouchEvent, _node: Node, draggedNodes: Node[]) => {
     setIsDragging(false);
     isDraggingRef.current = false;
-    draggingNodeIds.current.clear();
     
     let moved = false;
     for (const n of draggedNodes) {
+      if (n.id === 'floating-toolbar') continue;
+      
       const initial = dragInitialPositions.current[n.id];
       if (initial && (initial.x !== n.position.x || initial.y !== n.position.y)) {
         moved = true;
@@ -242,7 +274,7 @@ const CanvasInner = () => {
 
   return (
     <ReactFlow
-      nodes={localNodes}
+      defaultNodes={nodes}
       edges={edges}
       onNodesChange={handleNodesChange}
       onEdgesChange={onEdgesChange}
