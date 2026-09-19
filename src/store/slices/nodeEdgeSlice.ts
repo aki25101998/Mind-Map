@@ -27,7 +27,23 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
 
   onNodesChange: (changes) => {
     const currentNodes = get().nodes;
-    const newNodes = applyNodeChanges(changes, currentNodes) as MindMapNode[];
+    
+    // Lọc ra các thay đổi liên quan đến position khi đang kéo thả (transient state)
+    // Các thay đổi này ReactFlow sẽ tự quản lý internal, KHÔNG được liên tục update vào Zustand
+    const filteredChanges = changes.filter(change => {
+      if (change.type === 'position' && change.dragging) {
+        return false;
+      }
+      // Bỏ qua dragging false từ onNodesChange luôn, ta sẽ xử lý final position trong onNodeDragStop
+      if (change.type === 'position' && change.dragging === false) {
+        return false;
+      }
+      return true;
+    });
+
+    if (filteredChanges.length === 0) return;
+
+    const newNodes = applyNodeChanges(filteredChanges, currentNodes) as MindMapNode[];
     
     // Update selection state
     const selectedIds = newNodes.filter(n => n.selected).map(n => n.id);
@@ -49,6 +65,32 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     }, get().edges) as MindMapEdge[];
     set({ edges: newEdges, hasChildrenMap: computeHasChildrenMap(newEdges) });
     get().commitHistory();
+  },
+
+  updateNodePositions: (draggedNodes) => {
+    const currentNodes = get().nodes;
+    let changed = false;
+    
+    const newNodes = currentNodes.map(node => {
+      const dragged = draggedNodes.find(n => n.id === node.id);
+      
+      if (!dragged || dragged.id === 'floating-toolbar') return node;
+      
+      if (node.position.x !== dragged.position.x || node.position.y !== dragged.position.y) {
+        changed = true;
+        return {
+          ...node,
+          position: { x: dragged.position.x, y: dragged.position.y }
+        };
+      }
+      
+      return node;
+    });
+
+    if (changed) {
+      set({ nodes: newNodes });
+      get().commitHistory();
+    }
   },
 
   setNodes: (nodes) => {

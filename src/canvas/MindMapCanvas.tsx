@@ -58,11 +58,11 @@ const CanvasInner = () => {
     undo,
     redo,
     addNode,
-    commitHistory,
     setIsDragging,
     setEditingNodeId,
     editingNodeId,
-    setContextMenu
+    setContextMenu,
+    updateNodePositions
   } = useMindMapStore(useShallow(state => ({
     nodes: state.nodes,
     edges: state.edges,
@@ -81,11 +81,11 @@ const CanvasInner = () => {
     undo: state.undo,
     redo: state.redo,
     addNode: state.addNode,
-    commitHistory: state.commitHistory,
     setIsDragging: state.setIsDragging,
     setEditingNodeId: state.setEditingNodeId,
     editingNodeId: state.editingNodeId,
-    setContextMenu: state.setContextMenu
+    setContextMenu: state.setContextMenu,
+    updateNodePositions: state.updateNodePositions
   })));
   
   const dragInitialPositions = useRef<Record<string, { x: number, y: number }>>({});
@@ -167,9 +167,9 @@ const CanvasInner = () => {
     if (initialViewport && (initialViewport.x !== 0 || initialViewport.y !== 0 || initialViewport.zoom !== 1)) {
       rfSetViewport(initialViewport);
     } else {
-      setTimeout(() => {
+      window.requestAnimationFrame(() => {
         fitView({ padding: 0.2 });
-      }, 50);
+      });
     }
   }, [rfSetViewport, fitView]);
 
@@ -268,23 +268,10 @@ const CanvasInner = () => {
     setIsDragging(false);
     isDraggingRef.current = false;
     
-    let moved = false;
-    for (const n of draggedNodes) {
-      if (n.id === 'floating-toolbar') continue;
-      
-      const initial = dragInitialPositions.current[n.id];
-      if (initial && (initial.x !== n.position.x || initial.y !== n.position.y)) {
-        moved = true;
-        break;
-      }
-    }
-
-    if (moved) {
-      commitHistory();
-    }
+    updateNodePositions(draggedNodes);
     
     dragInitialPositions.current = {};
-  }, [commitHistory, setIsDragging]);
+  }, [updateNodePositions, setIsDragging]);
 
   const onMoveEnd = useCallback((_: any, vp: any) => {
     setViewport(vp);

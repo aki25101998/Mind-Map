@@ -24,9 +24,9 @@ export const BottomToolbar = () => {
 
   const handleAutoLayout = () => {
     autoLayout();
-    setTimeout(() => {
+    window.requestAnimationFrame(() => {
       fitView({ duration: 300, padding: 0.2 });
-    }, 50);
+    });
   };
 
   const handleColorChange = (color: string) => {

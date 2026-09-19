@@ -1,4 +1,4 @@
-import type { Connection, EdgeChange, NodeChange, Viewport } from '@xyflow/react';
+import type { Node, Connection, EdgeChange, NodeChange, Viewport } from '@xyflow/react';
 import type { MindMapNode, MindMapEdge } from '../../types';
 
 export type HistorySnapshot = {
@@ -45,6 +45,7 @@ export interface NodeEdgeSlice {
   setViewport: (viewport: Viewport) => void;
   createChildNode: (parentId: string) => void;
   createSiblingNode: (nodeId: string) => void;
+  updateNodePositions: (draggedNodes: Node[]) => void;
   toggleCollapse: (nodeId: string) => void;
   autoLayout: () => void;
 }
