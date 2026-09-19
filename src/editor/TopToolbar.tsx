@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useReactFlow, getNodesBounds, getViewportForBounds } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
+import { useAutoLayout } from '../hooks/useAutoLayout';
 import { exportToJSON, exportToPNG, exportToSVG } from '../utils/exportUtils';
 import { Undo, Redo, Download, Share2, Menu, LayoutTemplate, Image, FileJson, ChevronDown } from 'lucide-react';
 
@@ -9,7 +10,8 @@ interface TopToolbarProps {
 }
 
 export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
-  const { documentTitle, setTitle, undo, redo, syncStatus, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt, autoLayout } = useMindMapStore();
+  const { documentTitle, setTitle, undo, redo, syncStatus, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt } = useMindMapStore();
+  const handleAutoLayout = useAutoLayout();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentTitle);
 
@@ -26,7 +28,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   
-  const { getNodes, fitView } = useReactFlow();
+  const { getNodes } = useReactFlow();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -136,12 +138,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           {syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Sync failed' : syncStatus === 'offline' ? 'Offline' : 'Saved'}
         </div>
         <button 
-          onClick={() => {
-            autoLayout();
-            window.requestAnimationFrame(() => {
-              fitView({ duration: 300, padding: 0.2 });
-            });
-          }}
+          onClick={handleAutoLayout}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', background: 'var(--node-bg-default)', color: 'var(--text-primary)' }}
         >
           <LayoutTemplate size={16} /> Auto Layout

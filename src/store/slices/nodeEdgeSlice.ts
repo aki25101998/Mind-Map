@@ -28,18 +28,8 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   onNodesChange: (changes) => {
     const currentNodes = get().nodes;
     
-    // Lọc ra các thay đổi liên quan đến position khi đang kéo thả (transient state)
-    // Các thay đổi này ReactFlow sẽ tự quản lý internal, KHÔNG được liên tục update vào Zustand
-    const filteredChanges = changes.filter(change => {
-      if (change.type === 'position' && change.dragging) {
-        return false;
-      }
-      // Bỏ qua dragging false từ onNodesChange luôn, ta sẽ xử lý final position trong onNodeDragStop
-      if (change.type === 'position' && change.dragging === false) {
-        return false;
-      }
-      return true;
-    });
+    // Zustand KHÔNG nhận position từ onNodesChange (vì đã có local nodes lo)
+    const filteredChanges = changes.filter(change => change.type !== 'position');
 
     if (filteredChanges.length === 0) return;
 

@@ -1,16 +1,15 @@
-import type { NodeProps, Node } from '@xyflow/react';
+import { useStore } from '@xyflow/react';
 import { 
   Type, Square, Circle, SquareAsterisk, Palette, Copy, Trash2, Plus, ArrowRight, ALargeSmall, Minus
 } from 'lucide-react';
-import { useMindMapStore } from '../../store/useMindMapStore';
+import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 
-interface ToolbarNodeData extends Record<string, unknown> {
-  targetNodeId: string;
+interface FloatingToolbarProps {
+  nodeId: string;
 }
 
-export const ToolbarNode = ({ data }: NodeProps<Node<ToolbarNodeData, 'toolbar'>>) => {
-  const nodeId = data.targetNodeId;
+export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   const { 
     updateNodeData, 
     duplicateSelected, 
@@ -28,7 +27,11 @@ export const ToolbarNode = ({ data }: NodeProps<Node<ToolbarNodeData, 'toolbar'>
   })));
 
   const node = useMindMapStore(state => state.nodes.find(n => n.id === nodeId));
-  if (!node) return null;
+  
+  const transform = useStore(state => state.transform);
+  const internalNode = useStore(state => state.nodeLookup.get(nodeId));
+
+  if (!node || !internalNode) return null;
 
   const handleColorChange = (color: string) => {
     updateNodeData(nodeId, { backgroundColor: color });
@@ -60,8 +63,22 @@ export const ToolbarNode = ({ data }: NodeProps<Node<ToolbarNodeData, 'toolbar'>
     justifyContent: 'center',
   };
 
+  // Calculate screen position
+  const x = internalNode.internals?.positionAbsolute?.x ?? internalNode.position.x;
+  const y = (internalNode.internals?.positionAbsolute?.y ?? internalNode.position.y) - 60; // 60px above node
+  const nodeWidth = internalNode.measured?.width ?? 0;
+  
+  // Transform flow coordinates to screen coordinates relative to ReactFlow wrapper
+  const zoom = transform[2];
+  const screenX = (x + nodeWidth / 2) * zoom + transform[0];
+  const screenY = y * zoom + transform[1];
+
   return (
     <div style={{
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      transform: `translate(calc(${screenX}px - 50%), ${screenY}px)`,
       background: 'var(--panel-bg)',
       border: '1px solid var(--panel-border)',
       borderRadius: '8px',
@@ -69,10 +86,11 @@ export const ToolbarNode = ({ data }: NodeProps<Node<ToolbarNodeData, 'toolbar'>
       display: 'flex',
       gap: '4px',
       boxShadow: 'var(--shadow)',
-      cursor: 'grab',
+      zIndex: 1000,
+      pointerEvents: 'auto',
     }}>
       {/* Colors */}
-      <div className="nodrag" style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px', alignItems: 'center' }}>
         <Palette size={16} style={{ marginLeft: '4px', marginRight: '4px', color: 'var(--text-secondary)' }} />
         {['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'].map(color => (
           <button
@@ -85,7 +103,7 @@ export const ToolbarNode = ({ data }: NodeProps<Node<ToolbarNodeData, 'toolbar'>
       </div>
 
       {/* Shapes */}
-      <div className="nodrag" style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px' }}>
+      <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px' }}>
         <button style={buttonStyle} onClick={() => handleShapeChange('rectangle')} title="Rectangle"><Square size={16} /></button>
         <button style={buttonStyle} onClick={() => handleShapeChange('rounded')} title="Rounded"><SquareAsterisk size={16} /></button>
         <button style={buttonStyle} onClick={() => handleShapeChange('ellipse')} title="Ellipse"><Circle size={16} /></button>
@@ -93,7 +111,7 @@ export const ToolbarNode = ({ data }: NodeProps<Node<ToolbarNodeData, 'toolbar'>
       </div>
 
       {/* Text & Edge Styles */}
-      <div className="nodrag" style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px' }}>
+      <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px' }}>
         <button style={buttonStyle} onClick={() => handleFontSizeChange(12)} title="Small Text"><ALargeSmall size={14} /></button>
         <button style={buttonStyle} onClick={() => handleFontSizeChange(14)} title="Medium Text"><ALargeSmall size={16} /></button>
         <button style={buttonStyle} onClick={() => handleFontSizeChange(18)} title="Large Text"><ALargeSmall size={20} /></button>
@@ -102,7 +120,7 @@ export const ToolbarNode = ({ data }: NodeProps<Node<ToolbarNodeData, 'toolbar'>
       </div>
 
       {/* Actions */}
-      <div className="nodrag" style={{ display: 'flex', gap: '4px' }}>
+      <div style={{ display: 'flex', gap: '4px' }}>
         <button style={buttonStyle} onClick={() => createSiblingNode(nodeId)} title="Add Sibling (Enter)"><ArrowRight size={16} /></button>
         <button style={buttonStyle} onClick={() => createChildNode(nodeId)} title="Add Child (Tab)"><Plus size={16} /></button>
         <button style={buttonStyle} onClick={duplicateSelected} title="Duplicate (Ctrl+D)"><Copy size={16} /></button>
