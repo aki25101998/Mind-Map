@@ -5,7 +5,9 @@ import {
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 
+import React, { useState, useRef, useEffect } from 'react';
 
+let persistedPosition: { x: number; y: number } | null = null;
 
 interface FloatingToolbarProps {
   nodeId: string;
@@ -31,11 +33,17 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   })));
 
   const node = useMindMapStore(state => state.nodes.find(n => n.id === nodeId));
-  
-  const transform = useStore(state => state.transform);
-  const internalNode = useStore(state => state.nodeLookup.get(nodeId));
 
-  if (!node || !internalNode) return null;
+  const [position, setPosition] = useState<{ x: number, y: number }>(() => {
+    if (persistedPosition) return persistedPosition;
+    return { x: window.innerWidth / 2, y: 100 };
+  });
+
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  if (!node) return null;
 
   const handleColorChange = (color: string) => {
     updateNodeData(nodeId, { backgroundColor: color });
@@ -69,22 +77,48 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
     justifyContent: 'center',
   };
 
-  // Calculate screen position
-  const x = internalNode.internals?.positionAbsolute?.x ?? internalNode.position.x;
-  const y = (internalNode.internals?.positionAbsolute?.y ?? internalNode.position.y) - 60; // 60px above node
-  const nodeWidth = internalNode.measured?.width ?? 0;
-  
-  // Transform flow coordinates to screen coordinates relative to ReactFlow wrapper
-  const zoom = transform[2];
-  const screenX = (x + nodeWidth / 2) * zoom + transform[0];
-  const screenY = y * zoom + transform[1];
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    isDragging.current = true;
+    dragStart.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    };
+    if (toolbarRef.current) {
+      toolbarRef.current.setPointerCapture(e.pointerId);
+    }
+    e.preventDefault();
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    const newPos = {
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y
+    };
+    setPosition(newPos);
+    persistedPosition = newPos;
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = false;
+    if (toolbarRef.current) {
+      toolbarRef.current.releasePointerCapture(e.pointerId);
+    }
+  };
 
   return (
-    <div style={{
+    <div 
+      ref={toolbarRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      style={{
       position: 'absolute',
       left: 0,
       top: 0,
-      transform: `translate(calc(${screenX}px - 50%), ${screenY}px)`,
+      transform: `translate(calc(${position.x}px - 50%), ${position.y}px)`,
       background: 'var(--panel-bg)',
       border: '1px solid var(--panel-border)',
       borderRadius: '8px',
@@ -94,6 +128,8 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
       boxShadow: 'var(--shadow)',
       zIndex: 1000,
       pointerEvents: 'auto',
+      cursor: 'grab',
+      userSelect: 'none',
     }}>
       {/* Colors */}
       <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px', alignItems: 'center' }}>
