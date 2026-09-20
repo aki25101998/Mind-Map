@@ -13,7 +13,7 @@ export const ContextMenu = () => {
     duplicateSelected, 
     copySelected, 
     pasteFromClipboard, 
-    deleteSelected,
+    deleteNodeById,
     addNode,
     nodes,
     setSelectedNodes
@@ -30,9 +30,11 @@ export const ContextMenu = () => {
       }
     };
     
-    // Slight delay so the click that opened the menu doesn't close it
-    setTimeout(() => document.addEventListener('click', handleClickOutside), 10);
-    return () => document.removeEventListener('click', handleClickOutside);
+    const timeoutId = window.setTimeout(() => document.addEventListener('click', handleClickOutside), 10);
+    return () => {
+      window.clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+    };
   }, [setContextMenu]);
 
   if (!contextMenu) return null;
@@ -101,7 +103,7 @@ export const ContextMenu = () => {
           <hr style={{ margin: '4px 0', borderColor: 'var(--panel-border)' }} />
           <button className="menu-item" onClick={() => { setSelectedNodes([contextMenu.id!]); handleAction(duplicateSelected); }}>Duplicate</button>
           <button className="menu-item" onClick={() => { setSelectedNodes([contextMenu.id!]); handleAction(copySelected); }}>Copy</button>
-          <button className="menu-item" onClick={() => handleAction(deleteSelected)} style={{ color: 'var(--node-color-red)' }}>Delete</button>
+          <button className="menu-item" onClick={() => handleAction(() => deleteNodeById(contextMenu.id!))} style={{ color: 'var(--node-color-red)' }}>Delete</button>
         </>
       )}
       

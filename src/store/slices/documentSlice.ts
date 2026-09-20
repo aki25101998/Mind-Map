@@ -53,6 +53,7 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       editingNodeId: null,
       contextMenu: null,
       isDragging: false,
+      deletedDocumentId: null,
     });
   },
 
@@ -73,6 +74,7 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       editingNodeId: null,
       contextMenu: null,
       isDragging: false,
+      deletedDocumentId: null,
     });
   }
 });

@@ -50,7 +50,7 @@ export const getAllDocuments = async (): Promise<MindMapDocument[]> => {
     return await db.getAllFromIndex('documents', 'updatedAt');
   } catch (error) {
     console.error('Failed to get all documents from IndexedDB:', error);
-    return [];
+    throw error;
   }
 };
 

@@ -16,8 +16,6 @@ export const useAutosave = () => {
       if (prevState.documentId && state.documentId !== prevState.documentId) {
         if (state.deletedDocumentId === prevState.documentId) {
           // Document was just deleted, DO NOT flush save
-          // Reset the deleted flag immediately so it doesn't affect future operations
-          state.setDeletedDocumentId(null);
           return;
         }
 

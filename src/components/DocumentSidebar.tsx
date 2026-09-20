@@ -19,21 +19,36 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
     setDeletedDocumentId: state.setDeletedDocumentId
   })));
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const loadRecentDocs = () => {
-    getAllDocuments().then(docs => {
-      setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
-    });
+    getAllDocuments()
+      .then(docs => {
+        setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
+        setError(null);
+      })
+      .catch(err => {
+        console.error('Failed to load recent docs:', err);
+        setError('Unable to load documents. Please retry.');
+      });
   };
 
   useEffect(() => {
     let mounted = true;
     if (isOpen) {
-      getAllDocuments().then(docs => {
-        if (mounted) {
-          setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
-        }
-      });
+      getAllDocuments()
+        .then(docs => {
+          if (mounted) {
+            setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
+            setError(null);
+          }
+        })
+        .catch(err => {
+          if (mounted) {
+            console.error('Failed to load docs on open:', err);
+            setError('Unable to load documents. Please retry.');
+          }
+        });
     }
     return () => { mounted = false; };
   }, [isOpen]);
@@ -161,11 +176,15 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
               </div>
             ))}
             
-            {documents.length === 0 && (
+            {error ? (
+              <div style={{ color: 'var(--node-color-red)', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>
+                {error}
+              </div>
+            ) : documents.length === 0 ? (
               <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>
                 No documents found.
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

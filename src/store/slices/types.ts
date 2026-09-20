@@ -41,6 +41,7 @@ export interface NodeEdgeSlice {
   setEdges: (edges: MindMapEdge[]) => void;
   addNode: (node: MindMapNode) => void;
   deleteSelected: () => void;
+  deleteNodeById: (id: string) => void;
   updateNodeData: (id: string, data: Partial<MindMapNode['data']>) => void;
   updateNodeType: (id: string, type: MindMapNode['type']) => void;
   updateEdge: (id: string, data: Partial<MindMapEdge>) => void;

@@ -5,7 +5,7 @@ import {
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 
-import type { MindMapNodeType } from '../types';
+
 
 interface FloatingToolbarProps {
   nodeId: string;
@@ -42,8 +42,8 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   };
 
   const handleShapeChange = (shape: 'rectangle' | 'rounded' | 'ellipse' | 'text') => {
-    const typeMap = { rectangle: 'basic', rounded: 'rounded', ellipse: 'ellipse', text: 'text' };
-    updateNodeType(nodeId, (typeMap[shape] || 'basic') as MindMapNodeType);
+    const typeMap = { rectangle: 'basic', rounded: 'rounded', ellipse: 'ellipse', text: 'text' } as const;
+    updateNodeType(nodeId, typeMap[shape] || 'basic');
     updateNodeData(nodeId, { shape });
   };
 

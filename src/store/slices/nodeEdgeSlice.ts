@@ -114,6 +114,30 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     get().commitHistory();
   },
 
+  deleteNodeById: (id) => {
+    const { nodes, edges, selectedNodeIds, editingNodeId, contextMenu } = get();
+    const nodeToDelete = nodes.find(n => n.id === id);
+    if (!nodeToDelete) return;
+
+    const remainingNodes = nodes.filter(n => n.id !== id);
+    const edgesToRemove = getConnectedEdges([nodeToDelete], edges);
+    const remainingEdges = edges.filter(e => !edgesToRemove.some(re => re.id === e.id));
+
+    const newEditingNodeId = editingNodeId === id ? null : editingNodeId;
+    const newContextMenu = contextMenu?.target === 'node' && contextMenu.id === id ? null : contextMenu;
+    const newSelectedNodeIds = selectedNodeIds.filter(selId => selId !== id);
+
+    set({ 
+      nodes: remainingNodes, 
+      edges: remainingEdges, 
+      hasChildrenMap: computeHasChildrenMap(remainingEdges), 
+      selectedNodeIds: newSelectedNodeIds,
+      editingNodeId: newEditingNodeId,
+      contextMenu: newContextMenu
+    });
+    get().commitHistory();
+  },
+
   updateNodeData: (id, data) => {
     let newEdges = get().edges;
     if (data.backgroundColor) {

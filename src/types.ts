@@ -1,6 +1,6 @@
 import type { Node, Edge, Viewport } from '@xyflow/react';
 
-export type MindMapNodeType = 'main' | 'basic' | 'rounded' | 'text';
+export type MindMapNodeType = 'main' | 'basic' | 'rounded' | 'ellipse' | 'text';
 
 export interface NodeData extends Record<string, unknown> {
   label: string;
