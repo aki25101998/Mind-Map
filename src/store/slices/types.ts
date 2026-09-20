@@ -12,6 +12,7 @@ export interface DocumentSlice {
   templateId: string | undefined;
   createdAt: number;
   updatedAt: number;
+  deletedDocumentId: string | null;
   loadDocument: (
     id: string, 
     title: string, 
@@ -25,6 +26,7 @@ export interface DocumentSlice {
   closeDocument: () => void;
   setUpdatedAt: (timestamp: number) => void;
   setTitle: (title: string) => void;
+  setDeletedDocumentId: (id: string | null) => void;
 }
 
 export interface NodeEdgeSlice {
@@ -40,6 +42,7 @@ export interface NodeEdgeSlice {
   addNode: (node: MindMapNode) => void;
   deleteSelected: () => void;
   updateNodeData: (id: string, data: Partial<MindMapNode['data']>) => void;
+  updateNodeType: (id: string, type: MindMapNode['type']) => void;
   updateEdge: (id: string, data: Partial<MindMapEdge>) => void;
   updateOutgoingEdges: (sourceId: string, data: Partial<MindMapEdge['data']>) => void;
   setViewport: (viewport: Viewport) => void;

@@ -29,3 +29,11 @@ export const getDescendants = (
 
   return { descendantNodes, descendantEdges };
 };
+
+export const computeHasChildrenMap = (edges: MindMapEdge[]): Record<string, boolean> => {
+  const map: Record<string, boolean> = {};
+  edges.forEach(e => {
+    map[e.source] = true;
+  });
+  return map;
+};

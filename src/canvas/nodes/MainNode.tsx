@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps, Node } from '@xyflow/react';
 import { useMindMapStore } from '../../store/useMindMapStore';
@@ -17,7 +17,13 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
   );
   const hasChildren = useMindMapStore(state => state.hasChildrenMap[id] || false);
   const isEditing = editingNodeId === id;
-  const [label, setLabel] = useState(data.label);
+  const [label, setLabel] = React.useState(data.label);
+
+  React.useEffect(() => {
+    if (!isEditing) {
+      setLabel(data.label);
+    }
+  }, [data.label, isEditing]);
 
   const handleBlur = () => {
     setEditingNodeId(null);

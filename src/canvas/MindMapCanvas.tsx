@@ -17,6 +17,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { MainNode } from './nodes/MainNode';
 import { BasicNode } from './nodes/BasicNode';
 import { RoundedNode } from './nodes/RoundedNode';
+import { EllipseNode } from './nodes/EllipseNode';
 import { TextNode } from './nodes/TextNode';
 import { FloatingToolbar } from './FloatingToolbar';
 import { CustomMindMapEdge } from './edges/MindMapEdge';
@@ -29,6 +30,7 @@ const nodeTypes: NodeTypes = {
   main: MainNode,
   basic: BasicNode,
   rounded: RoundedNode,
+  ellipse: EllipseNode,
   text: TextNode,
 };
 

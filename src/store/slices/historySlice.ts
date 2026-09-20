@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import type { MindMapState, HistorySlice, HistorySnapshot } from './types';
 import type { MindMapNode, MindMapEdge } from '../../types';
+import { computeHasChildrenMap } from '../../utils/graphUtils';
 
 export const createHistorySnapshot = (nodes: MindMapNode[], edges: MindMapEdge[]): HistorySnapshot => {
   const strippedNodes = nodes.map(n => {
@@ -54,9 +55,15 @@ export const createHistorySlice: StateCreator<MindMapState, [], [], HistorySlice
     if (historyIndex > 0) {
       const prevIndex = historyIndex - 1;
       const snapshot = history[prevIndex];
+      const parsedNodes = JSON.parse(JSON.stringify(snapshot.nodes));
+      const parsedEdges = JSON.parse(JSON.stringify(snapshot.edges));
       set({
-        nodes: JSON.parse(JSON.stringify(snapshot.nodes)),
-        edges: JSON.parse(JSON.stringify(snapshot.edges)),
+        nodes: parsedNodes,
+        edges: parsedEdges,
+        hasChildrenMap: computeHasChildrenMap(parsedEdges),
+        selectedNodeIds: [],
+        editingNodeId: null,
+        contextMenu: null,
         historyIndex: prevIndex
       });
     }
@@ -67,9 +74,15 @@ export const createHistorySlice: StateCreator<MindMapState, [], [], HistorySlice
     if (historyIndex < history.length - 1) {
       const nextIndex = historyIndex + 1;
       const snapshot = history[nextIndex];
+      const parsedNodes = JSON.parse(JSON.stringify(snapshot.nodes));
+      const parsedEdges = JSON.parse(JSON.stringify(snapshot.edges));
       set({
-        nodes: JSON.parse(JSON.stringify(snapshot.nodes)),
-        edges: JSON.parse(JSON.stringify(snapshot.edges)),
+        nodes: parsedNodes,
+        edges: parsedEdges,
+        hasChildrenMap: computeHasChildrenMap(parsedEdges),
+        selectedNodeIds: [],
+        editingNodeId: null,
+        contextMenu: null,
         historyIndex: nextIndex
       });
     }

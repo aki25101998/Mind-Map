@@ -5,13 +5,16 @@ import {
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 
+import type { MindMapNodeType } from '../types';
+
 interface FloatingToolbarProps {
   nodeId: string;
 }
 
 export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   const { 
-    updateNodeData, 
+    updateNodeData,
+    updateNodeType,
     duplicateSelected, 
     deleteSelected, 
     createChildNode, 
@@ -19,6 +22,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
     updateOutgoingEdges
   } = useMindMapStore(useShallow(state => ({
     updateNodeData: state.updateNodeData,
+    updateNodeType: state.updateNodeType,
     duplicateSelected: state.duplicateSelected,
     deleteSelected: state.deleteSelected,
     createChildNode: state.createChildNode,
@@ -38,6 +42,8 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   };
 
   const handleShapeChange = (shape: 'rectangle' | 'rounded' | 'ellipse' | 'text') => {
+    const typeMap = { rectangle: 'basic', rounded: 'rounded', ellipse: 'ellipse', text: 'text' };
+    updateNodeType(nodeId, (typeMap[shape] || 'basic') as MindMapNodeType);
     updateNodeData(nodeId, { shape });
   };
 

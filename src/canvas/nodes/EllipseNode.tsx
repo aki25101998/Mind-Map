@@ -5,7 +5,7 @@ import { useMindMapStore } from '../../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { NodeData } from '../../types';
 
-export const BasicNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'basic'>>) => {
+export const EllipseNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'ellipse'>>) => {
   const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse } = useMindMapStore(
     useShallow(state => ({
       updateNodeData: state.updateNodeData,
@@ -39,11 +39,15 @@ export const BasicNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'basi
     color: data.color || 'var(--text-primary)',
     fontSize: `${data.fontSize || 14}px`,
     fontWeight: data.fontWeight || 'normal',
-    padding: '8px 16px',
-    borderRadius: `${data.borderRadius || 6}px`,
+    padding: '16px 24px',
+    borderRadius: '50%',
     boxShadow: selected ? '0 0 0 4px var(--accent-bg)' : 'none',
-    minWidth: '80px',
+    minWidth: '100px',
     textAlign: 'center',
+    aspectRatio: '2/1',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   };
 
   return (

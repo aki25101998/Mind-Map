@@ -25,21 +25,41 @@ export const initDB = () => {
 };
 
 export const saveDocument = async (doc: MindMapDocument): Promise<void> => {
-  const db = await initDB();
-  await db.put('documents', doc);
+  try {
+    const db = await initDB();
+    await db.put('documents', doc);
+  } catch (error) {
+    console.error('Failed to save document to IndexedDB:', error);
+    throw error;
+  }
 };
 
 export const getDocument = async (id: string): Promise<MindMapDocument | undefined> => {
-  const db = await initDB();
-  return db.get('documents', id);
+  try {
+    const db = await initDB();
+    return await db.get('documents', id);
+  } catch (error) {
+    console.error('Failed to get document from IndexedDB:', error);
+    throw error;
+  }
 };
 
 export const getAllDocuments = async (): Promise<MindMapDocument[]> => {
-  const db = await initDB();
-  return db.getAllFromIndex('documents', 'updatedAt');
+  try {
+    const db = await initDB();
+    return await db.getAllFromIndex('documents', 'updatedAt');
+  } catch (error) {
+    console.error('Failed to get all documents from IndexedDB:', error);
+    return [];
+  }
 };
 
 export const deleteDocument = async (id: string): Promise<void> => {
-  const db = await initDB();
-  await db.delete('documents', id);
+  try {
+    const db = await initDB();
+    await db.delete('documents', id);
+  } catch (error) {
+    console.error('Failed to delete document from IndexedDB:', error);
+    throw error;
+  }
 };

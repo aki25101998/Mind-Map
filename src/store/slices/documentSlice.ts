@@ -9,6 +9,7 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
   templateId: undefined,
   createdAt: Date.now(),
   updatedAt: Date.now(),
+  deletedDocumentId: null,
 
   setUpdatedAt: (timestamp) => {
     set({ updatedAt: timestamp });
@@ -16,6 +17,10 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
 
   setTitle: (title) => {
     set({ documentTitle: title });
+  },
+
+  setDeletedDocumentId: (id) => {
+    set({ deletedDocumentId: id });
   },
 
   loadDocument: (id, title, nodes, edges, viewport, templateId, createdAt, updatedAt) => {
@@ -26,11 +31,18 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       finalNodes = normalizeTwoWayDocument(nodes, edges);
     }
     
+    // We need computeHasChildrenMap here. Let's just import it at the top or compute it here inline since it's just edges.
+    const hasChildrenMap: Record<string, boolean> = {};
+    edges.forEach(e => {
+      hasChildrenMap[e.source] = true;
+    });
+
     set({ 
       documentId: id, 
       documentTitle: title, 
       nodes: finalNodes, 
       edges, 
+      hasChildrenMap,
       viewport,
       templateId,
       createdAt: createdAt ?? now,
@@ -40,6 +52,7 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       selectedNodeIds: [],
       editingNodeId: null,
       contextMenu: null,
+      isDragging: false,
     });
   },
 
@@ -50,6 +63,7 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       templateId: undefined,
       nodes: [],
       edges: [],
+      hasChildrenMap: {},
       viewport: { x: 0, y: 0, zoom: 1 },
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -58,6 +72,7 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       selectedNodeIds: [],
       editingNodeId: null,
       contextMenu: null,
+      isDragging: false,
     });
   }
 });

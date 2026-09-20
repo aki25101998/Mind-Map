@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useReactFlow } from '@xyflow/react';
 import { v4 as uuidv4 } from 'uuid';
+import { useAutoLayout } from '../hooks/useAutoLayout';
 
 export const ContextMenu = () => {
   const { 
@@ -14,13 +15,13 @@ export const ContextMenu = () => {
     pasteFromClipboard, 
     deleteSelected,
     addNode,
-    autoLayout,
     nodes,
     setSelectedNodes
   } = useMindMapStore();
   
   const { screenToFlowPosition, fitView } = useReactFlow();
   const menuRef = useRef<HTMLDivElement>(null);
+  const handleAutoLayout = useAutoLayout();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -89,10 +90,7 @@ export const ContextMenu = () => {
           <button className="menu-item" onClick={handleNewNode}>New node</button>
           <button className="menu-item" onClick={handlePaste}>Paste</button>
           <hr style={{ margin: '4px 0', borderColor: 'var(--panel-border)' }} />
-          <button className="menu-item" onClick={() => handleAction(() => {
-            autoLayout();
-            setTimeout(() => fitView({ duration: 300, padding: 0.2 }), 50);
-          })}>Auto layout</button>
+          <button className="menu-item" onClick={() => handleAction(handleAutoLayout)}>Auto layout</button>
           <button className="menu-item" onClick={handleSelectAll}>Select all</button>
           <button className="menu-item" onClick={handleFitView}>Fit view</button>
         </>

@@ -52,7 +52,8 @@ export const cloneTemplate = (template: Template) => {
     return {
       ...n,
       id: idMap[n.id],
-      data: { ...presetData, ...n.data }
+      position: { ...n.position },
+      data: JSON.parse(JSON.stringify({ ...presetData, ...n.data }))
     };
   });
 

@@ -14,6 +14,13 @@ export const useAutosave = () => {
     const unsubscribe = useMindMapStore.subscribe((state, prevState) => {
       // Handle document switch or close: immediately flush save for the old document
       if (prevState.documentId && state.documentId !== prevState.documentId) {
+        if (state.deletedDocumentId === prevState.documentId) {
+          // Document was just deleted, DO NOT flush save
+          // Reset the deleted flag immediately so it doesn't affect future operations
+          state.setDeletedDocumentId(null);
+          return;
+        }
+
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;

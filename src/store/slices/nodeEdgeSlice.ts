@@ -9,15 +9,7 @@ import {
 import type { MindMapNode, MindMapEdge } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import { findNonCollidingPosition, resolveNodeLayoutSide, getLayoutType, applyAutoLayout } from '../../utils/layoutUtils';
-import { getDescendants } from '../../utils/graphUtils';
-
-const computeHasChildrenMap = (edges: MindMapEdge[]) => {
-  const map: Record<string, boolean> = {};
-  edges.forEach(e => {
-    map[e.source] = true;
-  });
-  return map;
-};
+import { getDescendants, computeHasChildrenMap } from '../../utils/graphUtils';
 
 export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSlice> = (set, get) => ({
   nodes: [],
@@ -99,7 +91,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   },
 
   deleteSelected: () => {
-    const { nodes, edges, selectedNodeIds } = get();
+    const { nodes, edges, selectedNodeIds, editingNodeId, contextMenu } = get();
     if (selectedNodeIds.length === 0) return;
 
     const remainingNodes = nodes.filter(n => !selectedNodeIds.includes(n.id));
@@ -108,7 +100,17 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     
     const remainingEdges = edges.filter(e => !edgesToRemove.some(re => re.id === e.id));
 
-    set({ nodes: remainingNodes, edges: remainingEdges, hasChildrenMap: computeHasChildrenMap(remainingEdges), selectedNodeIds: [] });
+    const newEditingNodeId = editingNodeId && selectedNodeIds.includes(editingNodeId) ? null : editingNodeId;
+    const newContextMenu = contextMenu?.target === 'node' && contextMenu.id && selectedNodeIds.includes(contextMenu.id) ? null : contextMenu;
+
+    set({ 
+      nodes: remainingNodes, 
+      edges: remainingEdges, 
+      hasChildrenMap: computeHasChildrenMap(remainingEdges), 
+      selectedNodeIds: [],
+      editingNodeId: newEditingNodeId,
+      contextMenu: newContextMenu
+    });
     get().commitHistory();
   },
 
@@ -129,6 +131,18 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
       }),
       edges: newEdges,
       hasChildrenMap: computeHasChildrenMap(newEdges)
+    });
+    get().commitHistory();
+  },
+
+  updateNodeType: (id, type) => {
+    set({
+      nodes: get().nodes.map((node) => {
+        if (node.id === id) {
+          return { ...node, type: type as MindMapNode['type'] };
+        }
+        return node;
+      })
     });
     get().commitHistory();
   },

@@ -12,10 +12,11 @@ interface DocumentSidebarProps {
 }
 
 export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
-  const { documentId, loadDocument, closeDocument } = useMindMapStore(useShallow(state => ({
+  const { documentId, loadDocument, closeDocument, setDeletedDocumentId } = useMindMapStore(useShallow(state => ({
     documentId: state.documentId,
     loadDocument: state.loadDocument,
-    closeDocument: state.closeDocument
+    closeDocument: state.closeDocument,
+    setDeletedDocumentId: state.setDeletedDocumentId
   })));
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
 
@@ -52,6 +53,7 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
     e.stopPropagation();
     await deleteDocument(id);
     if (id === documentId) {
+      setDeletedDocumentId(id);
       closeDocument();
     }
     loadRecentDocs();
