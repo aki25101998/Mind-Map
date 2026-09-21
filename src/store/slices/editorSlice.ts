@@ -2,7 +2,17 @@ import type { StateCreator } from 'zustand';
 import type { MindMapState, EditorSlice, SyncStatus, ContextMenuState } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> = (set, get) => ({
+export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> = (set, get) => {
+  // Read saved theme from localStorage on initialization
+  const savedTheme = (typeof window !== 'undefined' && localStorage.getItem('mindmap-theme')) as 'light' | 'dark' | null;
+  const initialTheme = savedTheme || 'light';
+  
+  // Apply dark class immediately on load so there's no flash
+  if (initialTheme === 'dark' && typeof document !== 'undefined') {
+    document.documentElement.classList.add('dark');
+  }
+
+  return {
   selectedNodeIds: [],
   clipboardNodes: [],
   clipboardEdges: [],
@@ -12,7 +22,7 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
   isDragging: false,
   editingNodeId: null,
   contextMenu: null,
-  theme: 'light',
+  theme: initialTheme,
 
   toggleTheme: () => {
     set((state) => {
@@ -23,6 +33,8 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
       } else {
         document.documentElement.classList.remove('dark');
       }
+      // Persist to localStorage
+      localStorage.setItem('mindmap-theme', newTheme);
       return { theme: newTheme };
     });
   },
@@ -136,4 +148,4 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
     });
     get().commitHistory();
   }
-});
+};};
