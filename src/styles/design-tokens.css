@@ -43,9 +43,9 @@
   --node-text-default: #171717;
   
   /* Accent Colors */
-  --accent: #171717; /* Use black/dark gray for primary accent in light mode for a clean look */
-  --accent-soft: rgba(0, 0, 0, 0.04);
-  --accent-border: #171717;
+  --accent: #4f46e5;
+  --accent-soft: rgba(79, 70, 229, 0.08);
+  --accent-border: #4f46e5;
   
   /* Semantic */
   --social-bg: #f5f5f5;
@@ -65,47 +65,4 @@
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark Theme Colors */
-    --canvas-bg: #0a0a0a;
-    --panel-bg: #171717;
-    --panel-border: #262626;
-    --border-subtle: #333333;
-    
-    --text-primary: #ededed;
-    --text-secondary: #a3a3a3;
-    --text-muted: #737373;
-    
-    --node-bg-default: #171717;
-    --node-border-default: #262626;
-    --node-text-default: #ededed;
-
-    /* Accent Colors */
-    --accent: #ededed;
-    --accent-soft: rgba(255, 255, 255, 0.08);
-    --accent-border: #ededed;
-
-    --social-bg: #262626;
-    
-    /* Darker Shadows for Dark Mode */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
-    --shadow-toolbar: 0 8px 24px rgba(0, 0, 0, 0.6);
-    --shadow: var(--shadow-md);
-
-    /* Mind Map Node Colors (Darker Variants) */
-    --node-color-orange: #ea580c;
-    --node-color-purple: #9333ea;
-    --node-color-red: #dc2626;
-    --node-color-blue: #2563eb;
-    --node-color-green: #16a34a;
-    --node-color-yellow: #ca8a04;
-    --node-color-teal: #0d9488;
-    --node-color-cyan: #0891b2;
-    --node-color-gray: #525252;
-  }
 }

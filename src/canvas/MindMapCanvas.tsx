@@ -251,7 +251,7 @@ const CanvasInner = () => {
       defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
       minZoom={0.1}
       maxZoom={4}
-      colorMode="dark"
+      colorMode="light"
       panOnDrag={true}
       panOnScroll={false}
       zoomOnScroll={true}
