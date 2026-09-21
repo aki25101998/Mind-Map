@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Template, MindMapNode, MindMapEdge } from '../types';
 
-export const cloneTemplate = (template: Template) => {
+export const cloneTemplate = (template: Template, preserveIds: boolean = false) => {
   const idMap: Record<string, string> = {};
   const { stylePreset } = template;
 
   // Generate new IDs
   template.defaultNodes.forEach(n => {
-    idMap[n.id] = uuidv4();
+    idMap[n.id] = preserveIds ? n.id : uuidv4();
   });
 
   const rootNode = template.defaultNodes.find(n => n.type === 'main') || template.defaultNodes[0];
@@ -64,7 +64,7 @@ export const cloneTemplate = (template: Template) => {
     
     return {
       ...e,
-      id: uuidv4(),
+      id: preserveIds ? e.id : uuidv4(),
       source: idMap[e.source],
       target: idMap[e.target],
       data: {

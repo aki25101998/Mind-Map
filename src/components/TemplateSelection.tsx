@@ -19,6 +19,15 @@ import { validateDocument } from '../utils/validation';
 const nodeTypes = { main: MainNode, basic: BasicNode, rounded: RoundedNode, text: TextNode };
 const edgeTypes = { 'mindmap-edge': CustomMindMapEdge };
 
+const styledTemplates = templates.map(t => {
+  const cloned = cloneTemplate(t, true);
+  return {
+    ...t,
+    previewNodes: cloned.nodes,
+    previewEdges: cloned.edges
+  };
+});
+
 export const TemplateSelection = () => {
   const { loadDocument, theme, toggleTheme } = useMindMapStore();
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
@@ -79,7 +88,7 @@ export const TemplateSelection = () => {
     loadRecentDocs();
   };
 
-  const previewTemplate = templates.find(t => t.id === previewTemplateId);
+  const previewTemplate = styledTemplates.find(t => t.id === previewTemplateId);
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -226,7 +235,7 @@ export const TemplateSelection = () => {
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-6)'
         }}>
-          {templates.filter(t => t.id !== 'blank').map(template => (
+          {styledTemplates.filter(t => t.id !== 'blank').map(template => (
             <div key={template.id} onClick={() => setPreviewTemplateId(template.id)} style={{
               background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
               cursor: 'pointer', transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)', border: '1px solid var(--panel-border)'
@@ -247,8 +256,8 @@ export const TemplateSelection = () => {
               }}>
                 {/* Live mini preview */}
                 <ReactFlow
-                  nodes={template.defaultNodes}
-                  edges={template.defaultEdges}
+                  nodes={template.previewNodes}
+                  edges={template.previewEdges}
                   nodeTypes={nodeTypes}
                   edgeTypes={edgeTypes}
                   fitView
@@ -305,8 +314,8 @@ export const TemplateSelection = () => {
             </div>
             <div style={{ flex: 1, background: 'var(--canvas-bg)', position: 'relative' }}>
               <ReactFlow
-                nodes={previewTemplate.defaultNodes}
-                edges={previewTemplate.defaultEdges}
+                nodes={previewTemplate.previewNodes}
+                edges={previewTemplate.previewEdges}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 fitView
