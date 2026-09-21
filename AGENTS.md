@@ -12,10 +12,10 @@ Bất cứ khi nào bạn hoàn thành một tác vụ lập trình, sửa lỗi
 3. **Commit:** `git commit -m "Mô tả ngắn gọn, rõ ràng về thay đổi vừa thực hiện"`
 4. **Push lên GitHub:** `git push`
 5. **Build dự án:** `cmd.exe /c npm run build`
-6. **Deploy lên Firebase:** `cmd.exe /c npx firebase deploy`
+6. **Deploy lên Firebase:** `cmd.exe /c npx -p firebase-tools firebase deploy`
 
 *Mẹo: Trên PowerShell, để chạy chuỗi các lệnh này, hãy dùng dấu `;`. Ví dụ:*
-`git add . ; git commit -m "update" ; git push ; cmd.exe /c npm run build ; cmd.exe /c npx firebase deploy`
+`git add . ; git commit -m "update" ; git push ; cmd.exe /c npm run build ; cmd.exe /c npx -p firebase-tools firebase deploy`
 
 **LƯU Ý QUAN TRỌNG:** 
 - Đừng chờ người dùng nhắc nhở hay ra lệnh push code hay deploy.
