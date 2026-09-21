@@ -23,6 +23,10 @@
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+.react-flow__node.dragging {
+  transition: opacity 0.3s ease; /* Disable transform transition during drag */
+}
+
 /* Node Handle UX Optimization */
 .react-flow__node .react-flow__handle {
   opacity: 0 !important;
