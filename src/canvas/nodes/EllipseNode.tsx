@@ -34,20 +34,21 @@ export const EllipseNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'el
   const style: React.CSSProperties = {
     backgroundColor: data.backgroundColor || 'var(--node-bg-default)',
     borderColor: selected ? 'var(--accent)' : (data.borderColor || 'var(--node-border-default)'),
-    borderWidth: '2px',
+    borderWidth: '1px',
     borderStyle: 'solid',
     color: data.color || 'var(--text-primary)',
     fontSize: `${data.fontSize || 14}px`,
-    fontWeight: data.fontWeight || 'normal',
-    padding: '16px 24px',
+    fontWeight: data.fontWeight || '500',
+    padding: 'var(--space-4) var(--space-6)',
     borderRadius: '50%',
-    boxShadow: selected ? '0 0 0 4px var(--accent-bg)' : 'none',
+    boxShadow: selected ? '0 0 0 2px var(--accent-soft)' : 'var(--shadow-sm)',
     minWidth: '100px',
     textAlign: 'center',
     aspectRatio: '2/1',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    transition: 'var(--transition-fast)'
   };
 
   return (

@@ -97,71 +97,75 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
         position: 'fixed', left: 0, top: 0, bottom: 0, width: '300px',
         background: 'var(--panel-bg)', borderRight: '1px solid var(--panel-border)',
         zIndex: 50, display: 'flex', flexDirection: 'column',
-        boxShadow: 'var(--shadow)', color: 'var(--text-primary)'
+        boxShadow: 'var(--shadow-lg)', color: 'var(--text-primary)'
       }}>
-        <div style={{ padding: '16px', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '18px' }}>Documents</h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+        <div style={{ padding: 'var(--space-4)', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Documents</h2>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: 'var(--radius-sm)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
             <X size={20} />
           </button>
         </div>
 
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid var(--panel-border)' }}>
+        <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', borderBottom: '1px solid var(--panel-border)' }}>
           <button 
             onClick={handleHome}
             style={{ 
-              display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', 
+              display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-2) var(--space-3)', 
               background: 'transparent', border: 'none', color: 'var(--text-primary)', 
-              borderRadius: '8px', cursor: 'pointer', textAlign: 'left'
+              borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'left', fontSize: '14px', fontWeight: '500'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'var(--node-border-default)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <Home size={18} /> Home Dashboard
+            <Home size={16} /> Home Dashboard
           </button>
           
           <button 
             onClick={() => { closeDocument(); onClose(); }}
             style={{ 
-              display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', 
-              background: 'var(--accent)', border: 'none', color: '#fff', 
-              borderRadius: '8px', cursor: 'pointer', textAlign: 'left', fontWeight: 'bold'
+              display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-2) var(--space-3)', 
+              background: 'var(--text-primary)', border: 'none', color: 'var(--panel-bg)', 
+              borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'left', fontWeight: '600', fontSize: '14px'
             }}
           >
-            <Plus size={18} /> New Document
+            <Plus size={16} /> New Document
           </button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '12px', fontWeight: 'bold' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-4)' }}>
+          <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 'var(--space-3)', fontWeight: '600', letterSpacing: '0.05em' }}>
             Recent Maps
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             {documents.map(doc => (
               <div 
                 key={doc.id}
                 onClick={() => handleOpenDoc(doc)}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '10px 12px', borderRadius: '8px', cursor: 'pointer',
-                  background: doc.id === documentId ? 'var(--node-border-default)' : 'transparent',
-                  border: doc.id === documentId ? '1px solid var(--accent)' : '1px solid transparent'
+                  padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                  background: doc.id === documentId ? 'var(--accent-soft)' : 'transparent',
+                  border: doc.id === documentId ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                  transition: 'background var(--transition-fast)'
                 }}
                 onMouseEnter={e => {
-                  if (doc.id !== documentId) e.currentTarget.style.background = 'var(--node-border-default)';
+                  if (doc.id !== documentId) e.currentTarget.style.background = 'var(--social-bg)';
                 }}
                 onMouseLeave={e => {
                   if (doc.id !== documentId) e.currentTarget.style.background = 'transparent';
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                  <FileText size={16} color="var(--accent)" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', overflow: 'hidden' }}>
+                  <FileText size={16} color="var(--text-secondary)" />
                   <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {doc.title}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                       {new Date(doc.updatedAt).toLocaleDateString()}
                     </div>
                   </div>

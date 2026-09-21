@@ -39,12 +39,13 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
     borderStyle: 'solid',
     color: data.color || 'var(--node-text-default)',
     fontSize: `${data.fontSize || 20}px`,
-    fontWeight: data.fontWeight || 'bold',
-    padding: '12px 24px',
-    borderRadius: `${data.borderRadius || 8}px`,
-    boxShadow: selected ? '0 0 0 4px var(--accent-bg)' : '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
+    fontWeight: data.fontWeight || '700',
+    padding: 'var(--space-3) var(--space-6)',
+    borderRadius: data.borderRadius ? `${data.borderRadius}px` : 'var(--radius-lg)',
+    boxShadow: selected ? '0 0 0 2px var(--accent)' : 'var(--shadow-sm)',
     minWidth: '120px',
     textAlign: 'center',
+    transition: 'var(--transition-fast)',
   };
 
   return (

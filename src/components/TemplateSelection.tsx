@@ -123,24 +123,31 @@ export const TemplateSelection = () => {
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        <h1 style={{ marginBottom: '40px', fontSize: '32px' }}>My Mind Maps</h1>
+        <h1 style={{ marginBottom: 'var(--space-2)', fontSize: '36px', fontWeight: '700', letterSpacing: '-0.02em' }}>Your Workspace</h1>
+        <p style={{ marginBottom: 'var(--space-10)', fontSize: '18px', color: 'var(--text-secondary)' }}>Turn ideas into structure.</p>
         
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '40px' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-12)' }}>
           <button 
             onClick={() => handleSelectTemplate('blank')}
             style={{ 
-              padding: '16px 24px', borderRadius: '12px', background: 'var(--accent)', 
-              color: '#fff', border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' 
+              padding: 'var(--space-4) var(--space-6)', borderRadius: 'var(--radius-lg)', background: 'var(--text-primary)', 
+              color: 'var(--canvas-bg)', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer',
+              transition: 'opacity var(--transition-fast)'
             }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
-            + Blank Canvas
+            + New Mind Map
           </button>
           
           <label style={{ 
-            padding: '16px 24px', borderRadius: '12px', background: 'var(--panel-bg)', 
-            color: 'var(--text-primary)', border: '1px solid var(--panel-border)', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
+            padding: 'var(--space-4) var(--space-6)', borderRadius: 'var(--radius-lg)', background: 'var(--panel-bg)', 
+            color: 'var(--text-primary)', border: '1px solid var(--panel-border)', fontSize: '15px', fontWeight: '600', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background var(--transition-fast)'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'var(--panel-bg)'}
+          >
             Import Mind Map
             <input 
               type="file" 
@@ -152,27 +159,39 @@ export const TemplateSelection = () => {
         </div>
 
         {documents.length > 0 && (
-          <div style={{ marginBottom: '60px' }}>
-            <h2 style={{ marginBottom: '24px' }}>Recent Maps</h2>
-            <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '16px' }}>
+          <div style={{ marginBottom: 'var(--space-12)' }}>
+            <h2 style={{ marginBottom: 'var(--space-6)', fontSize: '20px', fontWeight: '600' }}>Recent Maps</h2>
+            <div style={{ display: 'flex', gap: 'var(--space-4)', overflowX: 'auto', paddingBottom: 'var(--space-4)' }}>
               {documents.map(doc => (
                 <div 
                   key={doc.id} 
                   onClick={() => handleOpenDoc(doc)}
                   style={{
-                    minWidth: '200px', background: 'var(--panel-bg)', borderRadius: '12px', padding: '16px',
-                    cursor: 'pointer', border: '1px solid var(--panel-border)', display: 'flex', flexDirection: 'column', gap: '12px'
+                    minWidth: '240px', background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
+                    cursor: 'pointer', border: '1px solid var(--panel-border)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)',
+                    transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <FileText size={24} color="var(--accent)" />
-                    <button onClick={(e) => handleDeleteDoc(e, doc.id)} style={{ background: 'transparent', color: 'var(--node-color-red)', padding: '4px', border: 'none', cursor: 'pointer' }}>
+                    <FileText size={20} color="var(--text-muted)" />
+                    <button onClick={(e) => handleDeleteDoc(e, doc.id)} style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--node-color-red)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
-                  <h3 style={{ margin: 0, fontSize: '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.title}</h3>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    {new Date(doc.updatedAt).toLocaleDateString()}
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.title}</h3>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    Updated {new Date(doc.updatedAt).toLocaleDateString()}
                   </div>
                 </div>
               ))}
@@ -180,18 +199,27 @@ export const TemplateSelection = () => {
           </div>
         )}
 
-        <h2 style={{ marginBottom: '24px' }}>Create from Template</h2>
+        <h2 style={{ marginBottom: 'var(--space-6)', fontSize: '20px', fontWeight: '600' }}>Create from Template</h2>
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px'
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-6)'
         }}>
           {templates.filter(t => t.id !== 'blank').map(template => (
             <div key={template.id} onClick={() => setPreviewTemplateId(template.id)} style={{
-              background: 'var(--panel-bg)', borderRadius: '12px', padding: '24px',
-              cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', border: '1px solid var(--panel-border)'
-            }}>
+              background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
+              cursor: 'pointer', transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)', border: '1px solid var(--panel-border)'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+            >
               <div style={{ 
-                height: '160px', background: 'var(--canvas-bg)', borderRadius: '8px', 
-                marginBottom: '16px', border: '1px solid var(--node-border-default)',
+                height: '180px', background: 'var(--canvas-bg)', borderRadius: 'var(--radius-md)', 
+                marginBottom: 'var(--space-4)', border: '1px solid var(--border-subtle)',
                 overflow: 'hidden', position: 'relative'
               }}>
                 {/* Live mini preview */}
@@ -210,9 +238,9 @@ export const TemplateSelection = () => {
                 />
                 <div style={{ position: 'absolute', inset: 0, zIndex: 10 }} />
               </div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>{template.name}</h3>
-              <div style={{ fontSize: '12px', color: 'var(--accent)', marginBottom: '8px', fontWeight: 'bold' }}>{template.category}</div>
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{template.description}</p>
+              <h3 style={{ margin: '0 0 var(--space-2) 0', fontSize: '16px', fontWeight: '600' }}>{template.name}</h3>
+              <div style={{ display: 'inline-block', fontSize: '11px', color: 'var(--text-primary)', background: 'var(--social-bg)', padding: '2px 8px', borderRadius: 'var(--radius-pill)', marginBottom: 'var(--space-2)', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{template.category}</div>
+              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{template.description}</p>
             </div>
           ))}
         </div>
@@ -220,29 +248,33 @@ export const TemplateSelection = () => {
 
       {previewTemplate && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', 
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
           display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
         }}>
           <div style={{
-            background: 'var(--panel-bg)', borderRadius: '16px', width: '90vw', maxWidth: '800px',
+            background: 'var(--panel-bg)', borderRadius: 'var(--radius-xl)', width: '90vw', maxWidth: '800px',
             height: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            border: '1px solid var(--panel-border)', boxShadow: 'var(--shadow)'
+            border: '1px solid var(--panel-border)', boxShadow: 'var(--shadow-toolbar)'
           }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ padding: 'var(--space-6)', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h2 style={{ margin: '0 0 8px 0' }}>{previewTemplate.name}</h2>
-                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{previewTemplate.description}</p>
+                <h2 style={{ margin: '0 0 var(--space-2) 0', fontSize: '24px', fontWeight: '600' }}>{previewTemplate.name}</h2>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '15px' }}>{previewTemplate.description}</p>
               </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
                 <button 
                   onClick={() => setPreviewTemplateId(null)} 
-                  style={{ padding: '8px 16px', borderRadius: '8px', background: 'transparent', border: '1px solid var(--panel-border)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  style={{ padding: '10px 16px', borderRadius: 'var(--radius-md)', background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={() => handleSelectTemplate(previewTemplate.id)} 
-                  style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--accent)', border: 'none', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                  style={{ padding: '10px 16px', borderRadius: 'var(--radius-md)', background: 'var(--text-primary)', border: 'none', color: 'var(--canvas-bg)', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
                   Use Template
                 </button>

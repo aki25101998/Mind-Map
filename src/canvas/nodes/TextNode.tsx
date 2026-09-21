@@ -37,11 +37,12 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
     borderColor: 'transparent',
     color: data.color || 'var(--text-primary)',
     fontSize: `${data.fontSize || 16}px`,
-    fontWeight: data.fontWeight || 'normal',
-    padding: '4px 8px',
-    boxShadow: selected ? '0 0 0 2px var(--accent)' : 'none',
+    fontWeight: data.fontWeight || '400',
+    padding: 'var(--space-1) var(--space-2)',
+    boxShadow: selected ? '0 0 0 2px var(--accent-soft)' : 'none',
     minWidth: '60px',
     textAlign: 'center',
+    transition: 'var(--transition-fast)'
   };
 
   return (

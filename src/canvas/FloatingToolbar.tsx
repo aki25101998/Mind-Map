@@ -1,11 +1,11 @@
-import { useStore } from '@xyflow/react';
+
 import { 
   Type, Square, Circle, SquareAsterisk, Palette, Copy, Trash2, Plus, ArrowRight, ALargeSmall, Minus
 } from 'lucide-react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 
 let persistedPosition: { x: number; y: number } | null = null;
 
@@ -70,11 +70,12 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
     background: 'transparent',
     border: 'none',
     cursor: 'pointer',
-    color: 'var(--text-primary)',
-    borderRadius: '4px',
+    color: 'var(--text-secondary)',
+    borderRadius: 'var(--radius-sm)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    transition: 'background var(--transition-fast), color var(--transition-fast)',
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -121,11 +122,11 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
       transform: `translate(calc(${position.x}px - 50%), ${position.y}px)`,
       background: 'var(--panel-bg)',
       border: '1px solid var(--panel-border)',
-      borderRadius: '8px',
-      padding: '4px',
+      borderRadius: 'var(--radius-lg)',
+      padding: 'var(--space-1)',
       display: 'flex',
-      gap: '4px',
-      boxShadow: 'var(--shadow)',
+      gap: 'var(--space-1)',
+      boxShadow: 'var(--shadow-toolbar)',
       zIndex: 1000,
       pointerEvents: 'auto',
       cursor: 'grab',

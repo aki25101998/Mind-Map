@@ -35,16 +35,17 @@ export const RoundedNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'ro
   const style: React.CSSProperties = {
     backgroundColor: data.backgroundColor || 'var(--node-bg-default)',
     borderColor: selected ? 'var(--accent)' : (data.borderColor || 'var(--node-border-default)'),
-    borderWidth: '2px',
+    borderWidth: '1px',
     borderStyle: 'solid',
     color: data.color || 'var(--text-primary)',
     fontSize: `${data.fontSize || 14}px`,
-    fontWeight: data.fontWeight || 'normal',
-    padding: '8px 24px',
-    borderRadius: '24px',
-    boxShadow: selected ? '0 0 0 4px var(--accent-bg)' : 'none',
+    fontWeight: data.fontWeight || '500',
+    padding: 'var(--space-2) var(--space-6)',
+    borderRadius: 'var(--radius-pill)',
+    boxShadow: selected ? '0 0 0 2px var(--accent-soft)' : 'var(--shadow-sm)',
     minWidth: '80px',
     textAlign: 'center',
+    transition: 'var(--transition-fast)',
   };
 
   return (

@@ -88,31 +88,33 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
 
   return (
     <div style={{
-      position: 'absolute', top: '16px', left: '16px', right: '16px',
+      position: 'absolute', top: 'var(--space-4)', left: 'var(--space-4)', right: 'var(--space-4)',
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       zIndex: 'var(--z-toolbar)', pointerEvents: 'none'
     }}>
       <div style={{
-        background: 'var(--panel-bg)', padding: '8px 16px', borderRadius: 'var(--panel-radius)',
+        background: 'var(--panel-bg)', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--panel-radius)',
         border: '1px solid var(--panel-border)', pointerEvents: 'auto',
-        boxShadow: 'var(--shadow)', display: 'flex', alignItems: 'center', gap: '16px'
+        boxShadow: 'var(--shadow-toolbar)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)'
       }}>
         <button 
           onClick={onMenuClick}
           title="Open Document Sidebar"
-          style={{ display: 'flex', alignItems: 'center', background: 'transparent', color: 'var(--text-primary)', padding: 0, cursor: 'pointer', border: 'none' }}
+          style={{ display: 'flex', alignItems: 'center', background: 'transparent', color: 'var(--text-secondary)', padding: 'var(--space-1)', cursor: 'pointer', border: 'none', borderRadius: 'var(--radius-sm)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
-        <div style={{ width: '1px', height: '20px', background: 'var(--panel-border)' }} />
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <button onClick={undo} style={{ padding: '6px', borderRadius: '6px', background: 'transparent', color: 'var(--text-primary)' }} title="Undo (Ctrl+Z)"><Undo size={18} /></button>
-          <button onClick={redo} style={{ padding: '6px', borderRadius: '6px', background: 'transparent', color: 'var(--text-primary)' }} title="Redo (Ctrl+Shift+Z)"><Redo size={18} /></button>
+        <div style={{ width: '1px', height: '16px', background: 'var(--border-subtle)' }} />
+        <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+          <button onClick={undo} style={{ padding: 'var(--space-1)', borderRadius: 'var(--radius-sm)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', border: 'none' }} title="Undo (Ctrl+Z)" onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}><Undo size={16} /></button>
+          <button onClick={redo} style={{ padding: 'var(--space-1)', borderRadius: 'var(--radius-sm)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', border: 'none' }} title="Redo (Ctrl+Shift+Z)" onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}><Redo size={16} /></button>
         </div>
-        <div style={{ width: '1px', height: '20px', background: 'var(--panel-border)' }} />
+        <div style={{ width: '1px', height: '16px', background: 'var(--border-subtle)' }} />
         <div 
           onDoubleClick={() => setEditingTitle(true)}
-          style={{ fontWeight: '600', minWidth: '150px', cursor: 'text' }}
+          style={{ fontWeight: '500', minWidth: '150px', cursor: 'text', fontSize: '14px', color: 'var(--text-primary)' }}
         >
           {editingTitle ? (
             <input 
@@ -121,7 +123,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
               onChange={e => setTitleInput(e.target.value)}
               onBlur={handleTitleSubmit}
               onKeyDown={e => e.key === 'Enter' && handleTitleSubmit()}
-              style={{ background: 'transparent', border: 'none', color: 'inherit', fontWeight: 'inherit', outline: 'none' }}
+              style={{ background: 'transparent', border: 'none', color: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%', padding: 0 }}
             />
           ) : (
             documentTitle
@@ -130,18 +132,20 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
       </div>
       
       <div style={{
-        background: 'var(--panel-bg)', padding: '8px', borderRadius: 'var(--panel-radius)',
+        background: 'var(--panel-bg)', padding: 'var(--space-2)', borderRadius: 'var(--panel-radius)',
         border: '1px solid var(--panel-border)', pointerEvents: 'auto',
-        boxShadow: 'var(--shadow)', display: 'flex', gap: '8px', alignItems: 'center'
+        boxShadow: 'var(--shadow-toolbar)', display: 'flex', gap: 'var(--space-2)', alignItems: 'center'
       }}>
-        <div style={{ fontSize: '12px', color: syncStatus === 'error' || syncStatus === 'offline' ? 'var(--node-color-red)' : 'var(--text-secondary)', marginRight: '8px' }}>
+        <div style={{ fontSize: '12px', fontWeight: '500', color: syncStatus === 'error' || syncStatus === 'offline' ? 'var(--node-color-red)' : 'var(--text-muted)', marginRight: 'var(--space-2)', paddingLeft: 'var(--space-2)' }}>
           {syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Sync failed' : syncStatus === 'offline' ? 'Offline' : 'Saved'}
         </div>
         <button 
           onClick={handleAutoLayout}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', background: 'var(--node-bg-default)', color: 'var(--text-primary)' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
         >
-          <LayoutTemplate size={16} /> Auto Layout
+          <LayoutTemplate size={14} /> Auto Layout
         </button>
         <div style={{ position: 'relative' }} ref={exportMenuRef}>
           <button 
@@ -149,11 +153,13 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
             disabled={isExporting}
             style={{ 
               display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', 
-              borderRadius: '6px', background: 'var(--node-bg-default)', color: 'var(--text-primary)',
-              opacity: isExporting ? 0.7 : 1, cursor: isExporting ? 'wait' : 'pointer'
+              borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)',
+              opacity: isExporting ? 0.7 : 1, cursor: isExporting ? 'wait' : 'pointer', fontSize: '13px', fontWeight: '500'
             }}
+            onMouseEnter={e => !isExporting && (e.currentTarget.style.background = 'var(--social-bg)')}
+            onMouseLeave={e => !isExporting && (e.currentTarget.style.background = 'transparent')}
           >
-            <Download size={16} /> 
+            <Download size={14} /> 
             {isExporting ? 'Exporting...' : 'Export'}
             <ChevronDown size={14} />
           </button>
@@ -162,30 +168,30 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
             <div style={{
               position: 'absolute', top: '100%', right: 0, marginTop: '8px',
               background: 'var(--panel-bg)', border: '1px solid var(--panel-border)',
-              borderRadius: '8px', boxShadow: 'var(--shadow)', padding: '8px',
+              borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-toolbar)', padding: '8px',
               display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '180px', zIndex: 1000
             }}>
               <button 
                 onClick={() => handleExportImage('png')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: '4px' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-bg)'}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <Image size={16} /> Download PNG
               </button>
               <button 
                 onClick={() => handleExportImage('svg')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: '4px' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-bg)'}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <Image size={16} /> Download SVG
               </button>
-              <div style={{ height: '1px', background: 'var(--panel-border)', margin: '4px 0' }} />
+              <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '4px 0' }} />
               <button 
                 onClick={handleExportJSON}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: '4px' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-bg)'}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <FileJson size={16} /> Export JSON (Backup)
@@ -194,10 +200,10 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           )}
         </div>
         <button 
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', background: 'var(--accent)', color: '#fff', border: 'none' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: 'var(--text-primary)', color: 'var(--panel-bg)', border: 'none', fontSize: '13px', fontWeight: '600' }}
           disabled title="Future functionality"
         >
-          <Share2 size={16} /> Share
+          <Share2 size={14} /> Share
         </button>
       </div>
     </div>
