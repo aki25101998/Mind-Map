@@ -12,6 +12,20 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
   isDragging: false,
   editingNodeId: null,
   contextMenu: null,
+  theme: 'light',
+
+  toggleTheme: () => {
+    set((state) => {
+      const newTheme = state.theme === 'light' ? 'dark' : 'light';
+      // Side-effect: update document class
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      return { theme: newTheme };
+    });
+  },
 
   setIsSaving: (saving: boolean) => {
     set({ isSaving: saving, syncStatus: saving ? 'saving' : 'saved' });

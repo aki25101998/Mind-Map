@@ -65,7 +65,8 @@ const CanvasInner = () => {
     setEditingNodeId,
     editingNodeId,
     setContextMenu,
-    updateNodePositions
+    updateNodePositions,
+    theme
   } = useMindMapStore(useShallow(state => ({
     nodes: state.nodes,
     edges: state.edges,
@@ -88,7 +89,8 @@ const CanvasInner = () => {
     setEditingNodeId: state.setEditingNodeId,
     editingNodeId: state.editingNodeId,
     setContextMenu: state.setContextMenu,
-    updateNodePositions: state.updateNodePositions
+    updateNodePositions: state.updateNodePositions,
+    theme: state.theme
   })));
   
   const isDraggingRef = useRef(false);
@@ -251,7 +253,7 @@ const CanvasInner = () => {
       defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
       minZoom={0.1}
       maxZoom={4}
-      colorMode="light"
+      colorMode={theme}
       panOnDrag={true}
       panOnScroll={false}
       zoomOnScroll={true}

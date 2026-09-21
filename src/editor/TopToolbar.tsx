@@ -3,14 +3,14 @@ import { useReactFlow, getNodesBounds, getViewportForBounds } from '@xyflow/reac
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useAutoLayout } from '../hooks/useAutoLayout';
 import { exportToJSON, exportToPNG, exportToSVG } from '../utils/exportUtils';
-import { Undo, Redo, Download, Share2, Menu, LayoutTemplate, Image, FileJson, ChevronDown } from 'lucide-react';
+import { Undo, Redo, Download, Share2, Menu, LayoutTemplate, Image, FileJson, ChevronDown, Moon, Sun } from 'lucide-react';
 
 interface TopToolbarProps {
   onMenuClick?: () => void;
 }
 
 export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
-  const { documentTitle, setTitle, undo, redo, syncStatus, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt } = useMindMapStore();
+  const { documentTitle, setTitle, undo, redo, syncStatus, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt, theme, toggleTheme } = useMindMapStore();
   const handleAutoLayout = useAutoLayout();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentTitle);
@@ -139,6 +139,15 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
         <div style={{ fontSize: '12px', fontWeight: '500', color: syncStatus === 'error' || syncStatus === 'offline' ? 'var(--node-color-red)' : 'var(--text-muted)', marginRight: 'var(--space-2)', paddingLeft: 'var(--space-2)' }}>
           {syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Sync failed' : syncStatus === 'offline' ? 'Offline' : 'Saved'}
         </div>
+        <button 
+          onClick={toggleTheme}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+        </button>
         <button 
           onClick={handleAutoLayout}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}

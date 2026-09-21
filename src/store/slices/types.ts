@@ -91,6 +91,8 @@ export interface EditorSlice {
   duplicateSelected: () => void;
   copySelected: () => void;
   pasteFromClipboard: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 export type MindMapState = DocumentSlice & NodeEdgeSlice & HistorySlice & EditorSlice;
