@@ -13,14 +13,14 @@ import { BasicNode } from '../canvas/nodes/BasicNode';
 import { RoundedNode } from '../canvas/nodes/RoundedNode';
 import { TextNode } from '../canvas/nodes/TextNode';
 import { CustomMindMapEdge } from '../canvas/edges/MindMapEdge';
-import { FileText, Trash2 } from 'lucide-react';
+import { FileText, Trash2, Sun, Moon } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
 
 const nodeTypes = { main: MainNode, basic: BasicNode, rounded: RoundedNode, text: TextNode };
 const edgeTypes = { 'mindmap-edge': CustomMindMapEdge };
 
 export const TemplateSelection = () => {
-  const { loadDocument } = useMindMapStore();
+  const { loadDocument, theme, toggleTheme } = useMindMapStore();
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
 
@@ -121,8 +121,31 @@ export const TemplateSelection = () => {
       width: '100vw', height: '100vh', background: 'var(--canvas-bg)',
       overflowY: 'auto', padding: '40px', color: 'var(--text-primary)'
     }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
         
+        <div style={{ position: 'absolute', top: '0', right: '0', marginTop: '4px' }}>
+          <button
+            onClick={toggleTheme}
+            style={{
+              padding: '8px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--panel-bg)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--panel-border)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background var(--transition-fast)'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--panel-bg)'}
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+        </div>
+
         <h1 style={{ marginBottom: 'var(--space-2)', fontSize: '36px', fontWeight: '700', letterSpacing: '-0.02em' }}>Your Workspace</h1>
         <p style={{ marginBottom: 'var(--space-10)', fontSize: '18px', color: 'var(--text-secondary)' }}>Turn ideas into structure.</p>
         
