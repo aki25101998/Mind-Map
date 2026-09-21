@@ -22,7 +22,7 @@ export const validateDocument = (doc: unknown): MindMapDocument => {
   }
 
   // Validate nodes
-  const validNodeTypes = ['main', 'basic', 'rounded', 'ellipse', 'text'];
+  const validNodeTypes = ['main', 'basic', 'rounded', 'ellipse', 'text', 'toolbar'];
   const validLayoutSides = ['left', 'right', 'center'];
   const nodeIds = new Set<string>();
 
