@@ -149,3 +149,4 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
     get().commitHistory();
   }
 };
+};
