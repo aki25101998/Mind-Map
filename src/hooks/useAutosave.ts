@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
-import { saveDocument } from '../persistence/idb';
+import { syncDocument } from '../persistence/persistenceService';
 import type { MindMapDocument } from '../types';
 
 export const useAutosave = () => {
@@ -36,7 +36,7 @@ export const useAutosave = () => {
         };
 
         savePromiseRef.current = savePromiseRef.current
-          .then(() => saveDocument(docToSave))
+          .then(() => syncDocument(docToSave))
           .catch(err => console.error('Failed to flush save old document:', err));
       }
 
@@ -80,7 +80,7 @@ export const useAutosave = () => {
 
           savePromiseRef.current = savePromiseRef.current.then(async () => {
             try {
-              await saveDocument(doc);
+              await syncDocument(doc);
               if (saveRequestIdRef.current === currentSaveRequestId) {
                 const finalState = useMindMapStore.getState();
                 if (finalState.documentId === currentDocId) {

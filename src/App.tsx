@@ -8,8 +8,12 @@ import { useAutosave } from './hooks/useAutosave';
 import { useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { Routes, Route } from 'react-router-dom';
+import { Login } from './components/auth/Login';
+import { Register } from './components/auth/Register';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
-function App() {
+function Workspace() {
   const { documentId, closeDocument } = useMindMapStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -35,5 +39,20 @@ function App() {
     </div>
   );
 }
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Workspace />
+        </ProtectedRoute>
+      } />
+    </Routes>
+  );
+}
+
 
 export default App;

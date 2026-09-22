@@ -73,3 +73,24 @@ export interface MindMapDocument {
   createdAt: number;
   updatedAt: number;
 }
+
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  createdAt?: number;
+}
+
+export interface AuthState {
+  user: AuthUser | null;
+  loading: boolean;
+  error: Error | null;
+}
+
+export type CloudMindMap = MindMapDocument;
+
+export type LocalMindMapDocument = MindMapDocument & { uid?: string };
+
+export interface PersistenceResult {
+  success: boolean;
+  error?: Error;
+}

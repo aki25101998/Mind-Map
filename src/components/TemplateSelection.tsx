@@ -5,7 +5,11 @@ import { cloneTemplate } from '../templates/templateUtils';
 
 
 import { useMindMapStore } from '../store/useMindMapStore';
-import { getAllDocuments, deleteDocument, saveDocument } from '../persistence/idb';
+import { loadAllDocuments, removeDocument, syncDocument } from '../persistence/persistenceService';
+import { getAllDocuments as getLocalLegacyDocuments } from '../persistence/idb';
+import { useAuth } from '../auth/useAuth';
+import { logout } from '../auth/authService';
+import { MigrationPrompt } from './auth/MigrationPrompt';
 import { v4 as uuidv4 } from 'uuid';
 import { ReactFlow } from '@xyflow/react';
 import { MainNode } from '../canvas/nodes/MainNode';
@@ -32,16 +36,31 @@ export const TemplateSelection = () => {
   const { loadDocument, theme, toggleTheme } = useMindMapStore();
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
+  
+  const { user } = useAuth();
+  const [legacyDocs, setLegacyDocs] = useState<MindMapDocument[]>([]);
+  const [showMigration, setShowMigration] = useState(false);
 
   const loadRecentDocs = () => {
-    getAllDocuments().then(docs => {
+    loadAllDocuments().then(docs => {
       setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
     });
   };
 
   useEffect(() => {
     let mounted = true;
-    getAllDocuments().then(docs => {
+    
+    // Check for legacy docs
+    getLocalLegacyDocuments().then(docs => {
+      if (!mounted) return;
+      const unowned = docs.filter(d => !(d as any).uid);
+      if (unowned.length > 0) {
+        setLegacyDocs(unowned);
+        setShowMigration(true);
+      }
+    });
+
+    loadAllDocuments().then(docs => {
       if (mounted) {
         setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
       }
@@ -68,7 +87,7 @@ export const TemplateSelection = () => {
       updatedAt: now
     };
 
-    await saveDocument(doc);
+    await syncDocument(doc);
     loadDocument(doc.id, doc.title, doc.nodes, doc.edges, doc.viewport, doc.templateId || 'blank', doc.createdAt, doc.updatedAt);
   };
 
@@ -84,7 +103,7 @@ export const TemplateSelection = () => {
 
   const handleDeleteDoc = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    await deleteDocument(id);
+    await removeDocument(id);
     loadRecentDocs();
   };
 
@@ -113,7 +132,7 @@ export const TemplateSelection = () => {
           updatedAt: Date.now()
         };
         
-        await saveDocument(importedDoc);
+        await syncDocument(importedDoc);
         loadDocument(importedDoc.id, importedDoc.title, importedDoc.nodes, importedDoc.edges, importedDoc.viewport, importedDoc.templateId || 'blank', importedDoc.createdAt, importedDoc.updatedAt);
       } catch (err) {
         console.error('Failed to import document:', err);
@@ -153,7 +172,38 @@ export const TemplateSelection = () => {
           >
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
+          {user && (
+            <button
+              onClick={logout}
+              style={{
+                marginLeft: '8px',
+                padding: '8px 16px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--panel-bg)',
+                color: 'var(--node-color-red)',
+                border: '1px solid var(--panel-border)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background var(--transition-fast)',
+                fontWeight: '600',
+                fontSize: '14px'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--panel-bg)'}
+              title="Log out"
+            >
+              Logout
+            </button>
+          )}
         </div>
+        
+        {user && (
+          <div style={{ position: 'absolute', top: '0', left: '0', marginTop: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+            Logged in as <strong>{user.email}</strong>
+          </div>
+        )}
 
         <h1 style={{ marginBottom: 'var(--space-2)', fontSize: '36px', fontWeight: '700', letterSpacing: '-0.02em' }}>Your Workspace</h1>
         <p style={{ marginBottom: 'var(--space-10)', fontSize: '18px', color: 'var(--text-secondary)' }}>Turn ideas into structure.</p>
@@ -327,6 +377,16 @@ export const TemplateSelection = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showMigration && (
+        <MigrationPrompt 
+          documents={legacyDocs} 
+          onComplete={() => {
+            setShowMigration(false);
+            loadRecentDocs();
+          }} 
+        />
       )}
     </div>
   );
