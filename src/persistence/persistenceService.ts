@@ -14,7 +14,7 @@ import type { MindMapDocument } from '../types';
 import { auth } from '../lib/firebase';
 
 export const syncDocument = async (document: MindMapDocument): Promise<void> => {
-  const user = auth.currentUser;
+  const user = auth?.currentUser;
   
   // Always save locally first (with uid if logged in)
   const docToSave = user ? { ...document, uid: user.uid } as any : document;
@@ -31,7 +31,7 @@ export const syncDocument = async (document: MindMapDocument): Promise<void> => 
 };
 
 export const loadDocument = async (id: string): Promise<MindMapDocument | undefined> => {
-  const user = auth.currentUser;
+  const user = auth?.currentUser;
 
   if (user) {
     try {
@@ -56,7 +56,7 @@ export const loadDocument = async (id: string): Promise<MindMapDocument | undefi
 };
 
 export const loadAllDocuments = async (): Promise<MindMapDocument[]> => {
-  const user = auth.currentUser;
+  const user = auth?.currentUser;
   
   if (user) {
     try {
@@ -74,7 +74,7 @@ export const loadAllDocuments = async (): Promise<MindMapDocument[]> => {
 };
 
 export const removeDocument = async (id: string): Promise<void> => {
-  const user = auth.currentUser;
+  const user = auth?.currentUser;
   
   // Remove locally
   await deleteLocalDocument(id);

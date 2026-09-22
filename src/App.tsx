@@ -12,6 +12,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { isFirebaseConfigured } from './lib/firebase';
 
 function Workspace() {
   const { documentId, closeDocument } = useMindMapStore();
@@ -46,9 +47,13 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/" element={
-        <ProtectedRoute>
+        isFirebaseConfigured ? (
+          <ProtectedRoute>
+            <Workspace />
+          </ProtectedRoute>
+        ) : (
           <Workspace />
-        </ProtectedRoute>
+        )
       } />
     </Routes>
   );
