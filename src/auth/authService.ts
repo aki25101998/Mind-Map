@@ -1,13 +1,32 @@
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signOut as firebaseSignOut
+  signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 export const login = async (email: string, password: string) => {
   return signInWithEmailAndPassword(auth, email, password);
+};
+
+export const loginWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  const userCredential = await signInWithPopup(auth, provider);
+  const user = userCredential.user;
+  
+  const userRef = doc(db, 'users', user.uid);
+  const snapshot = await getDoc(userRef);
+  if (!snapshot.exists()) {
+    await setDoc(userRef, {
+      email: user.email,
+      createdAt: Date.now()
+    });
+  }
+  
+  return userCredential;
 };
 
 export const register = async (email: string, password: string) => {

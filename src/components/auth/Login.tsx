@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { login } from '../../auth/authService';
+import { login, loginWithGoogle } from '../../auth/authService';
 import { useAuth } from '../../auth/useAuth';
 
 export const Login: React.FC = () => {
@@ -14,6 +14,22 @@ export const Login: React.FC = () => {
   if (user) {
     navigate('/');
   }
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      await loginWithGoogle();
+      navigate('/');
+    } catch (err: any) {
+      console.error(err);
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError('An error occurred during Google sign-in.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +119,33 @@ export const Login: React.FC = () => {
             {isLoading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: 'var(--space-6) 0' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
+          <span style={{ padding: '0 var(--space-4)', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '500' }}>OR</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
+        </div>
+
+        <button 
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+          style={{
+            width: '100%', padding: '12px', borderRadius: 'var(--radius-lg)', background: 'var(--canvas-bg)',
+            color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', fontSize: '15px', fontWeight: '600',
+            cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.7 : 1,
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', transition: 'background 0.2s'
+          }}
+          onMouseEnter={(e) => !isLoading && (e.currentTarget.style.background = 'var(--social-bg)')}
+          onMouseLeave={(e) => !isLoading && (e.currentTarget.style.background = 'var(--canvas-bg)')}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.8 15.71 17.58V20.35H19.27C21.36 18.43 22.56 15.6 22.56 12.25Z" fill="#4285F4"/>
+            <path d="M12 23C14.97 23 17.46 22.02 19.27 20.35L15.71 17.58C14.73 18.24 13.48 18.64 12 18.64C9.13 18.64 6.7 16.7 5.84 14.1H2.18V16.94C3.99 20.53 7.7 23 12 23Z" fill="#34A853"/>
+            <path d="M5.84 14.1C5.62 13.44 5.5 12.74 5.5 12C5.5 11.26 5.62 10.56 5.84 9.9V7.06H2.18C1.43 8.55 1 10.22 1 12C1 13.78 1.43 15.45 2.18 16.94L5.84 14.1Z" fill="#FBBC05"/>
+            <path d="M12 5.38C13.62 5.38 15.06 5.93 16.2 7.02L19.35 3.87C17.46 2.11 14.97 1 12 1C7.7 1 3.99 3.47 2.18 7.06L5.84 9.9C6.7 7.3 9.13 5.38 12 5.38Z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
 
         <div style={{ marginTop: 'var(--space-6)', textAlign: 'center', fontSize: '14px', color: 'var(--text-secondary)' }}>
           Don't have an account? <Link to="/register" style={{ color: 'var(--text-primary)', fontWeight: '600', textDecoration: 'none' }}>Register</Link>
