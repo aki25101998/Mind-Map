@@ -1,63 +1,58 @@
-import { MindMapCanvas } from './canvas/MindMapCanvas';
-import { useMindMapStore } from './store/useMindMapStore';
-import { TemplateSelection } from './components/TemplateSelection';
-import { TopToolbar } from './editor/TopToolbar';
-import { BottomToolbar } from './editor/BottomToolbar';
-import { DocumentSidebar } from './components/DocumentSidebar';
-import { useAutosave } from './hooks/useAutosave';
-import { useState } from 'react';
-import { ReactFlowProvider } from '@xyflow/react';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { PublicRoute } from './components/auth/PublicRoute';
+import { Dashboard } from './pages/Dashboard';
+import { TemplateSelectionPage } from './pages/TemplateSelectionPage';
+import { EditorPage } from './pages/EditorPage';
+import { Settings } from './pages/Settings';
+import { NotFound } from './pages/NotFound';
 import { isFirebaseConfigured } from './lib/firebase';
+import { useAuth } from './auth/useAuth';
 
-function Workspace() {
-  const { documentId, closeDocument } = useMindMapStore();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+function RootRedirect() {
+  const { user, loading } = useAuth();
   
-  // Initialize autosave
-  useAutosave();
-
-  if (!documentId) {
-    return <TemplateSelection />;
-  }
-
-  return (
-    <div style={{ width: '100%', maxWidth: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
-      <DocumentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <ReactFlowProvider>
-        <ErrorBoundary documentId={documentId} onReset={closeDocument}>
-          <main style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-            <TopToolbar onMenuClick={() => setIsSidebarOpen(true)} />
-            <MindMapCanvas />
-            <BottomToolbar />
-          </main>
-        </ErrorBoundary>
-      </ReactFlowProvider>
-    </div>
-  );
+  if (loading) return null;
+  
+  return user ? <Navigate to="/mindmaps" replace /> : <Navigate to="/login" replace />;
 }
 
 function App() {
+  // If firebase is not configured, we might want to bypass auth for local development
+  // but for production this should enforce auth.
+  
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/" element={
-        isFirebaseConfigured ? (
-          <ProtectedRoute>
-            <Workspace />
-          </ProtectedRoute>
-        ) : (
-          <Workspace />
-        )
+      <Route path="/" element={<RootRedirect />} />
+      
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+      
+      {/* Protected Routes */}
+      <Route path="/mindmaps" element={
+        isFirebaseConfigured ? <ProtectedRoute><Dashboard /></ProtectedRoute> : <Dashboard />
       } />
+      
+      <Route path="/mindmaps/new" element={
+        isFirebaseConfigured ? <ProtectedRoute><TemplateSelectionPage /></ProtectedRoute> : <TemplateSelectionPage />
+      } />
+      
+      <Route path="/mindmaps/:id" element={
+        isFirebaseConfigured ? <ProtectedRoute><EditorPage /></ProtectedRoute> : <EditorPage />
+      } />
+      
+      <Route path="/settings" element={
+        isFirebaseConfigured ? <ProtectedRoute><Settings /></ProtectedRoute> : <Settings />
+      } />
+      
+      {/* 404 Route */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
-
 
 export default App;

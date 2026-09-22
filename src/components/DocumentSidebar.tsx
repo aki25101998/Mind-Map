@@ -5,6 +5,7 @@ import { getAllDocuments, deleteDocument } from '../persistence/idb';
 import type { MindMapDocument } from '../types';
 import { FileText, Home, Plus, Trash2, X } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
+import { useNavigate } from 'react-router-dom';
 
 interface DocumentSidebarProps {
   isOpen: boolean;
@@ -12,14 +13,14 @@ interface DocumentSidebarProps {
 }
 
 export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
-  const { documentId, loadDocument, closeDocument, setDeletedDocumentId } = useMindMapStore(useShallow(state => ({
+  const { documentId, closeDocument, setDeletedDocumentId } = useMindMapStore(useShallow(state => ({
     documentId: state.documentId,
-    loadDocument: state.loadDocument,
     closeDocument: state.closeDocument,
     setDeletedDocumentId: state.setDeletedDocumentId
   })));
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const loadRecentDocs = () => {
     getAllDocuments()
@@ -56,8 +57,8 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
   const handleOpenDoc = (doc: MindMapDocument) => {
     try {
       const validDoc = validateDocument(doc);
-      loadDocument(validDoc.id, validDoc.title, validDoc.nodes, validDoc.edges, validDoc.viewport, validDoc.templateId || 'blank', validDoc.createdAt, validDoc.updatedAt);
       onClose();
+      navigate(`/mindmaps/${validDoc.id}`);
     } catch (err) {
       console.error('Failed to load document:', err);
       alert('This document is corrupted and cannot be loaded.');
@@ -70,13 +71,14 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
     if (id === documentId) {
       setDeletedDocumentId(id);
       closeDocument();
+      navigate('/mindmaps');
     }
     loadRecentDocs();
   };
 
   const handleHome = () => {
-    closeDocument();
     onClose();
+    navigate('/mindmaps');
   };
 
   if (!isOpen) return null;
@@ -124,7 +126,7 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
           </button>
           
           <button 
-            onClick={() => { closeDocument(); onClose(); }}
+            onClick={() => { onClose(); navigate('/mindmaps/new'); }}
             style={{ 
               display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-2) var(--space-3)', 
               background: 'var(--text-primary)', border: 'none', color: 'var(--panel-bg)', 

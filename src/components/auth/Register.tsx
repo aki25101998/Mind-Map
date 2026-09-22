@@ -13,7 +13,7 @@ export const Register: React.FC = () => {
   const { user } = useAuth();
 
   if (user) {
-    navigate('/');
+    navigate('/mindmaps');
   }
 
   const handleGoogleLogin = async () => {
@@ -21,7 +21,7 @@ export const Register: React.FC = () => {
     setIsLoading(true);
     try {
       await loginWithGoogle();
-      navigate('/');
+      navigate('/mindmaps');
     } catch (err: any) {
       console.error(err);
       if (err.code !== 'auth/popup-closed-by-user') {
@@ -50,7 +50,7 @@ export const Register: React.FC = () => {
 
     try {
       await register(email, password);
-      navigate('/');
+      navigate('/mindmaps');
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {

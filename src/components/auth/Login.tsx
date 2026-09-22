@@ -12,7 +12,7 @@ export const Login: React.FC = () => {
   const { user } = useAuth();
 
   if (user) {
-    navigate('/');
+    navigate('/mindmaps');
   }
 
   const handleGoogleLogin = async () => {
@@ -20,7 +20,7 @@ export const Login: React.FC = () => {
     setIsLoading(true);
     try {
       await loginWithGoogle();
-      navigate('/');
+      navigate('/mindmaps');
     } catch (err: any) {
       console.error(err);
       if (err.code !== 'auth/popup-closed-by-user') {
@@ -38,7 +38,7 @@ export const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate('/');
+      navigate('/mindmaps');
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
