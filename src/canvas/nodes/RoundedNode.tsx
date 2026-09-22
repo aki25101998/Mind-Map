@@ -52,23 +52,26 @@ export const RoundedNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'ro
     <>
       <div style={style} onDoubleClick={() => setEditingNodeId(id)}>
       {isEditing ? (
-        <input 
-          autoFocus
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          onBlur={handleBlur}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleBlur();
-            if (e.key === 'Escape') {
-              setLabel(data.label);
-              setEditingNodeId(null);
-            }
-          }}
-          style={{ 
-            background: 'transparent', border: 'none', color: 'inherit', 
-            fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%', textAlign: 'center' 
-          }}
-        />
+        <div style={{ display: 'inline-grid', alignItems: 'center', justifyItems: 'center' }}>
+          <span style={{ visibility: 'hidden', gridArea: '1 / 1', whiteSpace: 'pre' }}>{label || ' '}</span>
+          <input 
+            autoFocus
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleBlur();
+              if (e.key === 'Escape') {
+                setLabel(data.label);
+                setEditingNodeId(null);
+              }
+            }}
+            style={{ 
+              gridArea: '1 / 1', background: 'transparent', border: 'none', color: 'inherit', 
+              fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%', minWidth: 0, textAlign: 'center' 
+            }}
+          />
+        </div>
       ) : (
         <div>{data.label}</div>
       )}
