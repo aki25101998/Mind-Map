@@ -1,6 +1,12 @@
 @import './styles/design-tokens.css';
 @import '@xyflow/react/dist/style.css';
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -11,11 +17,19 @@
   background-color: var(--canvas-bg);
 }
 
-#root {
-  width: 100vw;
-  height: 100vh;
+html, body {
+  width: 100%;
+  max-width: 100%;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Smooth layout transitions */

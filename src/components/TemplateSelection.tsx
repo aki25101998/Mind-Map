@@ -127,8 +127,8 @@ export const TemplateSelection = () => {
 
   return (
     <div style={{
-      width: '100vw', height: '100vh', background: 'var(--canvas-bg)',
-      overflowY: 'auto', padding: '40px', color: 'var(--text-primary)'
+      width: '100%', maxWidth: '100%', height: '100vh', background: 'var(--canvas-bg)',
+      overflowY: 'auto', overflowX: 'hidden', padding: '40px', color: 'var(--text-primary)'
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
         
@@ -193,7 +193,7 @@ export const TemplateSelection = () => {
         {documents.length > 0 && (
           <div style={{ marginBottom: 'var(--space-12)' }}>
             <h2 style={{ marginBottom: 'var(--space-6)', fontSize: '20px', fontWeight: '600' }}>Recent Maps</h2>
-            <div style={{ display: 'flex', gap: 'var(--space-4)', overflowX: 'auto', paddingBottom: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-4)', overflowX: 'auto', paddingBottom: 'var(--space-4)', maxWidth: '100%' }}>
               {documents.map(doc => (
                 <div 
                   key={doc.id} 
@@ -233,7 +233,7 @@ export const TemplateSelection = () => {
 
         <h2 style={{ marginBottom: 'var(--space-6)', fontSize: '20px', fontWeight: '600' }}>Create from Template</h2>
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-6)'
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 'var(--space-6)'
         }}>
           {styledTemplates.filter(t => t.id !== 'blank').map(template => (
             <div key={template.id} onClick={() => setPreviewTemplateId(template.id)} style={{
@@ -284,7 +284,7 @@ export const TemplateSelection = () => {
           display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
         }}>
           <div style={{
-            background: 'var(--panel-bg)', borderRadius: 'var(--radius-xl)', width: '90vw', maxWidth: '800px',
+            background: 'var(--panel-bg)', borderRadius: 'var(--radius-xl)', width: '90%', maxWidth: '800px',
             height: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
             border: '1px solid var(--panel-border)', boxShadow: 'var(--shadow-toolbar)'
           }}>

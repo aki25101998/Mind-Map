@@ -21,7 +21,7 @@ function App() {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', maxWidth: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
       <DocumentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <ReactFlowProvider>
         <ErrorBoundary documentId={documentId} onReset={closeDocument}>
