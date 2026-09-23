@@ -27,7 +27,7 @@ export const Register: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.code !== 'auth/popup-closed-by-user') {
-        setError('An error occurred during Google sign-in.');
+        setError(err.message || 'An error occurred during Google sign-in.');
       }
     } finally {
       setIsLoading(false);
