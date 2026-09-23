@@ -141,12 +141,12 @@ export const Dashboard = () => {
         </div>
         
         {user && (
-          <div style={{ position: 'absolute', top: '0', left: '0', marginTop: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+          <div style={{ paddingTop: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>
             Logged in as <strong>{user.email}</strong>
           </div>
         )}
 
-        <h1 style={{ marginBottom: 'var(--space-2)', fontSize: '36px', fontWeight: '700', letterSpacing: '-0.02em', marginTop: '40px' }}>Your Workspace</h1>
+        <h1 style={{ marginBottom: 'var(--space-2)', fontSize: '36px', fontWeight: '700', letterSpacing: '-0.02em', marginTop: user ? '8px' : '40px' }}>Your Workspace</h1>
         <p style={{ marginBottom: 'var(--space-10)', fontSize: '18px', color: 'var(--text-secondary)' }}>Turn ideas into structure.</p>
         
         <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-12)' }}>
