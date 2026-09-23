@@ -4,7 +4,6 @@ import { Register } from './components/auth/Register';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { Dashboard } from './pages/Dashboard';
-import { TemplateSelectionPage } from './pages/TemplateSelectionPage';
 import { EditorPage } from './pages/EditorPage';
 import { Settings } from './pages/Settings';
 import { NotFound } from './pages/NotFound';
@@ -50,7 +49,6 @@ function App() {
       
       {/* Protected Routes */}
       <Route path="/mindmaps" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/mindmaps/new" element={<ProtectedRoute><TemplateSelectionPage /></ProtectedRoute>} />
       <Route path="/mindmaps/:id" element={<ProtectedRoute><EditorPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       

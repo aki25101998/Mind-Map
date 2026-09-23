@@ -9,6 +9,26 @@ import { v4 as uuidv4 } from 'uuid';
 import { FileText, Trash2, Sun, Moon, Settings } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
 import { useNavigate } from 'react-router-dom';
+import { ReactFlow } from '@xyflow/react';
+import { templates } from '../templates/definitions';
+import { cloneTemplate } from '../templates/templateUtils';
+import { MainNode } from '../canvas/nodes/MainNode';
+import { BasicNode } from '../canvas/nodes/BasicNode';
+import { RoundedNode } from '../canvas/nodes/RoundedNode';
+import { TextNode } from '../canvas/nodes/TextNode';
+import { CustomMindMapEdge } from '../canvas/edges/MindMapEdge';
+
+const nodeTypes = { main: MainNode, basic: BasicNode, rounded: RoundedNode, text: TextNode };
+const edgeTypes = { 'mindmap-edge': CustomMindMapEdge };
+
+const styledTemplates = templates.map(t => {
+  const cloned = cloneTemplate(t, true);
+  return {
+    ...t,
+    previewNodes: cloned.nodes,
+    previewEdges: cloned.edges
+  };
+});
 
 export const Dashboard = () => {
   const { theme, toggleTheme } = useMindMapStore();
@@ -17,7 +37,33 @@ export const Dashboard = () => {
   const { user } = useAuth();
   const [legacyDocs, setLegacyDocs] = useState<MindMapDocument[]>([]);
   const [showMigration, setShowMigration] = useState(false);
+  const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const previewTemplate = styledTemplates.find(t => t.id === previewTemplateId);
+
+  const handleSelectTemplate = async (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    const { nodes, edges } = cloneTemplate(template);
+    const newDocId = uuidv4();
+    const now = Date.now();
+    
+    const doc: MindMapDocument = {
+      id: newDocId,
+      title: templateId === 'blank' ? 'Untitled Mind Map' : `New ${template.name}`,
+      nodes,
+      edges,
+      viewport: { x: 0, y: 0, zoom: 1 },
+      templateId: template.id,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    await syncDocument(doc);
+    navigate(`/mindmaps/${newDocId}`);
+  };
 
   const loadRecentDocs = () => {
     loadAllDocuments().then(docs => {
@@ -151,7 +197,7 @@ export const Dashboard = () => {
         
         <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-12)' }}>
           <button 
-            onClick={() => navigate('/mindmaps/new')}
+            onClick={() => handleSelectTemplate('blank')}
             style={{ 
               padding: 'var(--space-4) var(--space-6)', borderRadius: 'var(--radius-lg)', background: 'var(--text-primary)', 
               color: 'var(--canvas-bg)', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer',
@@ -160,7 +206,7 @@ export const Dashboard = () => {
             onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
             onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
-            + New Mind Map
+            Start with Blank Canvas
           </button>
           
           <label style={{ 
@@ -179,6 +225,53 @@ export const Dashboard = () => {
               style={{ display: 'none' }} 
             />
           </label>
+        </div>
+
+        <div style={{ marginBottom: 'var(--space-12)' }}>
+          <h2 style={{ marginBottom: 'var(--space-6)', fontSize: '20px', fontWeight: '600' }}>Available Templates</h2>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 'var(--space-6)'
+          }}>
+            {styledTemplates.filter(t => t.id !== 'blank').map(template => (
+              <div key={template.id} onClick={() => setPreviewTemplateId(template.id)} style={{
+                background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
+                cursor: 'pointer', transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)', border: '1px solid var(--panel-border)'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              >
+                <div style={{ 
+                  height: '180px', background: 'var(--canvas-bg)', borderRadius: 'var(--radius-md)', 
+                  marginBottom: 'var(--space-4)', border: '1px solid var(--border-subtle)',
+                  overflow: 'hidden', position: 'relative'
+                }}>
+                  <ReactFlow
+                    nodes={template.previewNodes}
+                    edges={template.previewEdges}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    fitView
+                    panOnDrag={false}
+                    zoomOnScroll={false}
+                    zoomOnPinch={false}
+                    zoomOnDoubleClick={false}
+                    elementsSelectable={false}
+                    proOptions={{ hideAttribution: true }}
+                  />
+                  <div style={{ position: 'absolute', inset: 0, zIndex: 10 }} />
+                </div>
+                <h3 style={{ margin: '0 0 var(--space-2) 0', fontSize: '16px', fontWeight: '600' }}>{template.name}</h3>
+                <div style={{ display: 'inline-block', fontSize: '11px', color: 'var(--text-primary)', background: 'var(--social-bg)', padding: '2px 8px', borderRadius: 'var(--radius-pill)', marginBottom: 'var(--space-2)', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{template.category}</div>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{template.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {documents.length > 0 ? (
@@ -238,6 +331,57 @@ export const Dashboard = () => {
             loadRecentDocs();
           }} 
         />
+      )}
+
+      {previewTemplate && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            background: 'var(--panel-bg)', borderRadius: 'var(--radius-xl)', width: '90%', maxWidth: '800px',
+            height: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            border: '1px solid var(--panel-border)', boxShadow: 'var(--shadow-toolbar)'
+          }}>
+            <div style={{ padding: 'var(--space-6)', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2 style={{ margin: '0 0 var(--space-2) 0', fontSize: '24px', fontWeight: '600' }}>{previewTemplate.name}</h2>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '15px' }}>{previewTemplate.description}</p>
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                <button 
+                  onClick={() => setPreviewTemplateId(null)} 
+                  style={{ padding: '10px 16px', borderRadius: 'var(--radius-md)', background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => handleSelectTemplate(previewTemplate.id)} 
+                  style={{ padding: '10px 16px', borderRadius: 'var(--radius-md)', background: 'var(--text-primary)', border: 'none', color: 'var(--canvas-bg)', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                >
+                  Use Template
+                </button>
+              </div>
+            </div>
+            <div style={{ flex: 1, background: 'var(--canvas-bg)', position: 'relative' }}>
+              <ReactFlow
+                nodes={previewTemplate.previewNodes}
+                edges={previewTemplate.previewEdges}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                fitView
+                panOnDrag={true}
+                zoomOnScroll={true}
+                elementsSelectable={false}
+                proOptions={{ hideAttribution: true }}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
