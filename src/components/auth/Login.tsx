@@ -11,9 +11,11 @@ export const Login: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  if (user) {
-    navigate('/mindmaps');
-  }
+  React.useEffect(() => {
+    if (user) {
+      navigate('/mindmaps');
+    }
+  }, [user, navigate]);
 
   const handleGoogleLogin = async () => {
     setError(null);
@@ -48,7 +50,7 @@ export const Login: React.FC = () => {
       } else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please try again.');
       } else {
-        setError('An error occurred during login. Please try again.');
+        setError(err.message || 'An error occurred during login. Please try again.');
       }
     } finally {
       setIsLoading(false);
