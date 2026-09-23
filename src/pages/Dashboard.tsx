@@ -227,6 +227,53 @@ export const Dashboard = () => {
           </label>
         </div>
 
+        {documents.length > 0 ? (
+          <div style={{ marginBottom: 'var(--space-12)' }}>
+            <h2 style={{ marginBottom: 'var(--space-6)', fontSize: '20px', fontWeight: '600' }}>Recent Maps</h2>
+            <div style={{ display: 'flex', gap: 'var(--space-4)', overflowX: 'auto', paddingBottom: 'var(--space-4)', maxWidth: '100%', flexWrap: 'wrap' }}>
+              {documents.map(doc => (
+                <div 
+                  key={doc.id} 
+                  onClick={() => handleOpenDoc(doc)}
+                  style={{
+                    width: '240px', background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
+                    cursor: 'pointer', border: '1px solid var(--panel-border)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)',
+                    transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <FileText size={20} color="var(--text-muted)" />
+                    <button onClick={(e) => handleDeleteDoc(e, doc.id)} style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--node-color-red)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.title}</h3>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    Updated {new Date(doc.updatedAt).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: '60px', textAlign: 'center', border: '1px dashed var(--panel-border)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-12)' }}>
+            <FileText size={48} color="var(--text-muted)" style={{ margin: '0 auto 16px auto' }} />
+            <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>No Mind Maps Yet</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>Create your first mind map to get started.</p>
+          </div>
+        )}
+
         <div style={{ marginBottom: 'var(--space-12)' }}>
           <h2 style={{ marginBottom: 'var(--space-6)', fontSize: '20px', fontWeight: '600' }}>Available Templates</h2>
           <div style={{
@@ -273,53 +320,6 @@ export const Dashboard = () => {
             ))}
           </div>
         </div>
-
-        {documents.length > 0 ? (
-          <div style={{ marginBottom: 'var(--space-12)' }}>
-            <h2 style={{ marginBottom: 'var(--space-6)', fontSize: '20px', fontWeight: '600' }}>Recent Maps</h2>
-            <div style={{ display: 'flex', gap: 'var(--space-4)', overflowX: 'auto', paddingBottom: 'var(--space-4)', maxWidth: '100%', flexWrap: 'wrap' }}>
-              {documents.map(doc => (
-                <div 
-                  key={doc.id} 
-                  onClick={() => handleOpenDoc(doc)}
-                  style={{
-                    width: '240px', background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
-                    cursor: 'pointer', border: '1px solid var(--panel-border)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)',
-                    transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <FileText size={20} color="var(--text-muted)" />
-                    <button onClick={(e) => handleDeleteDoc(e, doc.id)} style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--node-color-red)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.title}</h3>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                    Updated {new Date(doc.updatedAt).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div style={{ padding: '60px', textAlign: 'center', border: '1px dashed var(--panel-border)', borderRadius: 'var(--radius-lg)' }}>
-            <FileText size={48} color="var(--text-muted)" style={{ margin: '0 auto 16px auto' }} />
-            <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>No Mind Maps Yet</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>Create your first mind map to get started.</p>
-          </div>
-        )}
 
       </div>
 
