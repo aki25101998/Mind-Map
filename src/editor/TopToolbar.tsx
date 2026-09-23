@@ -4,6 +4,7 @@ import { useMindMapStore } from '../store/useMindMapStore';
 import { useAutoLayout } from '../hooks/useAutoLayout';
 import { exportToJSON, exportToPNG, exportToSVG } from '../utils/exportUtils';
 import { Undo, Redo, Download, Share2, Menu, LayoutTemplate, Image, FileJson, ChevronDown, Moon, Sun } from 'lucide-react';
+import { ShareModal } from './ShareModal';
 
 interface TopToolbarProps {
   onMenuClick?: () => void;
@@ -14,6 +15,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   const handleAutoLayout = useAutoLayout();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentTitle);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const handleTitleSubmit = () => {
     setEditingTitle(false);
@@ -209,12 +211,14 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           )}
         </div>
         <button 
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: 'var(--text-primary)', color: 'var(--panel-bg)', border: 'none', fontSize: '13px', fontWeight: '600' }}
-          disabled title="Future functionality"
+          onClick={() => setIsShareModalOpen(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: 'var(--text-primary)', color: 'var(--panel-bg)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+          title="Share Mind Map"
         >
           <Share2 size={14} /> Share
         </button>
       </div>
+      <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
     </div>
   );
 };

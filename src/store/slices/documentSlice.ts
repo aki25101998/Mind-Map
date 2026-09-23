@@ -10,6 +10,8 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
   createdAt: Date.now(),
   updatedAt: Date.now(),
   deletedDocumentId: null,
+  shareEnabled: false,
+  shareId: null,
 
   setUpdatedAt: (timestamp) => {
     set({ updatedAt: timestamp });
@@ -23,7 +25,14 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
     set({ deletedDocumentId: id });
   },
 
-  loadDocument: (id, title, nodes, edges, viewport, templateId, createdAt, updatedAt) => {
+  setShareConfig: (enabled, shareId) => {
+    set((state) => ({ 
+      shareEnabled: enabled, 
+      shareId: shareId !== undefined ? shareId : state.shareId 
+    }));
+  },
+
+  loadDocument: (id, title, nodes, edges, viewport, templateId, createdAt, updatedAt, shareEnabled, shareId) => {
     const now = Date.now();
     let finalNodes = nodes;
     
@@ -54,6 +63,8 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       contextMenu: null,
       isDragging: false,
       deletedDocumentId: null,
+      shareEnabled: shareEnabled ?? false,
+      shareId: shareId ?? null,
     });
   },
 

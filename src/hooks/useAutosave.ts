@@ -33,6 +33,8 @@ export const useAutosave = () => {
           templateId: prevState.templateId,
           createdAt: prevState.createdAt,
           updatedAt: Date.now(),
+          shareEnabled: prevState.shareEnabled,
+          shareId: prevState.shareId || undefined,
         };
 
         savePromiseRef.current = savePromiseRef.current
@@ -48,7 +50,9 @@ export const useAutosave = () => {
         state.documentTitle !== prevState.documentTitle ||
         state.viewport.x !== prevState.viewport.x ||
         state.viewport.y !== prevState.viewport.y ||
-        state.viewport.zoom !== prevState.viewport.zoom);
+        state.viewport.zoom !== prevState.viewport.zoom ||
+        state.shareEnabled !== prevState.shareEnabled ||
+        state.shareId !== prevState.shareId);
 
       if (isDocumentChanged && !state.isDragging) {
         if (timeoutRef.current) {
@@ -76,6 +80,8 @@ export const useAutosave = () => {
             templateId: currentState.templateId,
             createdAt: currentState.createdAt,
             updatedAt: now,
+            shareEnabled: currentState.shareEnabled,
+            shareId: currentState.shareId || undefined,
           };
 
           savePromiseRef.current = savePromiseRef.current.then(async () => {

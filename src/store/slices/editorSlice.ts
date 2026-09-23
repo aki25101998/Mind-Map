@@ -22,6 +22,7 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
   isDragging: false,
   editingNodeId: null,
   contextMenu: null,
+  isReadOnly: false,
   theme: initialTheme,
 
   toggleTheme: () => {
@@ -61,6 +62,10 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
 
   setContextMenu: (menu: ContextMenuState | null) => {
     set({ contextMenu: menu });
+  },
+
+  setIsReadOnly: (readOnly: boolean) => {
+    set({ isReadOnly: readOnly });
   },
 
   setSelectedNodes: (ids: string[]) => {

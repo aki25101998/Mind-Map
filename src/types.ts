@@ -72,6 +72,18 @@ export interface MindMapDocument {
   templateId?: string;
   createdAt: number;
   updatedAt: number;
+  shareEnabled?: boolean;
+  shareId?: string;
+}
+
+export interface ShareConfig {
+  id: string; // shareId
+  mindMapId: string;
+  ownerId: string;
+  enabled: boolean;
+  permission: 'view';
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface AuthUser {

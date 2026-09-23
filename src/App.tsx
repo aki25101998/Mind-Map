@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { EditorPage } from './pages/EditorPage';
 import { Settings } from './pages/Settings';
 import { NotFound } from './pages/NotFound';
+import { SharePage } from './pages/SharePage';
 import { isFirebaseConfigured } from './lib/firebase';
 import { useAuth } from './auth/useAuth';
 
@@ -46,6 +47,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
+      
+      {/* Public Share Route */}
+      <Route path="/share/:shareId" element={<SharePage />} />
       
       {/* Protected Routes */}
       <Route path="/mindmaps" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

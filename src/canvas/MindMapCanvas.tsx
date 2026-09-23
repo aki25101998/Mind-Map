@@ -66,7 +66,8 @@ const CanvasInner = () => {
     editingNodeId,
     setContextMenu,
     updateNodePositions,
-    theme
+    theme,
+    isReadOnly
   } = useMindMapStore(useShallow(state => ({
     nodes: state.nodes,
     edges: state.edges,
@@ -90,7 +91,8 @@ const CanvasInner = () => {
     editingNodeId: state.editingNodeId,
     setContextMenu: state.setContextMenu,
     updateNodePositions: state.updateNodePositions,
-    theme: state.theme
+    theme: state.theme,
+    isReadOnly: state.isReadOnly
   })));
   
   const isDraggingRef = useRef(false);
@@ -136,6 +138,8 @@ const CanvasInner = () => {
 
   // Keyboard shortcuts
   useEffect(() => {
+    if (isReadOnly) return;
+    
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept if user is typing in an input
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
@@ -182,9 +186,10 @@ const CanvasInner = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, nodes, createChildNode, createSiblingNode, deleteSelected, undo, redo, copySelected, pasteFromClipboard, duplicateSelected, setSelectedNodes, setEditingNodeId]);
+  }, [selectedNodeIds, nodes, createChildNode, createSiblingNode, deleteSelected, undo, redo, copySelected, pasteFromClipboard, duplicateSelected, setSelectedNodes, setEditingNodeId, isReadOnly]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    if (isReadOnly) return;
     const target = e.target as HTMLElement;
     if (target.classList.contains('react-flow__pane')) {
       const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
@@ -200,17 +205,19 @@ const CanvasInner = () => {
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent | MouseEvent, node: { id: string }) => {
       e.preventDefault();
+      if (isReadOnly) return;
       setContextMenu({ x: e.clientX, y: e.clientY, target: 'node', id: node.id });
     },
-    [setContextMenu]
+    [setContextMenu, isReadOnly]
   );
 
   const onPaneContextMenu = useCallback(
     (e: React.MouseEvent | MouseEvent) => {
       e.preventDefault();
+      if (isReadOnly) return;
       setContextMenu({ x: e.clientX, y: e.clientY, target: 'canvas' });
     },
-    [setContextMenu]
+    [setContextMenu, isReadOnly]
   );
 
   const onNodeDragStart = useCallback((_e: React.MouseEvent | MouseEvent | TouchEvent, _node: Node, _draggedNodes: Node[]) => {
@@ -260,20 +267,23 @@ const CanvasInner = () => {
       zoomOnPinch={true}
       zoomOnDoubleClick={false}
       selectionMode={SelectionMode.Partial}
-      selectionOnDrag
+      selectionOnDrag={!isReadOnly}
       snapToGrid={false}
       snapGrid={SNAP_GRID}
       proOptions={PRO_OPTIONS}
+      nodesDraggable={!isReadOnly}
+      nodesConnectable={!isReadOnly}
+      elementsSelectable={!isReadOnly}
     >
       <Background gap={15} size={1} color="var(--node-border-default)" />
       <Controls showInteractive={false} position="bottom-right" />
       <MiniMap zoomable pannable nodeColor={(node) => {
         return node.data?.backgroundColor as string || 'var(--node-bg-default)';
       }} />
-      <ContextMenu />
-      <CommandPalette />
+      {!isReadOnly && <ContextMenu />}
+      {!isReadOnly && <CommandPalette />}
       
-      {selectedNodeIds.length === 1 && !editingNodeId && (
+      {!isReadOnly && selectedNodeIds.length === 1 && !editingNodeId && (
         <FloatingToolbar nodeId={selectedNodeIds[0]} />
       )}
     </ReactFlow>

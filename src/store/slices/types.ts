@@ -13,6 +13,8 @@ export interface DocumentSlice {
   createdAt: number;
   updatedAt: number;
   deletedDocumentId: string | null;
+  shareEnabled: boolean;
+  shareId: string | null;
   loadDocument: (
     id: string, 
     title: string, 
@@ -21,12 +23,15 @@ export interface DocumentSlice {
     viewport: Viewport,
     templateId: string,
     createdAt: number,
-    updatedAt: number
+    updatedAt: number,
+    shareEnabled?: boolean,
+    shareId?: string
   ) => void;
   closeDocument: () => void;
   setUpdatedAt: (timestamp: number) => void;
   setTitle: (title: string) => void;
   setDeletedDocumentId: (id: string | null) => void;
+  setShareConfig: (enabled: boolean, shareId?: string) => void;
 }
 
 export interface NodeEdgeSlice {
@@ -81,12 +86,14 @@ export interface EditorSlice {
   isDragging: boolean;
   editingNodeId: string | null;
   contextMenu: ContextMenuState | null;
+  isReadOnly: boolean;
   setIsSaving: (saving: boolean) => void;
   setSaveError: (error: string | null) => void;
   setSyncStatus: (status: SyncStatus) => void;
   setIsDragging: (isDragging: boolean) => void;
   setEditingNodeId: (id: string | null) => void;
   setContextMenu: (menu: ContextMenuState | null) => void;
+  setIsReadOnly: (readOnly: boolean) => void;
   setSelectedNodes: (ids: string[]) => void;
   duplicateSelected: () => void;
   copySelected: () => void;

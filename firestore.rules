@@ -16,8 +16,16 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
       
       match /mindmaps/{mapId} {
-        allow read, write: if isOwner(uid);
+        allow read: if isOwner(uid) || resource.data.shareEnabled == true;
+        allow write: if isOwner(uid);
       }
+    }
+
+    match /shares/{shareId} {
+      allow get: if true;
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow list: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
     }
   }
 }
