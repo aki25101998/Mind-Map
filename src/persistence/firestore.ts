@@ -81,11 +81,11 @@ export const setMindMapShareConfig = async (documentId: string, shareId: string,
 
   // 2. Update the mind map document
   const mapRef = doc(db, 'users', user.uid, 'mindmaps', documentId);
-  batch.update(mapRef, {
+  batch.set(mapRef, {
     shareEnabled: enabled,
     shareId: shareId,
     updatedAt: now
-  });
+  }, { merge: true });
 
   await batch.commit();
 };
