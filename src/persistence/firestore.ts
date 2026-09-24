@@ -50,7 +50,12 @@ export const saveShareConfig = async (config: ShareConfig): Promise<void> => {
   await setDoc(docRef, config);
 };
 
-export const setMindMapShareConfig = async (documentId: string, shareId: string, enabled: boolean): Promise<void> => {
+export const setMindMapShareConfig = async (
+  documentId: string, 
+  shareId: string, 
+  enabled: boolean,
+  permission: 'view' | 'edit' = 'view'
+): Promise<void> => {
   const user = auth.currentUser;
   if (!user) throw new Error('Authentication required');
 
@@ -74,7 +79,7 @@ export const setMindMapShareConfig = async (documentId: string, shareId: string,
     mindMapId: documentId,
     ownerId: user.uid,
     enabled: enabled,
-    permission: 'view',
+    permission: permission,
     createdAt: createdAt,
     updatedAt: now
   });
@@ -84,13 +89,19 @@ export const setMindMapShareConfig = async (documentId: string, shareId: string,
   batch.set(mapRef, {
     shareEnabled: enabled,
     shareId: shareId,
+    sharePermission: permission,
     updatedAt: now
   }, { merge: true });
 
   await batch.commit();
 };
 
-export const getPublicSharedDocument = async (shareId: string): Promise<MindMapDocument | undefined> => {
+export interface PublicSharedDocument extends MindMapDocument {
+  sharePermission: 'view' | 'edit';
+  ownerId: string;
+}
+
+export const getPublicSharedDocument = async (shareId: string): Promise<PublicSharedDocument | undefined> => {
   const shareRef = doc(db, 'shares', shareId);
   const shareSnap = await getDoc(shareRef);
   
@@ -117,5 +128,14 @@ export const getPublicSharedDocument = async (shareId: string): Promise<MindMapD
     return undefined;
   }
   
-  return mapData;
+  return {
+    ...mapData,
+    sharePermission: shareData.permission || 'view',
+    ownerId: shareData.ownerId
+  };
+};
+
+export const saveSharedCloudDocument = async (ownerId: string, document: MindMapDocument): Promise<void> => {
+  const mapRef = doc(db, 'users', ownerId, 'mindmaps', document.id);
+  await setDoc(mapRef, document, { merge: true });
 };

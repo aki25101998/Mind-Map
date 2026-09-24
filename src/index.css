@@ -35,6 +35,12 @@ html, body {
 /* Smooth layout transitions */
 .react-flow__node {
   transition: transform 0.3s ease, opacity 0.3s ease;
+  pointer-events: all;
+}
+
+.react-flow__node button {
+  pointer-events: all !important;
+  cursor: pointer !important;
 }
 
 .react-flow__node.dragging {

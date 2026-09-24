@@ -55,7 +55,8 @@ export const EditorPage = () => {
             doc.createdAt, 
             doc.updatedAt,
             doc.shareEnabled,
-            doc.shareId
+            doc.shareId,
+            doc.sharePermission
           );
         } else {
           setError('Document not found or access denied.');

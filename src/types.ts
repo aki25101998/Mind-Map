@@ -74,6 +74,7 @@ export interface MindMapDocument {
   updatedAt: number;
   shareEnabled?: boolean;
   shareId?: string;
+  sharePermission?: 'view' | 'edit';
 }
 
 export interface ShareConfig {
@@ -81,7 +82,7 @@ export interface ShareConfig {
   mindMapId: string;
   ownerId: string;
   enabled: boolean;
-  permission: 'view';
+  permission: 'view' | 'edit';
   createdAt: number;
   updatedAt: number;
 }

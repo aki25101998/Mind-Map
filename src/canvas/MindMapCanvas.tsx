@@ -273,7 +273,7 @@ const CanvasInner = () => {
       proOptions={PRO_OPTIONS}
       nodesDraggable={!isReadOnly}
       nodesConnectable={!isReadOnly}
-      elementsSelectable={!isReadOnly}
+      elementsSelectable={true}
     >
       <Background gap={15} size={1} color="var(--node-border-default)" />
       <Controls showInteractive={false} position="bottom-right" />

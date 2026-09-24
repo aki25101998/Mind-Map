@@ -12,7 +12,7 @@ interface ShareModalProps {
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
-  const { documentId, shareEnabled, shareId, setShareConfig } = useMindMapStore();
+  const { documentId, shareEnabled, shareId, sharePermission, setShareConfig } = useMindMapStore();
   const [isCopied, setIsCopied] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,18 +35,40 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
     setError(null);
     const newEnabledState = !shareEnabled;
     const shareIdToUse = shareId || uuidv4();
+    const permToUse = sharePermission || 'view';
 
     try {
       // Update both share config and mindmap atomic-ish (batch in firestore)
-      await setMindMapShareConfig(documentId, shareIdToUse, newEnabledState);
+      await setMindMapShareConfig(documentId, shareIdToUse, newEnabledState, permToUse);
 
       // Update local store only after success
-      setShareConfig(newEnabledState, shareIdToUse);
+      setShareConfig(newEnabledState, shareIdToUse, permToUse);
     } catch (err: any) {
       console.error('Failed to update share config:', err);
       setError(err.message || 'Failed to update share settings.');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handlePermissionChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPerm = e.target.value as 'view' | 'edit';
+    if (!documentId) return;
+
+    if (shareEnabled && shareId) {
+      setIsUpdating(true);
+      setError(null);
+      try {
+        await setMindMapShareConfig(documentId, shareId, true, newPerm);
+        setShareConfig(true, shareId, newPerm);
+      } catch (err: any) {
+        console.error('Failed to update permission:', err);
+        setError(err.message || 'Failed to update share settings.');
+      } finally {
+        setIsUpdating(false);
+      }
+    } else {
+      setShareConfig(false, shareId, newPerm);
     }
   };
 
@@ -167,9 +189,27 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
               </button>
             </div>
             
-            <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Permission:</span>
-              <span style={{ fontWeight: '500' }}>View only</span>
+            <div style={{ marginTop: '16px', fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>Permission:</span>
+              <select
+                value={sharePermission || 'view'}
+                onChange={handlePermissionChange}
+                disabled={isUpdating}
+                style={{
+                  background: 'var(--canvas-bg)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--panel-border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '4px 8px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: isUpdating ? 'wait' : 'pointer',
+                  outline: 'none'
+                }}
+              >
+                <option value="view">View only</option>
+                <option value="edit">View and edit</option>
+              </select>
             </div>
           </div>
         )}

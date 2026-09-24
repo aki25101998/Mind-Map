@@ -15,6 +15,7 @@ export interface DocumentSlice {
   deletedDocumentId: string | null;
   shareEnabled: boolean;
   shareId: string | null;
+  sharePermission: 'view' | 'edit';
   loadDocument: (
     id: string, 
     title: string, 
@@ -25,13 +26,14 @@ export interface DocumentSlice {
     createdAt: number,
     updatedAt: number,
     shareEnabled?: boolean,
-    shareId?: string | null
+    shareId?: string | null,
+    sharePermission?: 'view' | 'edit'
   ) => void;
   closeDocument: () => void;
   setUpdatedAt: (timestamp: number) => void;
   setTitle: (title: string) => void;
   setDeletedDocumentId: (id: string | null) => void;
-  setShareConfig: (enabled: boolean, shareId?: string | null) => void;
+  setShareConfig: (enabled: boolean, shareId?: string | null, permission?: 'view' | 'edit') => void;
 }
 
 export interface NodeEdgeSlice {

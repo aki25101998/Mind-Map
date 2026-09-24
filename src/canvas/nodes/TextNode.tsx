@@ -7,12 +7,13 @@ import type { NodeData } from '../../types';
 
 
 export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'>>) => {
-  const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse } = useMindMapStore(
+  const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse, isReadOnly } = useMindMapStore(
     useShallow(state => ({
       updateNodeData: state.updateNodeData,
       editingNodeId: state.editingNodeId,
       setEditingNodeId: state.setEditingNodeId,
-      toggleCollapse: state.toggleCollapse
+      toggleCollapse: state.toggleCollapse,
+      isReadOnly: state.isReadOnly
     }))
   );
   const hasChildren = useMindMapStore(state => state.hasChildrenMap[id] || false);
@@ -47,7 +48,7 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
 
   return (
     <>
-      <div style={style} onDoubleClick={() => setEditingNodeId(id)}>
+      <div style={style} onDoubleClick={() => !isReadOnly && setEditingNodeId(id)}>
       {isEditing ? (
         <div style={{ display: 'inline-grid', alignItems: 'center', justifyItems: 'center' }}>
           <span style={{ visibility: 'hidden', gridArea: '1 / 1', whiteSpace: 'pre' }}>{label || ' '}</span>
@@ -78,13 +79,16 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
       
       {hasChildren && !isEditing && (
         <button
+          type="button"
+          className="nodrag nopan"
           onClick={(e) => { e.stopPropagation(); toggleCollapse(id); }}
           style={{
             position: 'absolute', right: '-12px', top: '50%', transform: 'translateY(-50%)',
             background: 'var(--panel-bg)', border: '1px solid var(--panel-border)',
             borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', zIndex: 10, color: 'var(--text-primary)'
+            cursor: 'pointer', zIndex: 10, color: 'var(--text-primary)',
+            pointerEvents: 'all'
           }}
         >
           {data.collapsed ? '+' : '-'}
