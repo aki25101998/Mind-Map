@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Share2, Copy, X, Check, Globe } from 'lucide-react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { v4 as uuidv4 } from 'uuid';
@@ -60,22 +61,39 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0, 0, 0, 0.5)', zIndex: 9999,
-      display: 'flex', justifyContent: 'center', alignItems: 'center'
-    }}>
-      <div style={{
-        background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)',
-        width: '100%', maxWidth: '400px', padding: '24px',
-        border: '1px solid var(--panel-border)', boxShadow: 'var(--shadow-modal)'
-      }}>
+  const modalContent = (
+    <div 
+      onClick={onClose}
+      style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)', zIndex: 99999,
+        display: 'flex', justifyContent: 'center', alignItems: 'center',
+        pointerEvents: 'auto'
+      }}
+    >
+      <div 
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)',
+          width: '100%', maxWidth: '400px', padding: '24px',
+          border: '1px solid var(--panel-border)', boxShadow: 'var(--shadow-modal)',
+          pointerEvents: 'auto', position: 'relative'
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+          <h2 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, color: 'var(--text-primary)' }}>
             <Share2 size={20} /> Share Mind Map
           </h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+          <button 
+            type="button"
+            onClick={onClose} 
+            style={{ 
+              background: 'transparent', border: 'none', cursor: 'pointer', 
+              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', 
+              justifyContent: 'center', padding: '4px', borderRadius: '4px' 
+            }}
+            title="Close"
+          >
             <X size={20} />
           </button>
         </div>
@@ -88,29 +106,29 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
 
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500', color: 'var(--text-primary)' }}>
               <Globe size={16} /> Public Link Sharing
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: isUpdating ? 'wait' : 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={shareEnabled}
-                onChange={handleToggleShare}
-                disabled={isUpdating}
-                style={{ display: 'none' }}
-              />
-              <div style={{
+            <button
+              type="button"
+              role="switch"
+              aria-checked={shareEnabled}
+              disabled={isUpdating}
+              onClick={handleToggleShare}
+              style={{
                 width: '40px', height: '22px', borderRadius: '11px',
                 background: shareEnabled ? 'var(--node-color-green)' : 'var(--border-subtle)',
-                position: 'relative', transition: 'background 0.2s'
-              }}>
-                <div style={{
-                  position: 'absolute', top: '2px', left: shareEnabled ? '20px' : '2px',
-                  width: '18px', height: '18px', borderRadius: '50%', background: 'white',
-                  transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                }} />
-              </div>
-            </label>
+                position: 'relative', transition: 'background 0.2s',
+                border: 'none', padding: 0, cursor: isUpdating ? 'wait' : 'pointer',
+                outline: 'none'
+              }}
+            >
+              <div style={{
+                position: 'absolute', top: '2px', left: shareEnabled ? '20px' : '2px',
+                width: '18px', height: '18px', borderRadius: '50%', background: 'white',
+                transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+              }} />
+            </button>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
             {shareEnabled 
@@ -121,7 +139,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
 
         {shareEnabled && (
           <div>
-            <div style={{ fontSize: '13px', fontWeight: '500', marginBottom: '8px' }}>Link</div>
+            <div style={{ fontSize: '13px', fontWeight: '500', marginBottom: '8px', color: 'var(--text-primary)' }}>Link</div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
@@ -134,6 +152,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                 }}
               />
               <button
+                type="button"
                 onClick={handleCopyLink}
                 disabled={!shareEnabled || !shareId}
                 style={{
@@ -157,4 +176,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
