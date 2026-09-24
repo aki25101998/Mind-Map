@@ -1,5 +1,6 @@
 @import './styles/design-tokens.css';
 @import '@xyflow/react/dist/style.css';
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 *,
 *::before,
@@ -8,7 +9,7 @@
 }
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -23,6 +24,10 @@ html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  background: var(--canvas-ambient);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -32,9 +37,25 @@ html, body {
   overflow-x: hidden;
 }
 
+/* Custom Scrollbar for playful sleekness */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
 /* Smooth layout transitions */
 .react-flow__node {
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
   pointer-events: all;
 }
 
@@ -51,63 +72,69 @@ html, body {
 .react-flow__node .react-flow__handle {
   opacity: 0 !important;
   transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
-  width: 8px !important;
-  height: 8px !important;
+  width: 10px !important;
+  height: 10px !important;
   border-radius: 50%;
   background: var(--accent) !important;
-  border: 1px solid var(--panel-bg) !important;
-  pointer-events: none; /* Disable handle interaction by default to prevent drag conflict */
+  border: 2px solid var(--panel-bg) !important;
+  pointer-events: none;
 }
 
 /* Show handles and enable interaction on node hover */
 .react-flow__node:hover .react-flow__handle,
 .react-flow__node.selected .react-flow__handle {
-  opacity: 0.5 !important;
+  opacity: 0.65 !important;
   pointer-events: all;
 }
 
 /* Highlight handle on hover */
 .react-flow__node .react-flow__handle:hover {
   opacity: 1 !important;
-  width: 12px !important;
-  height: 12px !important;
+  width: 14px !important;
+  height: 14px !important;
+  box-shadow: 0 0 10px var(--accent);
 }
 
 /* During active connection, make handles visible */
 .react-flow__pane.connecting .react-flow__handle {
-  opacity: 0.8 !important;
+  opacity: 0.9 !important;
   pointer-events: all;
 }
 
-/* React Flow UI Overrides */
+/* React Flow UI Overrides for Creative Workshop */
 .react-flow__panel.react-flow__controls {
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-toolbar);
+  border: 1.5px solid var(--panel-border);
+  border-radius: var(--radius-md);
   overflow: hidden;
+  background: var(--panel-bg);
 }
 
 .react-flow__controls-button {
   background: var(--panel-bg);
-  border-bottom: 1px solid var(--panel-border);
+  border-bottom: 1.5px solid var(--panel-border);
   color: var(--text-primary);
   fill: var(--text-primary);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .react-flow__controls-button:hover {
   background: var(--social-bg);
+  fill: var(--accent);
+  color: var(--accent);
 }
 
 .react-flow__minimap {
   background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  border: 1.5px solid var(--panel-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-toolbar);
+  overflow: hidden;
 }
 
 .react-flow__minimap-mask {
   fill: var(--canvas-bg);
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
 .react-flow__background {

@@ -1,4 +1,3 @@
-
 import { 
   Type, Square, Circle, SquareAsterisk, Palette, Copy, Trash2, Plus, ArrowRight, ALargeSmall, Minus
 } from 'lucide-react';
@@ -65,8 +64,8 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
     updateOutgoingEdges(nodeId, { dashed: !isCurrentlyDashed });
   };
 
-  const buttonStyle = {
-    padding: '6px',
+  const buttonStyle: React.CSSProperties = {
+    padding: '7px',
     background: 'transparent',
     border: 'none',
     cursor: 'pointer',
@@ -75,7 +74,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'background var(--transition-fast), color var(--transition-fast)',
+    transition: 'all var(--transition-fast)',
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -108,6 +107,10 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
     }
   };
 
+  const vibrantSwatches = [
+    '#f97316', '#06b6d4', '#10b981', '#8b5cf6', '#3b82f6', '#f59e0b', '#ef4444'
+  ];
+
   return (
     <div 
       ref={toolbarRef}
@@ -116,58 +119,164 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       style={{
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      transform: `translate(calc(${position.x}px - 50%), ${position.y}px)`,
-      background: 'var(--panel-bg)',
-      border: '1px solid var(--panel-border)',
-      borderRadius: 'var(--radius-lg)',
-      padding: 'var(--space-1)',
-      display: 'flex',
-      gap: 'var(--space-1)',
-      boxShadow: 'var(--shadow-toolbar)',
-      zIndex: 1000,
-      pointerEvents: 'auto',
-      cursor: 'grab',
-      userSelect: 'none',
-    }}>
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        transform: `translate(calc(${position.x}px - 50%), ${position.y}px)`,
+        background: 'var(--panel-bg)',
+        border: '1.5px solid var(--panel-border)',
+        borderRadius: 'var(--radius-xl)',
+        padding: '6px 10px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        boxShadow: 'var(--shadow-toolbar)',
+        zIndex: 1000,
+        pointerEvents: 'auto',
+        cursor: 'grab',
+        userSelect: 'none',
+      }}
+    >
       {/* Colors */}
-      <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px', alignItems: 'center' }}>
-        <Palette size={16} style={{ marginLeft: '4px', marginRight: '4px', color: 'var(--text-secondary)' }} />
-        {['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'].map(color => (
+      <div style={{ display: 'flex', gap: '6px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '8px', alignItems: 'center' }}>
+        <Palette size={15} style={{ color: 'var(--accent)' }} />
+        {vibrantSwatches.map(color => (
           <button
             key={color}
             onClick={() => handleColorChange(color)}
-            style={{ width: '16px', height: '16px', borderRadius: '50%', background: color, border: 'none', cursor: 'pointer' }}
+            style={{
+              width: '18px',
+              height: '18px',
+              borderRadius: '50%',
+              background: color,
+              border: '2px solid var(--panel-bg)',
+              cursor: 'pointer',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              transition: 'transform var(--transition-fast)'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             title="Set color"
           />
         ))}
       </div>
 
       {/* Shapes */}
-      <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px' }}>
-        <button style={buttonStyle} onClick={() => handleShapeChange('rectangle')} title="Rectangle"><Square size={16} /></button>
-        <button style={buttonStyle} onClick={() => handleShapeChange('rounded')} title="Rounded"><SquareAsterisk size={16} /></button>
-        <button style={buttonStyle} onClick={() => handleShapeChange('ellipse')} title="Ellipse"><Circle size={16} /></button>
-        <button style={buttonStyle} onClick={() => handleShapeChange('text')} title="Text"><Type size={16} /></button>
+      <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>
+        <button 
+          style={buttonStyle} 
+          onClick={() => handleShapeChange('rectangle')} 
+          title="Rectangle"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <Square size={15} />
+        </button>
+        <button 
+          style={buttonStyle} 
+          onClick={() => handleShapeChange('rounded')} 
+          title="Rounded"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <SquareAsterisk size={15} />
+        </button>
+        <button 
+          style={buttonStyle} 
+          onClick={() => handleShapeChange('ellipse')} 
+          title="Ellipse"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <Circle size={15} />
+        </button>
+        <button 
+          style={buttonStyle} 
+          onClick={() => handleShapeChange('text')} 
+          title="Text"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <Type size={15} />
+        </button>
       </div>
 
       {/* Text & Edge Styles */}
-      <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--panel-border)', paddingRight: '8px', marginRight: '4px' }}>
-        <button style={buttonStyle} onClick={() => handleFontSizeChange(12)} title="Small Text"><ALargeSmall size={14} /></button>
-        <button style={buttonStyle} onClick={() => handleFontSizeChange(14)} title="Medium Text"><ALargeSmall size={16} /></button>
-        <button style={buttonStyle} onClick={() => handleFontSizeChange(18)} title="Large Text"><ALargeSmall size={20} /></button>
-        <div style={{ width: '1px', height: '100%', background: 'var(--panel-border)', margin: '0 4px' }} />
-        <button style={{ ...buttonStyle, background: node?.data?.dashedEdges ? 'var(--node-border-default)' : 'transparent' }} onClick={toggleDashedEdge} title="Toggle Dashed Edge"><Minus size={16} style={{ strokeDasharray: '4 4' }} /></button>
+      <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>
+        <button 
+          style={buttonStyle} 
+          onClick={() => handleFontSizeChange(12)} 
+          title="Small Text"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <ALargeSmall size={14} />
+        </button>
+        <button 
+          style={buttonStyle} 
+          onClick={() => handleFontSizeChange(14)} 
+          title="Medium Text"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <ALargeSmall size={16} />
+        </button>
+        <button 
+          style={buttonStyle} 
+          onClick={() => handleFontSizeChange(18)} 
+          title="Large Text"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <ALargeSmall size={18} />
+        </button>
+        <button 
+          style={{ ...buttonStyle, background: node?.data?.dashedEdges ? 'var(--accent-secondary-soft)' : 'transparent', color: node?.data?.dashedEdges ? 'var(--accent-secondary)' : 'var(--text-secondary)' }} 
+          onClick={toggleDashedEdge} 
+          title="Toggle Dashed Edge"
+        >
+          <Minus size={15} style={{ strokeDasharray: '3 3' }} />
+        </button>
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '4px' }}>
-        <button style={buttonStyle} onClick={() => createSiblingNode(nodeId)} title="Add Sibling (Enter)"><ArrowRight size={16} /></button>
-        <button style={buttonStyle} onClick={() => createChildNode(nodeId)} title="Add Child (Tab)"><Plus size={16} /></button>
-        <button style={buttonStyle} onClick={duplicateSelected} title="Duplicate (Ctrl+D)"><Copy size={16} /></button>
-        <button style={{ ...buttonStyle, color: 'var(--node-color-red)' }} onClick={deleteSelected} title="Delete"><Trash2 size={16} /></button>
+      <div style={{ display: 'flex', gap: '3px' }}>
+        <button 
+          style={buttonStyle} 
+          onClick={() => createSiblingNode(nodeId)} 
+          title="Add Sibling (Enter)"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--accent)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <ArrowRight size={15} />
+        </button>
+        <button 
+          style={buttonStyle} 
+          onClick={() => createChildNode(nodeId)} 
+          title="Add Child (Tab)"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--accent)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <Plus size={15} />
+        </button>
+        <button 
+          style={buttonStyle} 
+          onClick={duplicateSelected} 
+          title="Duplicate (Ctrl+D)"
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+        >
+          <Copy size={15} />
+        </button>
+        <button 
+          style={{ ...buttonStyle, color: 'var(--node-color-red)' }} 
+          onClick={deleteSelected} 
+          title="Delete"
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+        >
+          <Trash2 size={15} />
+        </button>
       </div>
     </div>
   );

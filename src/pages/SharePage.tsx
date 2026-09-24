@@ -4,7 +4,7 @@ import { MindMapCanvas } from '../canvas/MindMapCanvas';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { ReactFlowProvider } from '@xyflow/react';
 import { getPublicSharedDocument, saveSharedCloudDocument, type PublicSharedDocument } from '../persistence/firestore';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Sparkles } from 'lucide-react';
 
 export const SharePage = () => {
   const { shareId } = useParams<{ shareId: string }>();
@@ -98,14 +98,15 @@ export const SharePage = () => {
             updatedAt: Date.now(),
             shareEnabled: currentState.shareEnabled,
             shareId: currentState.shareId || undefined,
-            sharePermission: currentState.sharePermission,
+            sharePermission: currentState.sharePermission || 'view',
+            ownerId: sharedDocInfo.ownerId
           };
 
           try {
             await saveSharedCloudDocument(sharedDocInfo.ownerId, docToSave);
             setSyncStatus('saved');
           } catch (err) {
-            console.error('Failed to save shared document:', err);
+            console.error('Failed to sync shared edit:', err);
             setSyncStatus('error');
           }
         }, 1000);
@@ -122,12 +123,12 @@ export const SharePage = () => {
     return (
       <div style={{
         display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', 
-        background: 'var(--canvas-bg)', color: 'var(--text-primary)'
+        background: 'var(--canvas-ambient)', color: 'var(--text-primary)'
       }}>
         <div style={{
-          width: '32px', height: '32px', border: '3px solid var(--border-subtle)',
-          borderTopColor: 'var(--text-primary)', borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
+          width: '38px', height: '38px', border: '3.5px solid var(--border-subtle)',
+          borderTopColor: 'var(--accent)', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite'
         }} />
       </div>
     );
@@ -137,14 +138,19 @@ export const SharePage = () => {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', 
-        background: 'var(--canvas-bg)', color: 'var(--text-primary)'
+        background: 'var(--canvas-ambient)', color: 'var(--text-primary)', padding: '24px', textAlign: 'center'
       }}>
-        <h2 style={{ marginBottom: '16px' }}>{error}</h2>
+        <h2 style={{ marginBottom: '16px', fontSize: '22px', fontWeight: '700' }}>{error}</h2>
         <button 
           onClick={() => navigate('/')}
-          style={{ padding: '8px 16px', borderRadius: 'var(--radius-md)', background: 'var(--text-primary)', color: 'var(--canvas-bg)', border: 'none', cursor: 'pointer' }}
+          style={{
+            padding: '10px 22px', borderRadius: 'var(--radius-lg)',
+            background: 'var(--gradient-primary)', color: '#ffffff',
+            border: 'none', cursor: 'pointer', fontWeight: '700',
+            boxShadow: 'var(--accent-glow)'
+          }}
         >
-          Go to Home
+          Go to Studio
         </button>
       </div>
     );
@@ -152,13 +158,21 @@ export const SharePage = () => {
 
   return (
     <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-       {/* Shared header */}
-       <div style={{ padding: '12px 20px', background: 'var(--panel-bg)', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)' }}>{documentTitle}</h3>
+       {/* Shared creative header */}
+       <div style={{
+         padding: '12px 24px', background: 'var(--panel-bg)',
+         borderBottom: '1.5px solid var(--panel-border)', display: 'flex',
+         justifyContent: 'space-between', alignItems: 'center', zIndex: 10,
+         boxShadow: 'var(--shadow-sm)'
+       }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={18} color="var(--accent)" />
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: 'var(--text-primary)' }}>{documentTitle}</h3>
+          </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {!isReadOnly && (
-              <span style={{ fontSize: '12px', color: syncStatus === 'error' ? 'var(--node-color-red)' : 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: syncStatus === 'error' ? 'var(--node-color-red)' : 'var(--text-secondary)' }}>
                 {syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Save failed' : 'Saved'}
               </span>
             )}
@@ -168,20 +182,24 @@ export const SharePage = () => {
               onClick={toggleTheme}
               style={{ 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                padding: '6px', borderRadius: 'var(--radius-md)', 
+                padding: '7px', borderRadius: 'var(--radius-md)', 
                 background: 'transparent', color: 'var(--text-primary)', 
-                border: '1px solid var(--border-subtle)', cursor: 'pointer' 
+                border: '1px solid var(--border-subtle)', cursor: 'pointer',
+                transition: 'all var(--transition-fast)'
               }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
-              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+              {theme === 'dark' ? <Sun size={16} color="var(--accent)" /> : <Moon size={16} color="var(--accent-secondary)" />}
             </button>
 
             <div style={{ 
-              padding: '4px 10px', 
-              background: isReadOnly ? 'var(--node-color-yellow)' : 'var(--node-color-green)', 
-              color: isReadOnly ? '#000' : '#fff', 
-              borderRadius: '4px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px' 
+              padding: '4px 12px', 
+              background: isReadOnly ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)', 
+              color: isReadOnly ? 'var(--node-color-yellow)' : 'var(--node-color-green)', 
+              border: isReadOnly ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: 'var(--radius-pill)', fontSize: '11px', fontWeight: '800', letterSpacing: '0.04em' 
             }}>
               {isReadOnly ? 'VIEW ONLY' : 'CAN EDIT'}
             </div>

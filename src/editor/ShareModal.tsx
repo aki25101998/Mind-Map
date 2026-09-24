@@ -38,10 +38,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
     const permToUse = sharePermission || 'view';
 
     try {
-      // Update both share config and mindmap atomic-ish (batch in firestore)
       await setMindMapShareConfig(documentId, shareIdToUse, newEnabledState, permToUse);
-
-      // Update local store only after success
       setShareConfig(newEnabledState, shareIdToUse, permToUse);
     } catch (err: any) {
       console.error('Failed to update share config:', err);
@@ -88,23 +85,30 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
       onClick={onClose}
       style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'rgba(0, 0, 0, 0.5)', zIndex: 99999,
+        background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(8px)', zIndex: 99999,
         display: 'flex', justifyContent: 'center', alignItems: 'center',
-        pointerEvents: 'auto'
+        padding: '16px', pointerEvents: 'auto'
       }}
     >
       <div 
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'var(--panel-bg)', borderRadius: 'var(--radius-lg)',
-          width: '100%', maxWidth: '400px', padding: '24px',
-          border: '1px solid var(--panel-border)', boxShadow: 'var(--shadow-modal)',
+          background: 'var(--panel-bg)', borderRadius: 'var(--radius-2xl)',
+          width: '100%', maxWidth: '440px', padding: '28px',
+          border: '1.5px solid var(--panel-border)', boxShadow: 'var(--shadow-toolbar)',
           pointerEvents: 'auto', position: 'relative'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, color: 'var(--text-primary)' }}>
-            <Share2 size={20} /> Share Mind Map
+          <h2 style={{ fontSize: '19px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px', margin: 0, color: 'var(--text-primary)' }}>
+            <div style={{
+              width: '34px', height: '34px', borderRadius: '10px',
+              background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--accent)'
+            }}>
+              <Share2 size={18} />
+            </div>
+            Share Mind Map
           </h2>
           <button 
             type="button"
@@ -112,24 +116,33 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
             style={{ 
               background: 'transparent', border: 'none', cursor: 'pointer', 
               color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', 
-              justifyContent: 'center', padding: '4px', borderRadius: '4px' 
+              justifyContent: 'center', padding: '6px', borderRadius: 'var(--radius-sm)',
+              transition: 'all var(--transition-fast)'
             }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             title="Close"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         {error && (
-          <div style={{ padding: '10px', background: 'var(--node-color-red)', color: 'white', borderRadius: '4px', marginBottom: '16px', fontSize: '13px' }}>
+          <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--node-color-red)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(239, 68, 68, 0.25)', marginBottom: '18px', fontSize: '13px', fontWeight: '500' }}>
             {error}
           </div>
         )}
 
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500', color: 'var(--text-primary)' }}>
-              <Globe size={16} /> Public Link Sharing
+        <div style={{
+          background: 'var(--social-bg)',
+          borderRadius: 'var(--radius-xl)',
+          padding: '16px',
+          border: '1px solid var(--border-subtle)',
+          marginBottom: '20px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>
+              <Globe size={16} color="var(--accent-secondary)" /> Public Link Sharing
             </div>
             <button
               type="button"
@@ -138,39 +151,40 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
               disabled={isUpdating}
               onClick={handleToggleShare}
               style={{
-                width: '40px', height: '22px', borderRadius: '11px',
-                background: shareEnabled ? 'var(--node-color-green)' : 'var(--border-subtle)',
-                position: 'relative', transition: 'background 0.2s',
+                width: '44px', height: '24px', borderRadius: '12px',
+                background: shareEnabled ? 'var(--gradient-primary)' : 'var(--border-subtle)',
+                position: 'relative', transition: 'background var(--transition-fast)',
                 border: 'none', padding: 0, cursor: isUpdating ? 'wait' : 'pointer',
-                outline: 'none'
+                outline: 'none',
+                boxShadow: shareEnabled ? 'var(--accent-glow)' : 'none'
               }}
             >
               <div style={{
-                position: 'absolute', top: '2px', left: shareEnabled ? '20px' : '2px',
-                width: '18px', height: '18px', borderRadius: '50%', background: 'white',
-                transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                position: 'absolute', top: '2px', left: shareEnabled ? '22px' : '2px',
+                width: '20px', height: '20px', borderRadius: '50%', background: 'white',
+                transition: 'left var(--transition-fast)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
               }} />
             </button>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
             {shareEnabled 
-              ? 'Anyone with this link can view this mind map.' 
+              ? 'Anyone with this link can view or edit this mind map depending on your permission setting.' 
               : 'Sharing is disabled. Only you can access this mind map.'}
           </p>
         </div>
 
         {shareEnabled && (
           <div>
-            <div style={{ fontSize: '13px', fontWeight: '500', marginBottom: '8px', color: 'var(--text-primary)' }}>Link</div>
+            <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Shareable Link</div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
                 readOnly
                 value={shareUrl}
                 style={{
-                  flex: 1, padding: '8px 12px', borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--panel-border)', background: 'var(--canvas-bg)',
-                  color: 'var(--text-primary)', fontSize: '13px'
+                  flex: 1, padding: '10px 14px', borderRadius: 'var(--radius-lg)',
+                  border: '1.5px solid var(--panel-border)', background: 'var(--canvas-bg)',
+                  color: 'var(--text-primary)', fontSize: '13px', fontWeight: '500', outline: 'none'
                 }}
               />
               <button
@@ -179,18 +193,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                 disabled={!shareEnabled || !shareId}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '8px 16px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--text-primary)', color: 'var(--panel-bg)',
-                  border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
+                  padding: '10px 18px', borderRadius: 'var(--radius-lg)',
+                  background: 'var(--gradient-primary)', color: '#ffffff',
+                  border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '700',
+                  boxShadow: 'var(--accent-glow)',
+                  transition: 'transform var(--transition-bounce)'
                 }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
               >
                 {isCopied ? <Check size={16} /> : <Copy size={16} />}
                 {isCopied ? 'Copied' : 'Copy'}
               </button>
             </div>
             
-            <div style={{ marginTop: '16px', fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>Permission:</span>
+            <div style={{ marginTop: '18px', fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>Permission:</span>
               <select
                 value={sharePermission || 'view'}
                 onChange={handlePermissionChange}
@@ -198,11 +216,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                 style={{
                   background: 'var(--canvas-bg)',
                   color: 'var(--text-primary)',
-                  border: '1px solid var(--panel-border)',
+                  border: '1.5px solid var(--border-subtle)',
                   borderRadius: 'var(--radius-md)',
-                  padding: '4px 8px',
-                  fontSize: '12px',
-                  fontWeight: '500',
+                  padding: '6px 12px',
+                  fontSize: '13px',
+                  fontWeight: '600',
                   cursor: isUpdating ? 'wait' : 'pointer',
                   outline: 'none'
                 }}

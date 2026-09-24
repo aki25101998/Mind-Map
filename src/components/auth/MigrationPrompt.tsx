@@ -49,9 +49,9 @@ export const MigrationPrompt: React.FC<MigrationPromptProps> = ({ documents, onC
             onClick={handleSkip}
             disabled={isMigrating}
             style={{ 
-              padding: '10px 16px', borderRadius: 'var(--radius-md)', background: 'transparent', 
-              border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', cursor: 'pointer', 
-              fontSize: '14px', fontWeight: '500', opacity: isMigrating ? 0.5 : 1
+              padding: '10px 18px', borderRadius: 'var(--radius-md)', background: 'transparent', 
+              border: '1.5px solid var(--border-subtle)', color: 'var(--text-primary)', cursor: 'pointer', 
+              fontSize: '14px', fontWeight: '600', opacity: isMigrating ? 0.5 : 1
             }}
           >
             Keep Local (Skip)
@@ -60,9 +60,9 @@ export const MigrationPrompt: React.FC<MigrationPromptProps> = ({ documents, onC
             onClick={handleImport}
             disabled={isMigrating}
             style={{ 
-              padding: '10px 16px', borderRadius: 'var(--radius-md)', background: 'var(--text-primary)', 
-              border: 'none', color: 'var(--canvas-bg)', fontWeight: '600', cursor: 'pointer', 
-              fontSize: '14px', opacity: isMigrating ? 0.7 : 1
+              padding: '10px 20px', borderRadius: 'var(--radius-md)', background: 'var(--gradient-primary)', 
+              border: 'none', color: '#ffffff', fontWeight: '700', cursor: 'pointer', 
+              fontSize: '14px', opacity: isMigrating ? 0.7 : 1, boxShadow: 'var(--accent-glow)'
             }}
           >
             {isMigrating ? 'Importing...' : 'Import to My Account'}

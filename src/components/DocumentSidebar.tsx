@@ -128,10 +128,13 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
           <button 
             onClick={() => { onClose(); navigate('/mindmaps/new'); }}
             style={{ 
-              display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-2) var(--space-3)', 
-              background: 'var(--text-primary)', border: 'none', color: 'var(--panel-bg)', 
-              borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'left', fontWeight: '600', fontSize: '14px'
+              display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '10px 14px', 
+              background: 'var(--gradient-primary)', border: 'none', color: '#ffffff', 
+              borderRadius: 'var(--radius-lg)', cursor: 'pointer', textAlign: 'left', fontWeight: '700', fontSize: '14px',
+              boxShadow: 'var(--accent-glow)', transition: 'transform var(--transition-bounce)'
             }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
           >
             <Plus size={16} /> New Document
           </button>

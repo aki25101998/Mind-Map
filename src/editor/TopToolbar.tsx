@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useReactFlow, getNodesBounds, getViewportForBounds } from '@xyflow/react';
+import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useAutoLayout } from '../hooks/useAutoLayout';
 import { exportToJSON, exportToPNG, exportToSVG } from '../utils/exportUtils';
@@ -58,65 +58,140 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
 
       const nodesBounds = getNodesBounds(nodesData);
       
-      // Add padding
       const padding = 50;
       const width = nodesBounds.width + padding * 2;
       const height = nodesBounds.height + padding * 2;
-
-      const transform = getViewportForBounds(
-        nodesBounds,
-        width,
-        height,
-        0.5,
-        2,
-        0
-      );
-
-      // Default background color based on theme
-      const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim() || '#ffffff';
+      
+      const imageViewport = {
+        x: -nodesBounds.x + padding,
+        y: -nodesBounds.y + padding,
+        zoom: 1
+      };
 
       if (format === 'png') {
-        await exportToPNG(documentTitle, width, height, transform, bgColor);
+        await exportToPNG(documentTitle, width, height, imageViewport);
       } else {
-        await exportToSVG(documentTitle, width, height, transform, bgColor);
+        await exportToSVG(documentTitle, width, height, imageViewport);
       }
-    } catch (err) {
-      console.error('Export failed:', err);
-      alert('Failed to export image.');
+    } catch (error) {
+      console.error(`Export to ${format.toUpperCase()} failed:`, error);
     } finally {
       setIsExporting(false);
     }
   };
 
+  const getSyncDotColor = () => {
+    if (syncStatus === 'saving') return '#f59e0b';
+    if (syncStatus === 'error') return '#ef4444';
+    if (syncStatus === 'offline') return '#94a3b8';
+    return '#10b981';
+  };
+
   return (
     <div style={{
-      position: 'absolute', top: 'var(--space-4)', left: 'var(--space-4)', right: 'var(--space-4)',
+      position: 'absolute', top: '16px', left: '16px', right: '16px',
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       zIndex: 'var(--z-toolbar)', pointerEvents: 'none'
     }}>
+      {/* Left Dock: Menu, Undo/Redo, Title */}
       <div style={{
-        background: 'var(--panel-bg)', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--panel-radius)',
-        border: '1px solid var(--panel-border)', pointerEvents: 'auto',
-        boxShadow: 'var(--shadow-toolbar)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)'
+        background: 'var(--panel-bg)',
+        padding: '6px 14px',
+        borderRadius: 'var(--radius-lg)',
+        border: '1.5px solid var(--panel-border)',
+        pointerEvents: 'auto',
+        boxShadow: 'var(--shadow-toolbar)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        transition: 'all var(--transition-fast)'
       }}>
         <button 
           onClick={onMenuClick}
           title="Open Document Sidebar"
-          style={{ display: 'flex', alignItems: 'center', background: 'transparent', color: 'var(--text-secondary)', padding: 'var(--space-1)', cursor: 'pointer', border: 'none', borderRadius: 'var(--radius-sm)' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            padding: '6px',
+            cursor: 'pointer',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            transition: 'all var(--transition-fast)'
+          }}
           onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
         >
           <Menu size={18} />
         </button>
-        <div style={{ width: '1px', height: '16px', background: 'var(--border-subtle)' }} />
-        <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-          <button onClick={undo} style={{ padding: 'var(--space-1)', borderRadius: 'var(--radius-sm)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', border: 'none' }} title="Undo (Ctrl+Z)" onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}><Undo size={16} /></button>
-          <button onClick={redo} style={{ padding: 'var(--space-1)', borderRadius: 'var(--radius-sm)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', border: 'none' }} title="Redo (Ctrl+Shift+Z)" onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}><Redo size={16} /></button>
+
+        <div style={{ width: '1px', height: '18px', background: 'var(--border-subtle)' }} />
+
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button 
+            onClick={undo} 
+            style={{
+              padding: '6px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all var(--transition-fast)'
+            }} 
+            title="Undo (Ctrl+Z)"
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }} 
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+          >
+            <Undo size={16} />
+          </button>
+          <button 
+            onClick={redo} 
+            style={{
+              padding: '6px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all var(--transition-fast)'
+            }} 
+            title="Redo (Ctrl+Shift+Z)"
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }} 
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+          >
+            <Redo size={16} />
+          </button>
         </div>
-        <div style={{ width: '1px', height: '16px', background: 'var(--border-subtle)' }} />
+
+        <div style={{ width: '1px', height: '18px', background: 'var(--border-subtle)' }} />
+
+        {/* Editable Title Bubble */}
         <div 
           onDoubleClick={() => setEditingTitle(true)}
-          style={{ fontWeight: '500', minWidth: '150px', cursor: 'text', fontSize: '14px', color: 'var(--text-primary)' }}
+          style={{
+            fontWeight: '600',
+            minWidth: '160px',
+            cursor: 'text',
+            fontSize: '14px',
+            color: 'var(--text-primary)',
+            padding: '4px 10px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--social-bg)',
+            border: '1px solid transparent',
+            transition: 'border-color var(--transition-fast)'
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-secondary-border)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+          title="Double click to rename"
         >
           {editingTitle ? (
             <input 
@@ -133,39 +208,117 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
         </div>
       </div>
       
+      {/* Right Dock: Status, Theme, Layout, Export, Share */}
       <div style={{
-        background: 'var(--panel-bg)', padding: 'var(--space-2)', borderRadius: 'var(--panel-radius)',
-        border: '1px solid var(--panel-border)', pointerEvents: 'auto',
-        boxShadow: 'var(--shadow-toolbar)', display: 'flex', gap: 'var(--space-2)', alignItems: 'center'
+        background: 'var(--panel-bg)',
+        padding: '6px 12px',
+        borderRadius: 'var(--radius-lg)',
+        border: '1.5px solid var(--panel-border)',
+        pointerEvents: 'auto',
+        boxShadow: 'var(--shadow-toolbar)',
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center'
       }}>
-        <div style={{ fontSize: '12px', fontWeight: '500', color: syncStatus === 'error' || syncStatus === 'offline' ? 'var(--node-color-red)' : 'var(--text-muted)', marginRight: 'var(--space-2)', paddingLeft: 'var(--space-2)' }}>
+        {/* Sync Status Badge */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '12px',
+          fontWeight: '600',
+          color: 'var(--text-secondary)',
+          padding: '4px 8px',
+          background: 'var(--social-bg)',
+          borderRadius: 'var(--radius-pill)',
+          marginRight: '4px'
+        }}>
+          <span style={{
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            background: getSyncDotColor(),
+            boxShadow: `0 0 6px ${getSyncDotColor()}`
+          }} />
           {syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Sync failed' : syncStatus === 'offline' ? 'Offline' : 'Saved'}
         </div>
+
+        {/* Theme Toggle */}
         <button 
           onClick={toggleTheme}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
-          onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '7px',
+            borderRadius: 'var(--radius-md)',
+            background: 'transparent',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-subtle)',
+            cursor: 'pointer',
+            transition: 'all var(--transition-fast)'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'var(--social-bg)';
+            e.currentTarget.style.borderColor = 'var(--accent)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.borderColor = 'var(--border-subtle)';
+          }}
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
-          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          {theme === 'dark' ? <Sun size={15} color="var(--accent)" /> : <Moon size={15} color="var(--accent-secondary)" />}
         </button>
+
+        {/* Auto Layout */}
         <button 
           onClick={handleAutoLayout}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
-          onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '7px 12px',
+            borderRadius: 'var(--radius-md)',
+            background: 'transparent',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-subtle)',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: '600',
+            transition: 'all var(--transition-fast)'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'var(--social-bg)';
+            e.currentTarget.style.borderColor = 'var(--accent-secondary-border)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.borderColor = 'var(--border-subtle)';
+          }}
         >
-          <LayoutTemplate size={14} /> Auto Layout
+          <LayoutTemplate size={14} color="var(--accent-secondary)" /> Auto Layout
         </button>
+
+        {/* Export Dropdown */}
         <div style={{ position: 'relative' }} ref={exportMenuRef}>
           <button 
             onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
             disabled={isExporting}
             style={{ 
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', 
-              borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)',
-              opacity: isExporting ? 0.7 : 1, cursor: isExporting ? 'wait' : 'pointer', fontSize: '13px', fontWeight: '500'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 12px', 
+              borderRadius: 'var(--radius-md)',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-subtle)',
+              opacity: isExporting ? 0.7 : 1,
+              cursor: isExporting ? 'wait' : 'pointer',
+              fontSize: '13px',
+              fontWeight: '600',
+              transition: 'all var(--transition-fast)'
             }}
             onMouseEnter={e => !isExporting && (e.currentTarget.style.background = 'var(--social-bg)')}
             onMouseLeave={e => !isExporting && (e.currentTarget.style.background = 'transparent')}
@@ -178,41 +331,71 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           {isExportMenuOpen && (
             <div style={{
               position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-              background: 'var(--panel-bg)', border: '1px solid var(--panel-border)',
-              borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-toolbar)', padding: '8px',
-              display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '180px', zIndex: 1000
+              background: 'var(--panel-bg)', border: '1.5px solid var(--panel-border)',
+              borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-toolbar)', padding: '8px',
+              display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '190px', zIndex: 1000
             }}>
               <button 
                 onClick={() => handleExportImage('png')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
+                  background: 'transparent', border: 'none', color: 'var(--text-primary)',
+                  cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: '500'
+                }}
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
-                <Image size={16} /> Download PNG
+                <Image size={16} color="var(--accent-secondary)" /> Download PNG
               </button>
               <button 
                 onClick={() => handleExportImage('svg')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
+                  background: 'transparent', border: 'none', color: 'var(--text-primary)',
+                  cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: '500'
+                }}
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
-                <Image size={16} /> Download SVG
+                <Image size={16} color="var(--accent)" /> Download SVG
               </button>
               <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '4px 0' }} />
               <button 
                 onClick={handleExportJSON}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
+                  background: 'transparent', border: 'none', color: 'var(--text-primary)',
+                  cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: '500'
+                }}
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
-                <FileJson size={16} /> Export JSON (Backup)
+                <FileJson size={16} color="#10b981" /> Export JSON (Backup)
               </button>
             </div>
           )}
         </div>
+
+        {/* Share Button (Sunset Orange Gradient CTA) */}
         <button 
           onClick={() => setIsShareModalOpen(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: 'var(--text-primary)', color: 'var(--panel-bg)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--gradient-primary)',
+            color: '#ffffff',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: '700',
+            boxShadow: 'var(--accent-glow)',
+            transition: 'transform var(--transition-bounce)'
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
           title="Share Mind Map"
         >
           <Share2 size={14} /> Share

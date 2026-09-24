@@ -27,21 +27,43 @@ export const BottomToolbar = () => {
     selectedNodeIds.forEach(id => updateNodeData(id, { backgroundColor: color }));
   };
 
+  const colors = [
+    { label: 'Orange', value: 'var(--node-color-orange)' },
+    { label: 'Cyan', value: 'var(--node-color-cyan)' },
+    { label: 'Green', value: 'var(--node-color-green)' },
+    { label: 'Purple', value: 'var(--node-color-purple)' },
+    { label: 'Blue', value: 'var(--node-color-blue)' },
+    { label: 'Yellow', value: 'var(--node-color-yellow)' },
+    { label: 'Red', value: 'var(--node-color-red)' },
+  ];
+
   return (
     <div style={{
-      position: 'absolute', bottom: 'var(--space-6)', left: '50%', transform: 'translateX(-50%)',
-      display: 'flex', gap: 'var(--space-2)', alignItems: 'center',
-      background: 'var(--panel-bg)', padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-pill)',
-      border: '1px solid var(--panel-border)', zIndex: 'var(--z-toolbar)',
-      boxShadow: 'var(--shadow-toolbar)', pointerEvents: 'auto'
+      position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+      display: 'flex', gap: '8px', alignItems: 'center',
+      background: 'var(--panel-bg)', padding: '6px 16px', borderRadius: 'var(--radius-pill)',
+      border: '1.5px solid var(--panel-border)', zIndex: 'var(--z-toolbar)',
+      boxShadow: 'var(--shadow-toolbar)', pointerEvents: 'auto',
+      transition: 'all var(--transition-fast)'
     }}>
       <button 
         onClick={handleAutoLayout}
-        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: 'var(--radius-pill)', background: 'transparent', color: 'var(--text-primary)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
-        onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          borderRadius: 'var(--radius-pill)', background: 'transparent', color: 'var(--text-primary)',
+          border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
+          transition: 'all var(--transition-fast)'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = 'var(--social-bg)';
+          e.currentTarget.style.color = 'var(--accent)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.color = 'var(--text-primary)';
+        }}
       >
-        <Wand2 size={16} /> Layout
+        <Wand2 size={15} color="var(--accent)" /> Auto Layout
       </button>
       
       <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
@@ -49,30 +71,57 @@ export const BottomToolbar = () => {
       <button 
         onClick={duplicateSelected}
         disabled={selectedNodeIds.length === 0}
-        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: 'var(--radius-pill)', background: 'transparent', color: selectedNodeIds.length === 0 ? 'var(--text-muted)' : 'var(--text-primary)', border: 'none', cursor: selectedNodeIds.length === 0 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '500' }}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          borderRadius: 'var(--radius-pill)', background: 'transparent',
+          color: selectedNodeIds.length === 0 ? 'var(--text-muted)' : 'var(--text-primary)',
+          border: 'none', cursor: selectedNodeIds.length === 0 ? 'not-allowed' : 'pointer',
+          fontSize: '13px', fontWeight: '600',
+          transition: 'all var(--transition-fast)'
+        }}
         onMouseEnter={e => selectedNodeIds.length > 0 && (e.currentTarget.style.background = 'var(--social-bg)')}
         onMouseLeave={e => selectedNodeIds.length > 0 && (e.currentTarget.style.background = 'transparent')}
       >
-        <Copy size={16} /> Duplicate
+        <Copy size={15} /> Duplicate
       </button>
       
       <button 
         onClick={deleteSelected}
         disabled={selectedNodeIds.length === 0}
-        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: 'var(--radius-pill)', background: 'transparent', color: selectedNodeIds.length === 0 ? 'var(--text-muted)' : 'var(--node-color-red)', border: 'none', cursor: selectedNodeIds.length === 0 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '500' }}
-        onMouseEnter={e => selectedNodeIds.length > 0 && (e.currentTarget.style.background = 'var(--social-bg)')}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          borderRadius: 'var(--radius-pill)', background: 'transparent',
+          color: selectedNodeIds.length === 0 ? 'var(--text-muted)' : 'var(--node-color-red)',
+          border: 'none', cursor: selectedNodeIds.length === 0 ? 'not-allowed' : 'pointer',
+          fontSize: '13px', fontWeight: '600',
+          transition: 'all var(--transition-fast)'
+        }}
+        onMouseEnter={e => selectedNodeIds.length > 0 && (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)')}
         onMouseLeave={e => selectedNodeIds.length > 0 && (e.currentTarget.style.background = 'transparent')}
       >
-        <Trash2 size={16} /> Delete
+        <Trash2 size={15} /> Delete
       </button>
 
       <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
 
-      <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-        <button onClick={() => handleColorChange('var(--node-color-blue)')} style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--node-color-blue)', border: 'none', cursor: 'pointer' }} title="Blue" />
-        <button onClick={() => handleColorChange('var(--node-color-red)')} style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--node-color-red)', border: 'none', cursor: 'pointer' }} title="Red" />
-        <button onClick={() => handleColorChange('var(--node-color-green)')} style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--node-color-green)', border: 'none', cursor: 'pointer' }} title="Green" />
-        <button onClick={() => handleColorChange('var(--node-color-yellow)')} style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--node-color-yellow)', border: 'none', cursor: 'pointer' }} title="Yellow" />
+      {/* Vibrant Color Swatches */}
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', padding: '2px 4px' }}>
+        {colors.map(c => (
+          <button 
+            key={c.label}
+            onClick={() => handleColorChange(c.value)} 
+            style={{
+              width: '22px', height: '22px', borderRadius: '50%',
+              background: c.value, border: '2px solid var(--panel-bg)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+              cursor: 'pointer',
+              transition: 'transform var(--transition-bounce)'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            title={c.label}
+          />
+        ))}
       </div>
     </div>
   );
