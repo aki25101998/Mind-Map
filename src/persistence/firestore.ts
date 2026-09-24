@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, orderBy, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import type { MindMapDocument, ShareConfig } from '../types';
 
@@ -48,6 +48,35 @@ export const saveShareConfig = async (config: ShareConfig): Promise<void> => {
   
   const docRef = doc(db, 'shares', config.id);
   await setDoc(docRef, config);
+};
+
+export const setMindMapShareConfig = async (documentId: string, shareId: string, enabled: boolean): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Authentication required');
+
+  const batch = writeBatch(db);
+
+  // 1. Update the share config
+  const shareRef = doc(db, 'shares', shareId);
+  batch.set(shareRef, {
+    id: shareId,
+    mindMapId: documentId,
+    ownerId: user.uid,
+    enabled: enabled,
+    permission: 'view',
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  });
+
+  // 2. Update the mind map document
+  const mapRef = doc(db, 'users', user.uid, 'mindmaps', documentId);
+  batch.update(mapRef, {
+    shareEnabled: enabled,
+    shareId: shareId,
+    updatedAt: Date.now()
+  });
+
+  await batch.commit();
 };
 
 export const getPublicSharedDocument = async (shareId: string): Promise<MindMapDocument | undefined> => {

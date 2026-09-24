@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Share2, Copy, X, Check, Globe } from 'lucide-react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { v4 as uuidv4 } from 'uuid';
-import { saveShareConfig } from '../persistence/firestore';
+import { setMindMapShareConfig } from '../persistence/firestore';
 import { auth } from '../lib/firebase';
 
 interface ShareModalProps {
@@ -15,11 +15,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tempShareId, setTempShareId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const currentShareId = shareId || uuidv4();
-  const shareUrl = `${window.location.origin}/share/${currentShareId}`;
+  // Use existing shareId, or the temp one we just created, or null if not yet shared
+  const activeShareId = shareId || tempShareId;
+  const shareUrl = activeShareId ? `${window.location.origin}/share/${activeShareId}` : '';
 
   const handleToggleShare = async () => {
     const user = auth.currentUser;
@@ -32,21 +34,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
     setIsUpdating(true);
     setError(null);
     const newEnabledState = !shareEnabled;
+    const shareIdToUse = shareId || tempShareId || uuidv4();
 
     try {
-      // 1. Save config to /shares/{shareId}
-      await saveShareConfig({
-        id: currentShareId,
-        mindMapId: documentId,
-        ownerId: user.uid,
-        enabled: newEnabledState,
-        permission: 'view',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      });
+      // Update both share config and mindmap atomic-ish (batch in firestore)
+      await setMindMapShareConfig(documentId, shareIdToUse, newEnabledState);
 
-      // 2. Update store (this triggers autosave which updates /users/{uid}/mindmaps/{mapId})
-      setShareConfig(newEnabledState, currentShareId);
+      // If we generated a new shareId, store it in temp state
+      if (!shareId && !tempShareId) {
+        setTempShareId(shareIdToUse);
+      }
+
+      // Update local store only after success
+      setShareConfig(newEnabledState, shareIdToUse);
     } catch (err: any) {
       console.error('Failed to update share config:', err);
       setError(err.message || 'Failed to update share settings.');
