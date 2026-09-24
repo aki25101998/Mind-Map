@@ -32,7 +32,7 @@ export const EditorPage = () => {
       }
 
       // If it's already loaded in store, just skip
-      if (documentId === id) {
+      if (useMindMapStore.getState().documentId === id) {
         setIsLoading(false);
         return;
       }
@@ -45,7 +45,18 @@ export const EditorPage = () => {
         if (!mounted) return;
 
         if (doc) {
-          setStoreDocument(doc.id, doc.title, doc.nodes, doc.edges, doc.viewport, doc.templateId || 'blank', doc.createdAt, doc.updatedAt);
+          setStoreDocument(
+            doc.id, 
+            doc.title, 
+            doc.nodes, 
+            doc.edges, 
+            doc.viewport, 
+            doc.templateId || 'blank', 
+            doc.createdAt, 
+            doc.updatedAt,
+            doc.shareEnabled,
+            doc.shareId
+          );
         } else {
           setError('Document not found or access denied.');
         }
@@ -61,8 +72,9 @@ export const EditorPage = () => {
 
     return () => {
       mounted = false;
+      closeDocument();
     };
-  }, [id, documentId, navigate, setStoreDocument]);
+  }, [id, navigate, setStoreDocument, closeDocument]);
 
   if (isLoading) {
     return (

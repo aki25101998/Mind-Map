@@ -86,6 +86,9 @@ export const createDocumentSlice: StateCreator<MindMapState, [], [], DocumentSli
       contextMenu: null,
       isDragging: false,
       deletedDocumentId: null,
+      shareEnabled: false,
+      shareId: null,
+      isReadOnly: false,
     });
   }
 });

@@ -25,13 +25,13 @@ export interface DocumentSlice {
     createdAt: number,
     updatedAt: number,
     shareEnabled?: boolean,
-    shareId?: string
+    shareId?: string | null
   ) => void;
   closeDocument: () => void;
   setUpdatedAt: (timestamp: number) => void;
   setTitle: (title: string) => void;
   setDeletedDocumentId: (id: string | null) => void;
-  setShareConfig: (enabled: boolean, shareId?: string) => void;
+  setShareConfig: (enabled: boolean, shareId?: string | null) => void;
 }
 
 export interface NodeEdgeSlice {

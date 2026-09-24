@@ -54,18 +54,29 @@ export const setMindMapShareConfig = async (documentId: string, shareId: string,
   const user = auth.currentUser;
   if (!user) throw new Error('Authentication required');
 
+  const shareRef = doc(db, 'shares', shareId);
+  const shareSnap = await getDoc(shareRef);
+
+  const now = Date.now();
+  let createdAt = now;
+  if (shareSnap.exists()) {
+    const existingData = shareSnap.data();
+    if (typeof existingData?.createdAt === 'number') {
+      createdAt = existingData.createdAt;
+    }
+  }
+
   const batch = writeBatch(db);
 
   // 1. Update the share config
-  const shareRef = doc(db, 'shares', shareId);
   batch.set(shareRef, {
     id: shareId,
     mindMapId: documentId,
     ownerId: user.uid,
     enabled: enabled,
     permission: 'view',
-    createdAt: Date.now(),
-    updatedAt: Date.now()
+    createdAt: createdAt,
+    updatedAt: now
   });
 
   // 2. Update the mind map document
@@ -73,7 +84,7 @@ export const setMindMapShareConfig = async (documentId: string, shareId: string,
   batch.update(mapRef, {
     shareEnabled: enabled,
     shareId: shareId,
-    updatedAt: Date.now()
+    updatedAt: now
   });
 
   await batch.commit();
