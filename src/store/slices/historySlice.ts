@@ -1,19 +1,25 @@
 import type { StateCreator } from 'zustand';
 import type { MindMapState, HistorySlice, HistorySnapshot } from './types';
 import type { MindMapNode, MindMapEdge } from '../../types';
-import { computeHasChildrenMap } from '../../utils/graphUtils';
+import { computeHasChildrenMap, computeSubtreeVisibility } from '../../utils/graphUtils';
 
 export const createHistorySnapshot = (nodes: MindMapNode[], edges: MindMapEdge[]): HistorySnapshot => {
   const strippedNodes = nodes.map(n => {
-    // Strip properties that shouldn't affect history or equality checks
+    // Strip derived and ephemeral properties that shouldn't affect history or equality checks
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
-    const { selected, dragging, resizing, measured, width, height, ...rest } = n;
+    const { selected, dragging, resizing, measured, width, height, hidden, ...rest } = n;
     return rest as MindMapNode;
+  });
+
+  const strippedEdges = edges.map(e => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+    const { selected, hidden, ...rest } = e;
+    return rest as MindMapEdge;
   });
 
   return {
     nodes: JSON.parse(JSON.stringify(strippedNodes)),
-    edges: JSON.parse(JSON.stringify(edges))
+    edges: JSON.parse(JSON.stringify(strippedEdges))
   };
 };
 
@@ -57,10 +63,14 @@ export const createHistorySlice: StateCreator<MindMapState, [], [], HistorySlice
       const snapshot = history[prevIndex];
       const parsedNodes = JSON.parse(JSON.stringify(snapshot.nodes));
       const parsedEdges = JSON.parse(JSON.stringify(snapshot.edges));
+
+      // Derive visibility and children map from restored structure
+      const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(parsedNodes, parsedEdges);
+
       set({
-        nodes: parsedNodes,
-        edges: parsedEdges,
-        hasChildrenMap: computeHasChildrenMap(parsedEdges),
+        nodes: visibleNodes,
+        edges: visibleEdges,
+        hasChildrenMap: computeHasChildrenMap(visibleEdges),
         selectedNodeIds: [],
         editingNodeId: null,
         contextMenu: null,
@@ -76,10 +86,14 @@ export const createHistorySlice: StateCreator<MindMapState, [], [], HistorySlice
       const snapshot = history[nextIndex];
       const parsedNodes = JSON.parse(JSON.stringify(snapshot.nodes));
       const parsedEdges = JSON.parse(JSON.stringify(snapshot.edges));
+
+      // Derive visibility and children map from restored structure
+      const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(parsedNodes, parsedEdges);
+
       set({
-        nodes: parsedNodes,
-        edges: parsedEdges,
-        hasChildrenMap: computeHasChildrenMap(parsedEdges),
+        nodes: visibleNodes,
+        edges: visibleEdges,
+        hasChildrenMap: computeHasChildrenMap(visibleEdges),
         selectedNodeIds: [],
         editingNodeId: null,
         contextMenu: null,

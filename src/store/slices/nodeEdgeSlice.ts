@@ -64,6 +64,11 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     let changed = false;
     
     const newNodes = currentNodes.map(node => {
+      // Store-level lock protection: locked node position can NEVER be changed
+      if (node.data?.locked === true) {
+        return node;
+      }
+
       const dragged = draggedNodes.find(n => n.id === node.id);
       
       if (!dragged || dragged.id === 'floating-toolbar') return node;
@@ -207,9 +212,13 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
       }
       return edge;
     });
+
+    const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(get().nodes, newEdges);
+
     set({
-      edges: newEdges,
-      hasChildrenMap: computeHasChildrenMap(newEdges)
+      nodes: visibleNodes,
+      edges: visibleEdges,
+      hasChildrenMap: computeHasChildrenMap(visibleEdges)
     });
     get().commitHistory();
   },

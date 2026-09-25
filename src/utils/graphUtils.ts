@@ -1,11 +1,35 @@
 import type { MindMapNode, MindMapEdge } from '../types';
 
 /**
- * Determines whether an edge is a structural hierarchy edge (Parent -> Child)
- * or an arbitrary cross-relationship edge (A <-> B).
+ * Determines whether an edge is a structural hierarchy edge (Parent -> Child).
  */
 export const isStructuralEdge = (edge: MindMapEdge): boolean => {
   return !(edge.data?.relationship === true);
+};
+
+/**
+ * Determines whether an edge is a cross-relationship edge (A <-> B).
+ */
+export const isRelationshipEdge = (edge: MindMapEdge): boolean => {
+  return edge.data?.relationship === true;
+};
+
+/**
+ * Returns the structural parent ID of a node (if any).
+ * In a valid tree, each node has at most 1 structural parent.
+ */
+export const getStructuralParent = (nodeId: string, edges: MindMapEdge[]): string | null => {
+  const parentEdge = edges.find(e => e.target === nodeId && isStructuralEdge(e));
+  return parentEdge ? parentEdge.source : null;
+};
+
+/**
+ * Returns all structural child node IDs of a node.
+ */
+export const getStructuralChildren = (nodeId: string, edges: MindMapEdge[]): string[] => {
+  return edges
+    .filter(e => e.source === nodeId && isStructuralEdge(e))
+    .map(e => e.target);
 };
 
 /**
@@ -48,12 +72,17 @@ export interface ConnectionCandidate {
 
 /**
  * Validates a connection before creating an edge:
- * - Source and target must exist and be non-empty strings.
- * - Self-connections (A -> A) are disallowed.
- * - Duplicate edges (same source and target) are disallowed.
- * - For structural edges:
- *   - Reverse structural edges (B -> A when A -> B exists) are disallowed.
- *   - Cycles are strictly prohibited.
+ * 1. Source and target must exist and be non-empty strings.
+ * 2. Self-connections (A -> A) are disallowed.
+ * 3. Source and target nodes must exist in the node list.
+ * 4. Duplicate edges (same source and target) are disallowed.
+ * 5. For structural edges (Parent -> Child):
+ *    - Reverse structural edge (B -> A when A -> B exists) is disallowed.
+ *    - Cycle creation (A -> B -> C -> A) is disallowed.
+ *    - Target already having a structural parent is disallowed (tree rule: <= 1 parent).
+ *    - Target cannot be the Root/main node (Root cannot have a parent).
+ * 6. For relationship edges (A <-> B):
+ *    - No parent/cycle hierarchy rules applied.
  */
 export const isValidConnection = (
   connection: ConnectionCandidate,
@@ -69,9 +98,9 @@ export const isValidConnection = (
     return false;
   }
 
-  const sourceExists = nodes.some(n => n.id === source);
-  const targetExists = nodes.some(n => n.id === target);
-  if (!sourceExists || !targetExists) {
+  const sourceNode = nodes.find(n => n.id === source);
+  const targetNode = nodes.find(n => n.id === target);
+  if (!sourceNode || !targetNode) {
     return false;
   }
 
@@ -82,19 +111,81 @@ export const isValidConnection = (
 
   const isStructural = !(connection.data?.relationship === true);
   if (isStructural) {
+    // Root node can never have a structural parent
+    if (targetNode.type === 'main') {
+      return false;
+    }
+
     // Disallow reverse structural edge
     const hasReverse = edges.some(e => e.source === target && e.target === source && isStructuralEdge(e));
     if (hasReverse) {
       return false;
     }
 
-    // Disallow cycles
+    // Disallow structural cycles
     if (wouldCreateCycle(source, target, edges)) {
+      return false;
+    }
+
+    // Disallow multiple structural parents (tree constraint)
+    const existingParent = getStructuralParent(target, edges);
+    if (existingParent) {
       return false;
     }
   }
 
   return true;
+};
+
+/**
+ * Validates whether an existing relationship edge can be converted into a structural hierarchy edge.
+ */
+export const canConvertToStructural = (
+  edge: MindMapEdge,
+  edges: MindMapEdge[],
+  nodes: MindMapNode[]
+): { allowed: boolean; reason?: string } => {
+  const { source, target } = edge;
+  const sourceNode = nodes.find(n => n.id === source);
+  const targetNode = nodes.find(n => n.id === target);
+
+  if (!sourceNode || !targetNode) {
+    return { allowed: false, reason: 'Source or target node not found.' };
+  }
+
+  if (targetNode.type === 'main') {
+    return { allowed: false, reason: 'Root node cannot have a parent in the hierarchy.' };
+  }
+
+  const otherEdges = edges.filter(e => e.id !== edge.id);
+
+  // Check if target already has another structural parent
+  const existingParent = getStructuralParent(target, otherEdges);
+  if (existingParent) {
+    return { 
+      allowed: false, 
+      reason: 'Cannot convert this edge to a hierarchy edge because the target already has a parent.' 
+    };
+  }
+
+  // Check reverse structural edge
+  const hasReverse = otherEdges.some(e => e.source === target && e.target === source && isStructuralEdge(e));
+  if (hasReverse) {
+    return {
+      allowed: false,
+      reason: 'Cannot convert this edge to a hierarchy edge because a reverse hierarchy relationship exists.'
+    };
+  }
+
+  // Check cycle
+  if (wouldCreateCycle(source, target, otherEdges)) {
+    return {
+      allowed: false,
+      reason: 'Cannot convert this edge to a hierarchy edge because it would create a circular dependency.'
+    };
+  }
+
+  return { allowed: true };
 };
 
 /**
@@ -153,14 +244,6 @@ export const computeSubtreeVisibility = (
   nodes: MindMapNode[],
   edges: MindMapEdge[]
 ): { nodes: MindMapNode[]; edges: MindMapEdge[] } => {
-  // Build parent lookup for structural edges: target -> source
-  const structuralParentMap = new Map<string, string>();
-  edges.forEach(e => {
-    if (isStructuralEdge(e)) {
-      structuralParentMap.set(e.target, e.source);
-    }
-  });
-
   const nodeMap = new Map<string, MindMapNode>();
   nodes.forEach(n => nodeMap.set(n.id, n));
 
@@ -178,7 +261,7 @@ export const computeSubtreeVisibility = (
     }
     visited.add(id);
 
-    const parentId = structuralParentMap.get(id);
+    const parentId = getStructuralParent(id, edges);
     if (!parentId) {
       // Root or disconnected node is not hidden by collapse
       isNodeHiddenMemo.set(id, false);
@@ -229,6 +312,7 @@ export const computeSubtreeVisibility = (
 
 /**
  * Returns structural ancestors of a node starting from immediate parent up to root.
+ * Only follows structural edges (isStructuralEdge).
  */
 export const findAncestors = (
   nodeId: string,
@@ -239,18 +323,11 @@ export const findAncestors = (
   const nodeMap = new Map<string, MindMapNode>();
   nodes.forEach(n => nodeMap.set(n.id, n));
 
-  const structuralParentMap = new Map<string, string>();
-  edges.forEach(e => {
-    if (isStructuralEdge(e)) {
-      structuralParentMap.set(e.target, e.source);
-    }
-  });
-
   let currentId = nodeId;
   const visited = new Set<string>();
 
   while (true) {
-    const parentId = structuralParentMap.get(currentId);
+    const parentId = getStructuralParent(currentId, edges);
     if (!parentId || visited.has(parentId)) break;
     visited.add(parentId);
 

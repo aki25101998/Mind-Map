@@ -1,6 +1,7 @@
 import type { MindMapNode, MindMapEdge, LayoutType } from '../types';
 import dagre from 'dagre';
 import type { LayoutSide } from './layoutUtils';
+import { isStructuralEdge } from './graphUtils';
 
 interface TreeNode {
   node: MindMapNode;
@@ -32,7 +33,7 @@ export const buildHierarchyTree = (
 
   const adjList = new Map<string, string[]>();
   edges.forEach(e => {
-    if (!e.hidden) {
+    if (!e.hidden && isStructuralEdge(e)) {
       if (!adjList.has(e.source)) adjList.set(e.source, []);
       adjList.get(e.source)!.push(e.target);
     }
@@ -341,7 +342,7 @@ export const applyDagreLayout = (
   });
 
   edges.forEach(edge => {
-    if (!edge.hidden && dagreGraph.hasNode(edge.source) && dagreGraph.hasNode(edge.target)) {
+    if (!edge.hidden && isStructuralEdge(edge) && dagreGraph.hasNode(edge.source) && dagreGraph.hasNode(edge.target)) {
       dagreGraph.setEdge(edge.source, edge.target);
     }
   });

@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { 
   isStructuralEdge, 
+  isRelationshipEdge,
+  getStructuralParent,
+  getStructuralChildren,
   wouldCreateCycle, 
   isValidConnection, 
+  canConvertToStructural,
   getDescendants, 
   computeHasChildrenMap, 
   computeSubtreeVisibility,
@@ -34,11 +38,28 @@ describe('graphUtils', () => {
     data: { relationship: true }
   };
 
-  describe('isStructuralEdge', () => {
+  describe('isStructuralEdge & isRelationshipEdge', () => {
     it('identifies structural and relationship edges correctly', () => {
       expect(isStructuralEdge(structuralEdges[0])).toBe(true);
       expect(isStructuralEdge(relationshipEdge)).toBe(false);
       expect(isStructuralEdge({ id: 'e1', source: 'a', target: 'b', data: {} })).toBe(true);
+
+      expect(isRelationshipEdge(relationshipEdge)).toBe(true);
+      expect(isRelationshipEdge(structuralEdges[0])).toBe(false);
+    });
+  });
+
+  describe('getStructuralParent & getStructuralChildren', () => {
+    it('returns correct structural parent and children, ignoring relationship edges', () => {
+      const allEdges = [...structuralEdges, relationshipEdge];
+      expect(getStructuralParent('nodeA', allEdges)).toBe('root');
+      expect(getStructuralParent('nodeD', allEdges)).toBe('nodeC');
+      expect(getStructuralParent('root', allEdges)).toBeNull();
+
+      expect(getStructuralChildren('root', allEdges)).toEqual(['nodeA', 'nodeB']);
+      expect(getStructuralChildren('nodeB', allEdges)).toEqual(['nodeC']);
+      // nodeA only has relationship edge to nodeD, no structural children
+      expect(getStructuralChildren('nodeA', allEdges)).toEqual([]);
     });
   });
 
@@ -86,6 +107,25 @@ describe('graphUtils', () => {
       expect(isValidConnection({ source: 'nodeD', target: 'root' }, nodes, structuralEdges)).toBe(false);
     });
 
+    it('rejects structural connection if target already has a structural parent (tree constraint)', () => {
+      // nodeB -> nodeC already exists, so root -> nodeC should be rejected
+      expect(isValidConnection({ source: 'root', target: 'nodeC' }, nodes, structuralEdges)).toBe(false);
+    });
+
+    it('rejects structural connection if target is Root / main node', () => {
+      const newNode: MindMapNode = { id: 'newNode', type: 'basic', position: { x: 0, y: 0 }, data: { label: 'New' } };
+      expect(isValidConnection({ source: 'newNode', target: 'root' }, [...nodes, newNode], structuralEdges)).toBe(false);
+    });
+
+    it('allows relationship edge between any nodes without parent/cycle hierarchy restrictions', () => {
+      // Relationship edge: nodeD -> nodeA or nodeA -> nodeC (even though nodeC has parent nodeB)
+      expect(isValidConnection(
+        { source: 'nodeA', target: 'nodeC', data: { relationship: true } }, 
+        nodes, 
+        structuralEdges
+      )).toBe(true);
+    });
+
     it('rejects missing source or target', () => {
       expect(isValidConnection({ source: 'missing', target: 'nodeA' }, nodes, structuralEdges)).toBe(false);
       expect(isValidConnection({ source: 'nodeA', target: 'missing' }, nodes, structuralEdges)).toBe(false);
@@ -95,6 +135,29 @@ describe('graphUtils', () => {
     it('allows valid new structural connection', () => {
       const newNode: MindMapNode = { id: 'newNode', type: 'basic', position: { x: 0, y: 0 }, data: { label: 'New' } };
       expect(isValidConnection({ source: 'nodeA', target: 'newNode' }, [...nodes, newNode], structuralEdges)).toBe(true);
+    });
+  });
+
+  describe('canConvertToStructural', () => {
+    it('allows converting relationship edge to structural if target has no other parent', () => {
+      const leafNode: MindMapNode = { id: 'leaf', type: 'basic', position: { x: 0, y: 0 }, data: { label: 'Leaf' } };
+      const relEdge: MindMapEdge = { id: 'rel-1', source: 'nodeA', target: 'leaf', type: 'mindmap-edge', data: { relationship: true } };
+      const res = canConvertToStructural(relEdge, [relEdge], [...nodes, leafNode]);
+      expect(res.allowed).toBe(true);
+    });
+
+    it('rejects converting to structural if target already has another structural parent', () => {
+      // nodeD already has parent nodeC via structuralEdges
+      const res = canConvertToStructural(relationshipEdge, [...structuralEdges, relationshipEdge], nodes);
+      expect(res.allowed).toBe(false);
+      expect(res.reason).toContain('target already has a parent');
+    });
+
+    it('rejects converting to structural if target is root', () => {
+      const relToRoot: MindMapEdge = { id: 'rel-root', source: 'nodeA', target: 'root', type: 'mindmap-edge', data: { relationship: true } };
+      const res = canConvertToStructural(relToRoot, [relToRoot], nodes);
+      expect(res.allowed).toBe(false);
+      expect(res.reason).toContain('Root node cannot have a parent');
     });
   });
 

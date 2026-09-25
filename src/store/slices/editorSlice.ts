@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import type { MindMapState, EditorSlice, SyncStatus, ContextMenuState } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import { computeHasChildrenMap } from '../../utils/graphUtils';
 
 export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> = (set, get) => {
   // Read saved theme from localStorage on initialization
@@ -103,9 +104,11 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
       target: idMap[e.target]
     }));
 
+    const allEdges = [...edges, ...newEdges];
     set({ 
       nodes: [...nodes.map(n => ({...n, selected: false})), ...newNodes],
-      edges: [...edges, ...newEdges],
+      edges: allEdges,
+      hasChildrenMap: computeHasChildrenMap(allEdges),
       selectedNodeIds: newIds
     });
     get().commitHistory();
@@ -154,9 +157,11 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
       target: idMap[e.target]
     }));
 
+    const allEdges = [...edges, ...newEdges];
     set({
       nodes: [...nodes.map(n => ({...n, selected: false})), ...newNodes],
-      edges: [...edges, ...newEdges],
+      edges: allEdges,
+      hasChildrenMap: computeHasChildrenMap(allEdges),
       selectedNodeIds: newIds,
       pasteCount: nextCount
     });

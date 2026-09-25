@@ -5,6 +5,7 @@ import {
 import { useMindMapStore } from '../../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { MindMapEdgeStyle } from '../../types';
+import { canConvertToStructural } from '../../utils/graphUtils';
 
 let persistedEdgePosition: { x: number; y: number } | null = null;
 
@@ -13,14 +14,16 @@ interface EdgeFloatingToolbarProps {
 }
 
 export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
-  const { updateEdge, deleteSelected } = useMindMapStore(
+  const { updateEdge, deleteSelected, nodes, edges } = useMindMapStore(
     useShallow(state => ({
       updateEdge: state.updateEdge,
-      deleteSelected: state.deleteSelected
+      deleteSelected: state.deleteSelected,
+      nodes: state.nodes,
+      edges: state.edges
     }))
   );
 
-  const edge = useMindMapStore(state => state.edges.find(e => e.id === edgeId));
+  const edge = edges.find(e => e.id === edgeId);
 
   const [position, setPosition] = useState<{ x: number; y: number }>(() => {
     if (persistedEdgePosition) return persistedEdgePosition;
@@ -35,10 +38,26 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
 
   const edgeData = edge.data || {};
   const currentStyle: MindMapEdgeStyle = edgeData.edgeStyle || 'curved';
+  const isRelationship = edgeData.relationship === true;
   const isDashed = !!edgeData.dashed;
   const hasArrowStart = !!edgeData.arrowStart;
   const hasArrowEnd = !!edgeData.arrowEnd;
   const currentWidth = edgeData.strokeWidth || 2;
+
+  const handleModeChange = (makeRelationship: boolean) => {
+    if (makeRelationship === isRelationship) return;
+
+    if (!makeRelationship) {
+      const result = canConvertToStructural(edge, edges, nodes);
+      if (!result.allowed) {
+        alert(result.reason || 'Cannot convert this edge to a hierarchy edge because the target already has a parent.');
+        return;
+      }
+      updateEdge(edgeId, { data: { relationship: false } });
+    } else {
+      updateEdge(edgeId, { data: { relationship: true } });
+    }
+  };
 
   const handleStyleChange = (style: MindMapEdgeStyle) => {
     updateEdge(edgeId, { data: { edgeStyle: style } });
@@ -137,28 +156,36 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
         userSelect: 'none',
       }}
     >
-      {/* Edge Colors */}
-      <div style={{ display: 'flex', gap: '6px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '8px', alignItems: 'center' }}>
-        <Palette size={15} style={{ color: 'var(--accent)' }} />
-        {vibrantSwatches.map(color => (
-          <button
-            key={color}
-            onClick={() => handleColorChange(color)}
-            style={{
-              width: '18px',
-              height: '18px',
-              borderRadius: '50%',
-              background: color,
-              border: edgeData.strokeColor === color ? '2px solid var(--accent)' : '2px solid var(--panel-bg)',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-              transition: 'transform var(--transition-fast)'
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-            title={`Set color ${color}`}
-          />
-        ))}
+      {/* Edge Mode: Hierarchy vs Relationship */}
+      <div style={{ display: 'flex', gap: '2px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px', alignItems: 'center' }}>
+        <button
+          onClick={() => handleModeChange(false)}
+          style={{
+            ...buttonStyle,
+            padding: '3px 8px',
+            fontSize: '11px',
+            fontWeight: !isRelationship ? '600' : '400',
+            background: !isRelationship ? 'var(--social-bg)' : 'transparent',
+            color: !isRelationship ? 'var(--accent)' : 'var(--text-secondary)',
+          }}
+          title="Structural Hierarchy Edge (Parent -> Child)"
+        >
+          Hierarchy
+        </button>
+        <button
+          onClick={() => handleModeChange(true)}
+          style={{
+            ...buttonStyle,
+            padding: '3px 8px',
+            fontSize: '11px',
+            fontWeight: isRelationship ? '600' : '400',
+            background: isRelationship ? 'var(--social-bg)' : 'transparent',
+            color: isRelationship ? 'var(--accent)' : 'var(--text-secondary)',
+          }}
+          title="Free Cross-link Relationship Edge"
+        >
+          Relationship
+        </button>
       </div>
 
       {/* Edge Geometry: Curved, Straight, Orthogonal */}
@@ -234,6 +261,30 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
         >
           4px
         </button>
+      </div>
+
+      {/* Edge Colors */}
+      <div style={{ display: 'flex', gap: '6px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '8px', alignItems: 'center' }}>
+        <Palette size={15} style={{ color: 'var(--accent)' }} />
+        {vibrantSwatches.map(color => (
+          <button
+            key={color}
+            onClick={() => handleColorChange(color)}
+            style={{
+              width: '18px',
+              height: '18px',
+              borderRadius: '50%',
+              background: color,
+              border: edgeData.strokeColor === color ? '2px solid var(--accent)' : '2px solid var(--panel-bg)',
+              cursor: 'pointer',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              transition: 'transform var(--transition-fast)'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            title={`Set color ${color}`}
+          />
+        ))}
       </div>
 
       {/* Delete Edge */}

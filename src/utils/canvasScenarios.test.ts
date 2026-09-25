@@ -327,4 +327,74 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     // Position should be offset and not overlap
     expect(pos.x !== 100 || pos.y !== 100).toBe(true);
   });
+
+  // Additional Phase 4 & 15 Tests: Store-level Lock Protection
+  it('Store-level Lock Protection: locked node position can NEVER be updated', () => {
+    const lockedNode: MindMapNode = {
+      id: 'locked-node',
+      type: 'basic',
+      position: { x: 50, y: 50 },
+      data: { label: 'Locked Topic', locked: true }
+    };
+
+    useMindMapStore.setState({
+      nodes: [...useMindMapStore.getState().nodes, lockedNode]
+    });
+
+    // Try to update locked node position
+    useMindMapStore.getState().updateNodePositions([
+      { ...lockedNode, position: { x: 500, y: 500 } }
+    ]);
+
+    const state = useMindMapStore.getState();
+    const updated = state.nodes.find(n => n.id === 'locked-node');
+    expect(updated?.position).toEqual({ x: 50, y: 50 });
+  });
+
+  // Additional Phase 11 Test: Selected Edge Deletion
+  it('Edge Deletion: deleteSelected removes selected edge without deleting nodes', () => {
+    const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 0, y: 0 }, data: { label: 'A' } };
+    const nodeB: MindMapNode = { id: 'B', type: 'basic', position: { x: 100, y: 0 }, data: { label: 'B' } };
+    const edgeAB: MindMapEdge = { id: 'e-ab', source: 'A', target: 'B', selected: true };
+
+    useMindMapStore.setState({
+      nodes: [nodeA, nodeB],
+      edges: [edgeAB],
+      selectedNodeIds: []
+    });
+
+    useMindMapStore.getState().deleteSelected();
+
+    const state = useMindMapStore.getState();
+    expect(state.edges).toHaveLength(0);
+    expect(state.nodes).toHaveLength(2);
+  });
+
+  // Additional Phase 5 Test: History does not store derived hidden state
+  it('History Snapshot: derived hidden is stripped and recomputed on undo/redo', () => {
+    const root: MindMapNode = { id: 'R', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const child: MindMapNode = { id: 'C', type: 'basic', position: { x: 100, y: 0 }, data: { label: 'Child' } };
+    const edgeRC: MindMapEdge = { id: 'e-rc', source: 'R', target: 'C' };
+
+    useMindMapStore.setState({
+      nodes: [root, child],
+      edges: [edgeRC],
+      history: [],
+      historyIndex: -1
+    });
+
+    useMindMapStore.getState().commitHistory();
+    const history1 = useMindMapStore.getState().history;
+    // Ensure hidden property is undefined in history snapshot
+    expect(history1[0].nodes.find(n => n.id === 'C')?.hidden).toBeUndefined();
+
+    // Now collapse R
+    useMindMapStore.getState().toggleCollapse('R');
+    expect(useMindMapStore.getState().nodes.find(n => n.id === 'C')?.hidden).toBe(true);
+
+    // Undo collapse
+    useMindMapStore.getState().undo();
+    // After undo, visibility is recomputed: C is not hidden
+    expect(useMindMapStore.getState().nodes.find(n => n.id === 'C')?.hidden).toBe(false);
+  });
 });

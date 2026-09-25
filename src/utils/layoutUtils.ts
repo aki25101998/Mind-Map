@@ -1,5 +1,6 @@
 import type { MindMapNode, MindMapEdge, LayoutType, MindMapNodeType } from '../types';
 import { templates } from '../templates/definitions';
+import { isStructuralEdge, getStructuralParent } from './graphUtils';
 
 export type LayoutSide = 'left' | 'right' | 'center';
 
@@ -35,16 +36,16 @@ export const resolveNodeLayoutSide = (
     return node.data.layoutSide;
   }
 
-  // Trace parent relationships toward root
+  // Trace parent relationships toward root using only structural edges
   let currentNodeId = nodeId;
   const maxDepth = 1000;
   let depth = 0;
 
   while (depth < maxDepth) {
-    const parentEdge = edges.find(e => e.target === currentNodeId);
-    if (!parentEdge) break; // Disconnected
+    const parentId = getStructuralParent(currentNodeId, edges);
+    if (!parentId) break; // Disconnected
 
-    const parentNode = nodes.find(n => n.id === parentEdge.source);
+    const parentNode = nodes.find(n => n.id === parentId);
     if (!parentNode) break;
 
     if (parentNode.type === 'main') {
@@ -181,8 +182,10 @@ export const normalizeTwoWayDocument = (nodes: MindMapNode[], edges: MindMapEdge
 
   const adjList = new Map<string, string[]>();
   edges.forEach(e => {
-    if (!adjList.has(e.source)) adjList.set(e.source, []);
-    adjList.get(e.source)!.push(e.target);
+    if (isStructuralEdge(e)) {
+      if (!adjList.has(e.source)) adjList.set(e.source, []);
+      adjList.get(e.source)!.push(e.target);
+    }
   });
 
   const nodeSides = new Map<string, LayoutSide>();
