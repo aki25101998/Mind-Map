@@ -50,8 +50,8 @@ export const buildHierarchyTree = (
       .map(childId => buildSubtree(childId, depth + 1, side))
       .filter((c): c is TreeNode => c !== null);
 
-    const width = node.measured?.width ?? DEFAULT_WIDTH;
-    const height = node.measured?.height ?? DEFAULT_HEIGHT;
+    const width = node.data?.width ?? node.measured?.width ?? DEFAULT_WIDTH;
+    const height = node.data?.height ?? node.measured?.height ?? DEFAULT_HEIGHT;
 
     return {
       node,
@@ -73,8 +73,8 @@ export const buildHierarchyTree = (
 };
 
 const calculateSubtreeSizes = (tree: TreeNode) => {
-  tree.width = tree.node.measured?.width ?? DEFAULT_WIDTH;
-  tree.height = tree.node.measured?.height ?? DEFAULT_HEIGHT;
+  tree.width = tree.node.data?.width ?? tree.node.measured?.width ?? DEFAULT_WIDTH;
+  tree.height = tree.node.data?.height ?? tree.node.measured?.height ?? DEFAULT_HEIGHT;
 
   if (tree.children.length === 0) {
     tree.subtreeWidth = tree.width;
@@ -234,8 +234,8 @@ export const applyRadialMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]): 
   if (!tree) return nodes;
 
   const calculateRadialWeights = (t: TreeNode): number => {
-    t.width = t.node.measured?.width ?? DEFAULT_WIDTH;
-    t.height = t.node.measured?.height ?? DEFAULT_HEIGHT;
+    t.width = t.node.data?.width ?? t.node.measured?.width ?? DEFAULT_WIDTH;
+    t.height = t.node.data?.height ?? t.node.measured?.height ?? DEFAULT_HEIGHT;
     
     let descendants = 0;
     t.children.forEach(child => {
@@ -335,8 +335,8 @@ export const applyDagreLayout = (
   nodes.forEach(node => {
     if (!node.hidden) {
       dagreGraph.setNode(node.id, { 
-        width: node.measured?.width ?? DEFAULT_WIDTH, 
-        height: node.measured?.height ?? DEFAULT_HEIGHT 
+        width: node.data?.width ?? node.measured?.width ?? DEFAULT_WIDTH, 
+        height: node.data?.height ?? node.measured?.height ?? DEFAULT_HEIGHT 
       });
     }
   });
@@ -356,8 +356,8 @@ export const applyDagreLayout = (
       return {
         ...node,
         position: {
-          x: nodeWithPosition.x - (node.measured?.width ?? DEFAULT_WIDTH) / 2,
-          y: nodeWithPosition.y - (node.measured?.height ?? DEFAULT_HEIGHT) / 2,
+          x: nodeWithPosition.x - (node.data?.width ?? node.measured?.width ?? DEFAULT_WIDTH) / 2,
+          y: nodeWithPosition.y - (node.data?.height ?? node.measured?.height ?? DEFAULT_HEIGHT) / 2,
         },
       };
     }

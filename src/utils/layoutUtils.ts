@@ -126,8 +126,8 @@ export const findNonCollidingPosition = (
         existingNode.data?.fontSize
       );
 
-      const exW = existingNode.measured?.width ?? estimatedExisting.width;
-      const exH = existingNode.measured?.height ?? estimatedExisting.height;
+      const exW = existingNode.data?.width ?? existingNode.measured?.width ?? estimatedExisting.width;
+      const exH = existingNode.data?.height ?? existingNode.measured?.height ?? estimatedExisting.height;
       
       const candidateRight = x + candW;
       const candidateLeft = x;

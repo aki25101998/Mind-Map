@@ -111,15 +111,21 @@ const CanvasInner = () => {
   }, [nodes, setLocalNodes]);
 
   const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
-    // Handle transient interaction via local nodes
-    onLocalNodesChange(changes as unknown as NodeChange<MindMapNode>[]);
+    // Guard against temporary measurement changes for the node currently being edited
+    const filteredChanges = editingNodeId 
+      ? changes.filter(c => !(c.type === 'dimensions' && c.id === editingNodeId))
+      : changes;
+
+    if (filteredChanges.length > 0) {
+      onLocalNodesChange(filteredChanges as unknown as NodeChange<MindMapNode>[]);
+    }
     
     // Forward selection changes to Zustand for persistence / UI sync
     const selectionChanges = changes.filter(c => c.type === 'select');
     if (selectionChanges.length > 0) {
       onNodesChange(selectionChanges as unknown as NodeChange<MindMapNode>[]);
     }
-  }, [onLocalNodesChange, onNodesChange]);
+  }, [onLocalNodesChange, onNodesChange, editingNodeId]);
 
   const initialized = useRef(false);
   const nodesInitialized = useNodesInitialized();

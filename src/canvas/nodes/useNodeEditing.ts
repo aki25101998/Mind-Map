@@ -1,4 +1,5 @@
-import React, { useState, useRef, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { useInternalNode } from '@xyflow/react';
 import type { NodeData } from '../../types';
 
 interface UseNodeEditingProps {
@@ -19,55 +20,71 @@ export function useNodeEditing({
   updateNodeData
 }: UseNodeEditingProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const internalNode = useInternalNode(id);
+
   const [draftLabel, setDraftLabel] = useState<string | null>(null);
   const [editDimensions, setEditDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  // Helper to capture current canonical dimensions in callbacks:
+  // 1. Prefer React Flow measured dimensions
+  // 2. Fallback to DOM element bounding box if measured is not yet populated
+  const getCanonicalDimensions = useCallback((): { width: number; height: number } | null => {
+    const measuredW = internalNode?.measured?.width;
+    const measuredH = internalNode?.measured?.height;
+    if (typeof measuredW === 'number' && typeof measuredH === 'number' && measuredW > 0 && measuredH > 0) {
+      return { width: Math.round(measuredW), height: Math.round(measuredH) };
+    }
+
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return { width: Math.round(rect.width), height: Math.round(rect.height) };
+      }
+    }
+
+    return null;
+  }, [internalNode]);
+
+  // Synchronously resolve canonical dimensions from React Flow hook if editDimensions state is not yet set
+  const measuredW = internalNode?.measured?.width;
+  const measuredH = internalNode?.measured?.height;
+  const fallbackDims = (typeof measuredW === 'number' && typeof measuredH === 'number' && measuredW > 0 && measuredH > 0)
+    ? { width: Math.round(measuredW), height: Math.round(measuredH) }
+    : null;
+
+  const activeDims = editDimensions || (isEditing ? fallbackDims : null);
 
   // If draftLabel is active, use it; otherwise fallback to canonical dataLabel from store
   const label = isEditing && draftLabel !== null ? draftLabel : dataLabel;
 
-  useLayoutEffect(() => {
-    if (isEditing) {
-      if (!editDimensions && containerRef.current) {
-        const el = containerRef.current;
-        const width = el.offsetWidth;
-        const height = el.offsetHeight;
-        if (width > 0 && height > 0) {
-          setEditDimensions({ width, height });
-        }
-      }
-    } else {
-      if (draftLabel !== null) {
-        setDraftLabel(null);
-      }
-      if (editDimensions !== null) {
-        setEditDimensions(null);
-      }
-    }
-  }, [isEditing, editDimensions, draftLabel]);
-
   const handleStartEditing = useCallback(() => {
     if (isReadOnly) return;
-    if (containerRef.current) {
-      const el = containerRef.current;
-      const width = el.offsetWidth;
-      const height = el.offsetHeight;
-      if (width > 0 && height > 0) {
-        setEditDimensions({ width, height });
-      }
+    
+    // Synchronously capture geometry BEFORE activating editing mode
+    const dims = getCanonicalDimensions();
+    if (dims) {
+      setEditDimensions(dims);
     }
+    
     setDraftLabel(dataLabel);
     setEditingNodeId(id);
-  }, [id, isReadOnly, dataLabel, setEditingNodeId]);
+  }, [id, isReadOnly, dataLabel, setEditingNodeId, getCanonicalDimensions]);
 
   const handleBlur = useCallback(() => {
     const finalLabel = draftLabel !== null ? draftLabel : dataLabel;
+    const dims = editDimensions || getCanonicalDimensions();
+
     setEditingNodeId(null);
     setDraftLabel(null);
     setEditDimensions(null);
+
     if (finalLabel !== dataLabel) {
-      updateNodeData(id, { label: finalLabel });
+      updateNodeData(id, {
+        label: finalLabel,
+        ...(dims ? { width: dims.width, height: dims.height } : {})
+      });
     }
-  }, [id, draftLabel, dataLabel, setEditingNodeId, updateNodeData]);
+  }, [id, draftLabel, dataLabel, editDimensions, getCanonicalDimensions, setEditingNodeId, updateNodeData]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -81,14 +98,15 @@ export function useNodeEditing({
     }
   }, [handleBlur, setEditingNodeId]);
 
-  // CSS dimension locking rules for edit mode
-  const dimensionStyle: React.CSSProperties = isEditing && editDimensions ? {
-    width: `${editDimensions.width}px`,
-    height: `${editDimensions.height}px`,
-    minWidth: `${editDimensions.width}px`,
-    maxWidth: `${editDimensions.width}px`,
-    minHeight: `${editDimensions.height}px`,
-    maxHeight: `${editDimensions.height}px`,
+  // CSS dimension locking rules:
+  // When editing, strictly lock width, height, minWidth, maxWidth, minHeight, maxHeight
+  const dimensionStyle: React.CSSProperties = isEditing && activeDims ? {
+    width: `${activeDims.width}px`,
+    height: `${activeDims.height}px`,
+    minWidth: `${activeDims.width}px`,
+    maxWidth: `${activeDims.width}px`,
+    minHeight: `${activeDims.height}px`,
+    maxHeight: `${activeDims.height}px`,
     boxSizing: 'border-box',
     transition: 'none'
   } : {
@@ -99,7 +117,7 @@ export function useNodeEditing({
     containerRef,
     label,
     setLabel: setDraftLabel,
-    editDimensions,
+    editDimensions: activeDims,
     dimensionStyle,
     handleStartEditing,
     handleBlur,

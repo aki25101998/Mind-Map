@@ -4,6 +4,8 @@ export type MindMapNodeType = 'main' | 'basic' | 'rounded' | 'ellipse' | 'text';
 
 export interface NodeData extends Record<string, unknown> {
   label: string;
+  width?: number;
+  height?: number;
   color?: string;
   backgroundColor?: string;
   borderColor?: string;

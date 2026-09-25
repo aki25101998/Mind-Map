@@ -24,7 +24,6 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
   placeholder = 'Type text...'
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus and place cursor at the end on mount
   useLayoutEffect(() => {
@@ -35,24 +34,8 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
     }
   }, []);
 
-  // Adjust textarea height up to container clientHeight without overflowing
-  useLayoutEffect(() => {
-    const textarea = textareaRef.current;
-    const container = containerRef.current;
-    if (!textarea || !container) return;
-
-    textarea.style.height = '0px';
-    const parentMaxHeight = container.clientHeight || 0;
-    const targetHeight = parentMaxHeight > 0 
-      ? Math.min(textarea.scrollHeight, parentMaxHeight)
-      : textarea.scrollHeight;
-
-    textarea.style.height = `${Math.max(targetHeight, 16)}px`;
-  }, [value]);
-
   return (
     <div
-      ref={containerRef}
       style={{
         width: '100%',
         height: '100%',
@@ -78,8 +61,11 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
         onKeyDown={onKeyDown}
         style={{
           width: '100%',
+          height: '100%',
           maxWidth: '100%',
+          maxHeight: '100%',
           minWidth: 0,
+          minHeight: 0,
           boxSizing: 'border-box',
           background: 'transparent',
           border: 'none',
