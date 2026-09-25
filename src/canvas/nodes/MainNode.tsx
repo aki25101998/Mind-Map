@@ -5,6 +5,8 @@ import { useMindMapStore } from '../../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { NodeData } from '../../types';
 import { Lock, ExternalLink } from 'lucide-react';
+import { useNodeEditing } from './useNodeEditing';
+import { NodeTextEditor } from './NodeTextEditor';
 
 export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'>>) => {
   const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse, isReadOnly } = useMindMapStore(
@@ -18,20 +20,23 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
   );
   const hasChildren = useMindMapStore(state => state.hasChildrenMap[id] || false);
   const isEditing = editingNodeId === id;
-  const [label, setLabel] = React.useState(data.label);
 
-  React.useEffect(() => {
-    if (!isEditing) {
-      setLabel(data.label);
-    }
-  }, [data.label, isEditing]);
-
-  const handleBlur = () => {
-    setEditingNodeId(null);
-    if (label !== data.label) {
-      updateNodeData(id, { label });
-    }
-  };
+  const {
+    containerRef,
+    label,
+    setLabel,
+    dimensionStyle,
+    handleStartEditing,
+    handleBlur,
+    handleKeyDown
+  } = useNodeEditing({
+    id,
+    dataLabel: data.label,
+    isEditing,
+    isReadOnly: !!isReadOnly,
+    setEditingNodeId,
+    updateNodeData
+  });
 
   const style: React.CSSProperties = {
     backgroundColor: data.backgroundColor || 'var(--node-color-orange)',
@@ -46,14 +51,19 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
     boxShadow: selected ? '0 0 0 2px var(--accent)' : 'var(--shadow-sm)',
     minWidth: '120px',
     textAlign: (data.textAlign as 'left' | 'center' | 'right') || 'center',
-    transition: 'var(--transition-fast)',
+    transition: isEditing ? 'none' : 'var(--transition-fast)',
     cursor: data.locked ? 'default' : 'grab',
-    position: 'relative'
+    position: 'relative',
+    ...dimensionStyle
   };
 
   return (
     <>
-      <div style={style} onDoubleClick={() => !isReadOnly && setEditingNodeId(id)}>
+      <div 
+        ref={containerRef}
+        style={style} 
+        onDoubleClick={handleStartEditing}
+      >
         {data.locked && (
           <span 
             title="Node position is locked"
@@ -87,28 +97,20 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
         )}
 
         {isEditing ? (
-          <div style={{ display: 'inline-grid', alignItems: 'center', justifyItems: 'center' }}>
-            <span style={{ visibility: 'hidden', gridArea: '1 / 1', whiteSpace: 'pre' }}>{label || ' '}</span>
-            <input 
-              autoFocus
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              onBlur={handleBlur}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleBlur();
-                if (e.key === 'Escape') {
-                  setLabel(data.label);
-                  setEditingNodeId(null);
-                }
-              }}
-              style={{ 
-                gridArea: '1 / 1', background: 'transparent', border: 'none', color: 'inherit', 
-                fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%', minWidth: 0, textAlign: 'inherit' 
-              }}
-            />
-          </div>
+          <NodeTextEditor
+            value={label}
+            onChange={setLabel}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            fontSize={data.fontSize || 20}
+            fontWeight={data.fontWeight || '700'}
+            textAlign={(data.textAlign as 'left' | 'center' | 'right') || 'center'}
+            color={data.color || 'var(--node-text-default)'}
+          />
         ) : (
-          <div>{data.label}</div>
+          <div style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
+            {data.label}
+          </div>
         )}
         
         {/* 4-way handles for freeform connectivity */}
