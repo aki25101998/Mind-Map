@@ -17,12 +17,16 @@ export const CustomMindMapEdge = (props: EdgeProps<MindMapEdge>) => {
     markerStart,
   } = props;
 
+  const strokeColor = selected ? 'var(--accent)' : (data?.strokeColor || '#a3a3a3');
+  const strokeWidth = selected ? (data?.strokeWidth ? data.strokeWidth + 1.5 : 3.5) : (data?.strokeWidth || 2);
+
   const style = {
     ...props.style,
-    stroke: data?.strokeColor || (selected ? 'var(--accent)' : '#a3a3a3'), /* Use a clean muted gray for edges */
-    strokeWidth: data?.strokeWidth || (selected ? 3 : 2),
+    stroke: strokeColor,
+    strokeWidth,
     strokeDasharray: data?.dashed ? '5, 5' : undefined,
     opacity: data?.opacity ?? 1,
+    filter: selected ? 'drop-shadow(0 0 4px var(--accent))' : undefined,
     transition: 'stroke var(--transition-fast), stroke-width var(--transition-fast)',
   };
 
@@ -52,18 +56,20 @@ export const CustomMindMapEdge = (props: EdgeProps<MindMapEdge>) => {
   }
 
   // Draw arrow ends if configured
-  const markerE = data?.arrowEnd ? 'url(#arrow-end)' : (typeof markerEnd === 'string' ? markerEnd : undefined);
-  const markerS = data?.arrowStart ? 'url(#arrow-start)' : (typeof markerStart === 'string' ? markerStart : undefined);
+  const markerEId = `arrow-end-${id}`;
+  const markerSId = `arrow-start-${id}`;
+  const markerE = data?.arrowEnd ? `url(#${markerEId})` : (typeof markerEnd === 'string' ? markerEnd : undefined);
+  const markerS = data?.arrowStart ? `url(#${markerSId})` : (typeof markerStart === 'string' ? markerStart : undefined);
 
   return (
     <>
-      {/* SVG Defs for markers if not global */}
+      {/* SVG Defs for markers unique per edge */}
       <defs>
-        <marker id="arrow-end" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M 0 0 L 10 5 L 0 10 z" fill={style.stroke as string} />
+        <marker id={markerEId} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill={strokeColor} />
         </marker>
-        <marker id="arrow-start" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M 10 0 L 0 5 L 10 10 z" fill={style.stroke as string} />
+        <marker id={markerSId} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 10 0 L 0 5 L 10 10 z" fill={strokeColor} />
         </marker>
       </defs>
       <BaseEdge path={edgePath} markerEnd={markerE} markerStart={markerS} style={style} id={id} />

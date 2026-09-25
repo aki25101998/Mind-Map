@@ -82,6 +82,7 @@ export interface EditorSlice {
   selectedNodeIds: string[];
   clipboardNodes: MindMapNode[];
   clipboardEdges: MindMapEdge[];
+  pasteCount: number;
   isSaving: boolean; // Keep for backward compatibility
   saveError: string | null; // Keep for backward compatibility
   syncStatus: SyncStatus;

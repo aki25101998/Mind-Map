@@ -16,6 +16,7 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
   selectedNodeIds: [],
   clipboardNodes: [],
   clipboardEdges: [],
+  pasteCount: 0,
   isSaving: false, // Legacy compatibility
   saveError: null, // Legacy compatibility
   syncStatus: 'idle',
@@ -117,12 +118,19 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
     const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
     const selectedEdges = edges.filter(e => selectedNodeIds.includes(e.source) && selectedNodeIds.includes(e.target));
 
-    set({ clipboardNodes: JSON.parse(JSON.stringify(selectedNodes)), clipboardEdges: JSON.parse(JSON.stringify(selectedEdges)) });
+    set({ 
+      clipboardNodes: JSON.parse(JSON.stringify(selectedNodes)), 
+      clipboardEdges: JSON.parse(JSON.stringify(selectedEdges)),
+      pasteCount: 0 
+    });
   },
 
   pasteFromClipboard: () => {
-    const { nodes, edges, clipboardNodes, clipboardEdges } = get();
+    const { nodes, edges, clipboardNodes, clipboardEdges, pasteCount } = get();
     if (clipboardNodes.length === 0) return;
+
+    const nextCount = pasteCount + 1;
+    const offset = 40 * nextCount;
 
     const idMap: Record<string, string> = {};
     const newIds: string[] = [];
@@ -134,7 +142,7 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
       return {
         ...n,
         id: newId,
-        position: { x: n.position.x + 50, y: n.position.y + 50 },
+        position: { x: n.position.x + offset, y: n.position.y + offset },
         selected: true
       };
     });
@@ -149,7 +157,8 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
     set({
       nodes: [...nodes.map(n => ({...n, selected: false})), ...newNodes],
       edges: [...edges, ...newEdges],
-      selectedNodeIds: newIds
+      selectedNodeIds: newIds,
+      pasteCount: nextCount
     });
     get().commitHistory();
   }

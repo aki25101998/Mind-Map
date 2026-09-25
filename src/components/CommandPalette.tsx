@@ -3,7 +3,8 @@ import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useReactFlow } from '@xyflow/react';
 import type { MindMapNode } from '../types';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, EyeOff } from 'lucide-react';
+import { findAncestors, computeSubtreeVisibility, computeHasChildrenMap } from '../utils/graphUtils';
 
 export const CommandPalette = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,18 +17,21 @@ export const CommandPalette = () => {
   })));
   
   const nodes = useMindMapStore(state => state.nodes);
+  const edges = useMindMapStore(state => state.edges);
   
   const { setCenter } = useReactFlow();
   
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Filter nodes based on search query
+  // Filter nodes based on search query (label, note, tags)
+  const q = query.trim().toLowerCase();
   const filteredNodes = nodes.filter(node => {
-    if (node.hidden) return false;
-    const labelMatch = node.data.label.toLowerCase().includes(query.toLowerCase());
-    const tagsMatch = node.data.tags?.some(tag => tag.toLowerCase().includes(query.toLowerCase()));
-    return labelMatch || tagsMatch;
+    if (!q) return true;
+    const labelMatch = node.data?.label?.toLowerCase().includes(q);
+    const noteMatch = typeof node.data?.note === 'string' && node.data.note.toLowerCase().includes(q);
+    const tagsMatch = node.data?.tags?.some(tag => tag.toLowerCase().includes(q));
+    return labelMatch || noteMatch || tagsMatch;
   });
 
   const handleOpen = useCallback(() => {
@@ -43,15 +47,38 @@ export const CommandPalette = () => {
 
   const handleSelectNode = useCallback((node: MindMapNode) => {
     handleClose();
+
+    // Check if node is hidden inside a collapsed subtree
+    const ancestors = findAncestors(node.id, nodes, edges);
+    const collapsedAncestors = ancestors.filter(a => a.data?.collapsed);
+
+    if (collapsedAncestors.length > 0) {
+      const collapsedIds = new Set(collapsedAncestors.map(a => a.id));
+      const updatedNodes = nodes.map(n => {
+        if (collapsedIds.has(n.id)) {
+          return { ...n, data: { ...n.data, collapsed: false } };
+        }
+        return n;
+      });
+
+      const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(updatedNodes, edges);
+      useMindMapStore.setState({
+        nodes: visibleNodes,
+        edges: visibleEdges,
+        hasChildrenMap: computeHasChildrenMap(visibleEdges)
+      });
+      useMindMapStore.getState().commitHistory();
+    }
+
     setSelectedNodes([node.id]);
     setEditingNodeId(node.id);
-    setCenter(node.position.x + 100, node.position.y + 30, { duration: 800, zoom: 1.5 });
-  }, [handleClose, setSelectedNodes, setEditingNodeId, setCenter]);
+    setCenter(node.position.x + 100, node.position.y + 30, { duration: 800, zoom: 1.4 });
+  }, [handleClose, setSelectedNodes, setEditingNodeId, setCenter, nodes, edges]);
 
-  // Handle Ctrl+K shortcut
+  // Handle Ctrl+K and Ctrl+F shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'f' || e.key === 'K' || e.key === 'F')) {
         e.preventDefault();
         handleOpen();
       }
@@ -98,8 +125,6 @@ export const CommandPalette = () => {
     }
   }, [selectedIndex]);
 
-
-
   if (!isOpen) return null;
 
   return (
@@ -123,7 +148,7 @@ export const CommandPalette = () => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search nodes by title or tags... (Esc to close)"
+            placeholder="Search nodes by title, note or tags... (Ctrl+F, Esc to close)"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -154,10 +179,23 @@ export const CommandPalette = () => {
                   color: 'var(--text-primary)'
                 }}
               >
-                <MapPin size={16} color="var(--accent)" />
+                {node.hidden ? (
+                  <span title="In collapsed branch" style={{ display: 'flex', alignItems: 'center' }}>
+                    <EyeOff size={16} color="var(--text-muted)" />
+                  </span>
+                ) : (
+                  <MapPin size={16} color="var(--accent)" />
+                )}
                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: index === selectedIndex ? 'bold' : 'normal' }}>
-                    {node.data.label}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: index === selectedIndex ? 'bold' : 'normal' }}>
+                      {node.data.label}
+                    </span>
+                    {node.hidden && (
+                      <span style={{ fontSize: '10px', padding: '2px 6px', background: 'var(--border-subtle)', borderRadius: '4px', color: 'var(--text-muted)' }}>
+                        collapsed
+                      </span>
+                    )}
                   </div>
                   {node.data.tags && node.data.tags.length > 0 && (
                     <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>

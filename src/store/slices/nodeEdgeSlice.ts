@@ -9,7 +9,12 @@ import {
 import type { MindMapNode, MindMapEdge } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import { findNonCollidingPosition, resolveNodeLayoutSide, getLayoutType, applyAutoLayout } from '../../utils/layoutUtils';
-import { getDescendants, computeHasChildrenMap } from '../../utils/graphUtils';
+import { 
+  computeHasChildrenMap, 
+  isValidConnection, 
+  isStructuralEdge, 
+  computeSubtreeVisibility 
+} from '../../utils/graphUtils';
 
 export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSlice> = (set, get) => ({
   nodes: [],
@@ -39,12 +44,17 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   },
 
   onConnect: (connection) => {
+    const { nodes, edges } = get();
+    if (!isValidConnection(connection, nodes, edges)) {
+      return;
+    }
+
     const newEdges = addEdge({ 
       ...connection, 
       id: uuidv4(), 
       type: 'mindmap-edge',
       data: { edgeStyle: 'curved' }
-    }, get().edges) as MindMapEdge[];
+    }, edges) as MindMapEdge[];
     set({ edges: newEdges, hasChildrenMap: computeHasChildrenMap(newEdges) });
     get().commitHistory();
   },
@@ -92,22 +102,35 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
 
   deleteSelected: () => {
     const { nodes, edges, selectedNodeIds, editingNodeId, contextMenu } = get();
-    if (selectedNodeIds.length === 0) return;
+    const selectedEdges = edges.filter(e => e.selected);
+    const nodesToDelete = nodes.filter(n => selectedNodeIds.includes(n.id) && n.type !== 'main');
 
-    const remainingNodes = nodes.filter(n => !selectedNodeIds.includes(n.id));
-    const nodesToDelete = nodes.filter(n => selectedNodeIds.includes(n.id));
-    const edgesToRemove = getConnectedEdges(nodesToDelete, edges);
-    
-    const remainingEdges = edges.filter(e => !edgesToRemove.some(re => re.id === e.id));
+    // If neither non-root nodes nor edges are selected, do nothing
+    if (nodesToDelete.length === 0 && selectedEdges.length === 0) {
+      return;
+    }
 
-    const newEditingNodeId = editingNodeId && selectedNodeIds.includes(editingNodeId) ? null : editingNodeId;
-    const newContextMenu = contextMenu?.target === 'node' && contextMenu.id && selectedNodeIds.includes(contextMenu.id) ? null : contextMenu;
+    const nodeIdsToDelete = new Set(nodesToDelete.map(n => n.id));
+    const edgeIdsToRemove = new Set(selectedEdges.map(e => e.id));
+
+    const connectedEdges = getConnectedEdges(nodesToDelete, edges);
+    connectedEdges.forEach(e => edgeIdsToRemove.add(e.id));
+
+    const remainingNodes = nodes.filter(n => !nodeIdsToDelete.has(n.id));
+    const remainingEdges = edges.filter(e => !edgeIdsToRemove.has(e.id));
+
+    // Restore visibility on remaining nodes/edges
+    const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(remainingNodes, remainingEdges);
+
+    const newSelectedNodeIds = selectedNodeIds.filter(id => !nodeIdsToDelete.has(id));
+    const newEditingNodeId = editingNodeId && nodeIdsToDelete.has(editingNodeId) ? null : editingNodeId;
+    const newContextMenu = contextMenu?.target === 'node' && contextMenu.id && nodeIdsToDelete.has(contextMenu.id) ? null : contextMenu;
 
     set({ 
-      nodes: remainingNodes, 
-      edges: remainingEdges, 
-      hasChildrenMap: computeHasChildrenMap(remainingEdges), 
-      selectedNodeIds: [],
+      nodes: visibleNodes, 
+      edges: visibleEdges, 
+      hasChildrenMap: computeHasChildrenMap(visibleEdges), 
+      selectedNodeIds: newSelectedNodeIds,
       editingNodeId: newEditingNodeId,
       contextMenu: newContextMenu
     });
@@ -117,20 +140,22 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   deleteNodeById: (id) => {
     const { nodes, edges, selectedNodeIds, editingNodeId, contextMenu } = get();
     const nodeToDelete = nodes.find(n => n.id === id);
-    if (!nodeToDelete) return;
+    if (!nodeToDelete || nodeToDelete.type === 'main') return;
 
     const remainingNodes = nodes.filter(n => n.id !== id);
     const edgesToRemove = getConnectedEdges([nodeToDelete], edges);
     const remainingEdges = edges.filter(e => !edgesToRemove.some(re => re.id === e.id));
+
+    const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(remainingNodes, remainingEdges);
 
     const newEditingNodeId = editingNodeId === id ? null : editingNodeId;
     const newContextMenu = contextMenu?.target === 'node' && contextMenu.id === id ? null : contextMenu;
     const newSelectedNodeIds = selectedNodeIds.filter(selId => selId !== id);
 
     set({ 
-      nodes: remainingNodes, 
-      edges: remainingEdges, 
-      hasChildrenMap: computeHasChildrenMap(remainingEdges), 
+      nodes: visibleNodes, 
+      edges: visibleEdges, 
+      hasChildrenMap: computeHasChildrenMap(visibleEdges), 
       selectedNodeIds: newSelectedNodeIds,
       editingNodeId: newEditingNodeId,
       contextMenu: newContextMenu
@@ -174,7 +199,11 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   updateEdge: (id, data) => {
     const newEdges = get().edges.map((edge) => {
       if (edge.id === id) {
-        return { ...edge, ...data };
+        return { 
+          ...edge, 
+          ...data,
+          data: data.data ? { ...edge.data, ...data.data } : edge.data
+        };
       }
       return edge;
     });
@@ -233,7 +262,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     const preferredX = parentNode.position.x + offsetX;
     const preferredY = parentNode.position.y;
     
-    const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, nodes);
+    const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, nodes, 'basic', 'New Topic');
 
     const newId = uuidv4();
     const newNode: MindMapNode = {
@@ -266,13 +295,12 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   createSiblingNode: (nodeId) => {
     const { nodes, edges, templateId } = get();
     const targetNode = nodes.find(n => n.id === nodeId);
-    if (!targetNode) return;
+    if (!targetNode || targetNode.type === 'main') return;
 
     // Find parent edge
-    const parentEdge = edges.find(e => e.target === nodeId);
+    const parentEdge = edges.find(e => e.target === nodeId && isStructuralEdge(e));
     if (!parentEdge) {
-      // If root, just create another root child
-      get().createChildNode(nodeId);
+      // Root or disconnected node has no sibling
       return;
     }
 
@@ -284,7 +312,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     const preferredX = targetNode.position.x;
     const preferredY = targetNode.position.y + 80;
     
-    const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, nodes);
+    const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, nodes, targetNode.type, 'New Topic', targetNode.data?.fontSize);
 
     const newId = uuidv4();
     const newNode: MindMapNode = {
@@ -315,35 +343,27 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   },
 
   toggleCollapse: (nodeId) => {
-    const { nodes, edges } = get();
+    const { nodes, edges, selectedNodeIds, editingNodeId } = get();
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
 
     const isCollapsed = !node.data.collapsed;
-    const { descendantNodes, descendantEdges } = getDescendants(nodeId, nodes, edges);
-    
-    const descendantNodeIds = new Set(descendantNodes.map(n => n.id));
-    const descendantEdgeIds = new Set(descendantEdges.map(e => e.id));
-
-    const newEdges = edges.map(e => {
-      if (descendantEdgeIds.has(e.id)) {
-        return { ...e, hidden: isCollapsed };
+    const updatedNodes = nodes.map(n => {
+      if (n.id === nodeId) {
+        return { ...n, data: { ...n.data, collapsed: isCollapsed } };
       }
-      return e;
+      return n;
     });
 
+    const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(updatedNodes, edges);
+    const hiddenNodeIds = new Set(visibleNodes.filter(n => n.hidden).map(n => n.id));
+
     set({
-      nodes: nodes.map(n => {
-        if (n.id === nodeId) {
-          return { ...n, data: { ...n.data, collapsed: isCollapsed } };
-        }
-        if (descendantNodeIds.has(n.id)) {
-          return { ...n, hidden: isCollapsed };
-        }
-        return n;
-      }),
-      edges: newEdges,
-      hasChildrenMap: computeHasChildrenMap(newEdges)
+      nodes: visibleNodes,
+      edges: visibleEdges,
+      hasChildrenMap: computeHasChildrenMap(visibleEdges),
+      selectedNodeIds: selectedNodeIds.filter(id => !hiddenNodeIds.has(id)),
+      editingNodeId: editingNodeId && hiddenNodeIds.has(editingNodeId) ? null : editingNodeId
     });
     get().commitHistory();
   },

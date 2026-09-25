@@ -1,4 +1,4 @@
-import type { MindMapNode, MindMapEdge, LayoutType } from '../types';
+import type { MindMapNode, MindMapEdge, LayoutType, MindMapNodeType } from '../types';
 import { templates } from '../templates/definitions';
 
 export type LayoutSide = 'left' | 'right' | 'center';
@@ -66,24 +66,67 @@ export const resolveNodeLayoutSide = (
   return node.position.x < 0 ? 'left' : 'right';
 };
 
-const NODE_WIDTH = 180;
-const NODE_HEIGHT = 60;
-const COLLISION_GAP = 20;
+export const estimateNodeSize = (
+  type?: MindMapNodeType,
+  label?: string,
+  fontSize?: number
+): { width: number; height: number } => {
+  const effectiveFontSize = fontSize || (type === 'main' ? 20 : 14);
+  const textLength = label?.length || 8;
+  const paddingX = type === 'main' ? 48 : (type === 'rounded' ? 36 : 28);
+  const paddingY = type === 'main' ? 28 : 20;
+
+  // Approximate character width
+  const charWidth = effectiveFontSize * 0.6;
+  const estimatedTextWidth = textLength * charWidth;
+
+  let baseWidth = 160;
+  let baseHeight = 50;
+
+  if (type === 'main') {
+    baseWidth = 200;
+    baseHeight = 70;
+  } else if (type === 'ellipse') {
+    baseWidth = 160;
+    baseHeight = 80;
+  } else if (type === 'text') {
+    baseWidth = 120;
+    baseHeight = 40;
+  }
+
+  const width = Math.max(baseWidth, Math.round(estimatedTextWidth + paddingX));
+  const height = Math.max(baseHeight, Math.round(effectiveFontSize + paddingY));
+
+  return { width, height };
+};
+
+const COLLISION_GAP = 24;
 
 export const findNonCollidingPosition = (
   preferredX: number,
   preferredY: number,
-  nodes: MindMapNode[]
+  nodes: MindMapNode[],
+  candidateType?: MindMapNodeType,
+  candidateLabel?: string,
+  candidateFontSize?: number
 ): { x: number; y: number } => {
-  const candW = NODE_WIDTH;
-  const candH = NODE_HEIGHT;
+  const { width: candW, height: candH } = estimateNodeSize(candidateType, candidateLabel, candidateFontSize);
 
   const isColliding = (x: number, y: number) => {
     return nodes.some(existingNode => {
+      if (existingNode.hidden) return false;
+
       const exX = existingNode.position.x;
       const exY = existingNode.position.y;
-      const exW = existingNode.measured?.width ?? NODE_WIDTH;
-      const exH = existingNode.measured?.height ?? NODE_HEIGHT;
+      
+      const estimatedExisting = estimateNodeSize(
+        existingNode.type, 
+        existingNode.data?.label, 
+        existingNode.data?.fontSize
+      );
+
+      const exW = existingNode.measured?.width ?? estimatedExisting.width;
+      const exH = existingNode.measured?.height ?? estimatedExisting.height;
       
       const candidateRight = x + candW;
       const candidateLeft = x;
@@ -109,7 +152,7 @@ export const findNonCollidingPosition = (
   }
 
   let angle = 0;
-  let radius = 30;
+  let radius = 35;
   const MAX_ATTEMPTS = 300;
   
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
@@ -124,11 +167,11 @@ export const findNonCollidingPosition = (
     angle += Math.PI / 6; 
     if (angle >= 2 * Math.PI - 0.01) {
       angle = 0;
-      radius += 40;
+      radius += 45;
     }
   }
 
-  // If no position found (extremely rare), place at preferred
+  // Fallback to preferred
   return { x: preferredX, y: preferredY };
 };
 
@@ -192,6 +235,10 @@ export const normalizeTwoWayDocument = (nodes: MindMapNode[], edges: MindMapEdge
 
 import { applyClassicMindMap, applyTwoWayMindMap, applyRadialMindMap, applyDagreLayout } from './hierarchyLayout';
 
+/**
+ * Calculates auto layout positions for nodes based on template/layoutType.
+ * Locked nodes (node.data.locked === true) preserve their exact user-assigned positions.
+ */
 export const applyAutoLayout = (
   nodes: MindMapNode[],
   edges: MindMapEdge[],
@@ -199,22 +246,48 @@ export const applyAutoLayout = (
 ): MindMapNode[] => {
   if (nodes.length === 0 || layoutType === 'free') return nodes;
 
+  let layoutedNodes: MindMapNode[] = [];
+
   switch (layoutType) {
     case 'tree':
-      return applyClassicMindMap(nodes, edges);
+      layoutedNodes = applyClassicMindMap(nodes, edges);
+      break;
     case 'two-way':
-      return applyTwoWayMindMap(nodes, edges);
+      layoutedNodes = applyTwoWayMindMap(nodes, edges);
+      break;
     case 'radial':
-      return applyRadialMindMap(nodes, edges);
+      layoutedNodes = applyRadialMindMap(nodes, edges);
+      break;
     case 'org':
-      return applyDagreLayout(nodes, edges, 'TB');
+      layoutedNodes = applyDagreLayout(nodes, edges, 'TB');
+      break;
     case 'flow':
-      return applyDagreLayout(nodes, edges, 'LR');
     case 'brace':
-      return applyDagreLayout(nodes, edges, 'LR');
+      layoutedNodes = applyDagreLayout(nodes, edges, 'LR');
+      break;
     case 'one-way':
-      return applyClassicMindMap(nodes, edges);
     default:
-      return applyClassicMindMap(nodes, edges);
+      layoutedNodes = applyClassicMindMap(nodes, edges);
+      break;
   }
+
+  // Preserve positions for locked nodes
+  const lockedNodeMap = new Map<string, { x: number; y: number }>();
+  nodes.forEach(n => {
+    if (n.data?.locked) {
+      lockedNodeMap.set(n.id, n.position);
+    }
+  });
+
+  if (lockedNodeMap.size > 0) {
+    return layoutedNodes.map(n => {
+      const lockedPos = lockedNodeMap.get(n.id);
+      if (lockedPos) {
+        return { ...n, position: lockedPos };
+      }
+      return n;
+    });
+  }
+
+  return layoutedNodes;
 };

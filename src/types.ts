@@ -21,6 +21,8 @@ export interface NodeData extends Record<string, unknown> {
   note?: string;
   url?: string;
   layoutSide?: 'left' | 'right' | 'center';
+  locked?: boolean;
+  dashedEdges?: boolean;
 }
 
 export type MindMapNode = Node<NodeData, MindMapNodeType>;

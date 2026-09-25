@@ -11,7 +11,26 @@ interface TopToolbarProps {
 }
 
 export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
-  const { documentTitle, setTitle, undo, redo, syncStatus, nodes, edges, viewport, documentId, templateId, createdAt, updatedAt, theme, toggleTheme } = useMindMapStore();
+  const { 
+    documentTitle, 
+    setTitle, 
+    undo, 
+    redo, 
+    history,
+    historyIndex,
+    syncStatus, 
+    nodes, 
+    edges, 
+    viewport, 
+    documentId, 
+    templateId, 
+    createdAt, 
+    updatedAt, 
+    theme, 
+    toggleTheme 
+  } = useMindMapStore();
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
   const handleAutoLayout = useAutoLayout();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentTitle);
@@ -132,41 +151,45 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
         <div style={{ display: 'flex', gap: '4px' }}>
           <button 
             onClick={undo} 
+            disabled={!canUndo}
             style={{
               padding: '6px',
               borderRadius: 'var(--radius-sm)',
               background: 'transparent',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
+              color: canUndo ? 'var(--text-secondary)' : 'var(--text-muted)',
+              cursor: canUndo ? 'pointer' : 'not-allowed',
+              opacity: canUndo ? 1 : 0.35,
               border: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all var(--transition-fast)'
             }} 
-            title="Undo (Ctrl+Z)"
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }} 
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            title={canUndo ? "Undo (Ctrl+Z)" : "Cannot Undo"}
+            onMouseEnter={e => { if (canUndo) { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; } }} 
+            onMouseLeave={e => { if (canUndo) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
           >
             <Undo size={16} />
           </button>
           <button 
             onClick={redo} 
+            disabled={!canRedo}
             style={{
               padding: '6px',
               borderRadius: 'var(--radius-sm)',
               background: 'transparent',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
+              color: canRedo ? 'var(--text-secondary)' : 'var(--text-muted)',
+              cursor: canRedo ? 'pointer' : 'not-allowed',
+              opacity: canRedo ? 1 : 0.35,
               border: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all var(--transition-fast)'
             }} 
-            title="Redo (Ctrl+Shift+Z)"
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }} 
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            title={canRedo ? "Redo (Ctrl+Shift+Z)" : "Cannot Redo"}
+            onMouseEnter={e => { if (canRedo) { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; } }} 
+            onMouseLeave={e => { if (canRedo) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
           >
             <Redo size={16} />
           </button>

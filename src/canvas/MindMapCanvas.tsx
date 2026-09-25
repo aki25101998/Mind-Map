@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   ReactFlow, 
   Background,
@@ -20,11 +20,13 @@ import { RoundedNode } from './nodes/RoundedNode';
 import { EllipseNode } from './nodes/EllipseNode';
 import { TextNode } from './nodes/TextNode';
 import { FloatingToolbar } from './FloatingToolbar';
+import { EdgeFloatingToolbar } from './edges/EdgeFloatingToolbar';
 import { CustomMindMapEdge } from './edges/MindMapEdge';
 import { ContextMenu } from '../editor/ContextMenu';
 import { CommandPalette } from '../components/CommandPalette';
 import { v4 as uuidv4 } from 'uuid';
 import type { MindMapNode } from '../types';
+import { isValidConnection } from '../utils/graphUtils';
 
 const nodeTypes: NodeTypes = {
   main: MainNode,
@@ -97,7 +99,7 @@ const CanvasInner = () => {
   
   const isDraggingRef = useRef(false);
   
-  const { setViewport: rfSetViewport, screenToFlowPosition, fitView } = useReactFlow();
+  const { setViewport: rfSetViewport, screenToFlowPosition, fitView, setCenter } = useReactFlow();
   
   const [localNodes, setLocalNodes, onLocalNodesChange] = useNodesState(nodes || []);
   
@@ -154,7 +156,12 @@ const CanvasInner = () => {
         if (selectedNodeIds.length === 1) createChildNode(selectedNodeIds[0]);
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        if (selectedNodeIds.length === 1) createSiblingNode(selectedNodeIds[0]);
+        if (selectedNodeIds.length === 1) {
+          const selectedNode = nodes.find(n => n.id === selectedNodeIds[0]);
+          if (selectedNode && selectedNode.type !== 'main') {
+            createSiblingNode(selectedNodeIds[0]);
+          }
+        }
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         deleteSelected();
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -178,6 +185,14 @@ const CanvasInner = () => {
           e.preventDefault();
           setEditingNodeId(selectedNodeIds[0]);
         }
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (selectedNodeIds.length === 1 && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          const node = nodes.find(n => n.id === selectedNodeIds[0]);
+          if (node) {
+            setCenter(node.position.x + 100, node.position.y + 30, { duration: 600 });
+          }
+        }
       } else if (e.key === 'Escape') {
         setSelectedNodes([]);
         setEditingNodeId(null);
@@ -186,21 +201,25 @@ const CanvasInner = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, nodes, createChildNode, createSiblingNode, deleteSelected, undo, redo, copySelected, pasteFromClipboard, duplicateSelected, setSelectedNodes, setEditingNodeId, isReadOnly]);
+  }, [selectedNodeIds, nodes, createChildNode, createSiblingNode, deleteSelected, undo, redo, copySelected, pasteFromClipboard, duplicateSelected, setSelectedNodes, setEditingNodeId, setCenter, isReadOnly]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     if (isReadOnly) return;
     const target = e.target as HTMLElement;
     if (target.classList.contains('react-flow__pane')) {
       const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      const newId = uuidv4();
       addNode({
-        id: uuidv4(),
+        id: newId,
         type: 'basic',
         position,
-        data: { label: 'New Node' },
+        data: { label: 'New Topic' },
+        selected: true
       });
+      setSelectedNodes([newId]);
+      setEditingNodeId(newId);
     }
-  }, [screenToFlowPosition, addNode]);
+  }, [screenToFlowPosition, addNode, setSelectedNodes, setEditingNodeId, isReadOnly]);
 
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent | MouseEvent, node: { id: string }) => {
@@ -229,7 +248,11 @@ const CanvasInner = () => {
     setIsDragging(false);
     isDraggingRef.current = false;
     
-    updateNodePositions(draggedNodes);
+    // Only update non-locked nodes
+    const validDragged = draggedNodes.filter(n => !(n.data as any)?.locked);
+    if (validDragged.length > 0) {
+      updateNodePositions(validDragged);
+    }
   }, [updateNodePositions, setIsDragging]);
 
   const onMoveEnd = useCallback((_: any, vp: any) => {
@@ -240,13 +263,27 @@ const CanvasInner = () => {
     setContextMenu(null);
   }, [setContextMenu]);
 
+  const isValidConnectionHandler = useCallback((connection: any) => {
+    return isValidConnection(connection, nodes, edges);
+  }, [nodes, edges]);
+
+  const selectedEdge = edges.find(e => e.selected);
+
+  const displayNodes = useMemo(() => {
+    return localNodes.map(n => ({
+      ...n,
+      draggable: !isReadOnly && !(n.data as any)?.locked
+    }));
+  }, [localNodes, isReadOnly]);
+
   return (
     <ReactFlow
-      nodes={localNodes}
+      nodes={displayNodes}
       edges={edges}
       onNodesChange={handleNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      isValidConnection={isValidConnectionHandler}
       onNodeDragStart={onNodeDragStart}
       onNodeDragStop={onNodeDragStop}
       onMoveEnd={onMoveEnd}
@@ -285,6 +322,10 @@ const CanvasInner = () => {
       
       {!isReadOnly && selectedNodeIds.length === 1 && !editingNodeId && (
         <FloatingToolbar nodeId={selectedNodeIds[0]} />
+      )}
+
+      {!isReadOnly && selectedNodeIds.length === 0 && selectedEdge && (
+        <EdgeFloatingToolbar edgeId={selectedEdge.id} />
       )}
     </ReactFlow>
   );
