@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
-import { getAllDocuments, deleteDocument } from '../persistence/idb';
+import { loadAllDocuments, removeDocument, syncDocument } from '../persistence/persistenceService';
 import type { MindMapDocument } from '../types';
 import { FileText, Home, Plus, Trash2, X } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
 import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 
 interface DocumentSidebarProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
   const navigate = useNavigate();
 
   const loadRecentDocs = () => {
-    getAllDocuments()
+    loadAllDocuments()
       .then(docs => {
         setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
         setError(null);
@@ -37,7 +38,7 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
   useEffect(() => {
     let mounted = true;
     if (isOpen) {
-      getAllDocuments()
+      loadAllDocuments()
         .then(docs => {
           if (mounted) {
             setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
@@ -67,13 +68,33 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
 
   const handleDeleteDoc = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    await deleteDocument(id);
+    await removeDocument(id);
     if (id === documentId) {
       setDeletedDocumentId(id);
       closeDocument();
       navigate('/mindmaps');
     }
     loadRecentDocs();
+  };
+
+  const handleNewDocument = async () => {
+    onClose();
+    const newDocId = uuidv4();
+    const now = Date.now();
+    const newDoc: MindMapDocument = {
+      id: newDocId,
+      title: 'Untitled Mind Map',
+      nodes: [
+        { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Main Idea' } }
+      ],
+      edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 },
+      templateId: 'blank',
+      createdAt: now,
+      updatedAt: now
+    };
+    await syncDocument(newDoc);
+    navigate(`/mindmaps/${newDocId}`);
   };
 
   const handleHome = () => {
@@ -126,7 +147,7 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
           </button>
           
           <button 
-            onClick={() => { onClose(); navigate('/mindmaps/new'); }}
+            onClick={handleNewDocument}
             style={{ 
               display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '10px 14px', 
               background: 'var(--gradient-primary)', border: 'none', color: '#ffffff', 

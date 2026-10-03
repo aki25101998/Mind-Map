@@ -171,9 +171,9 @@ export const templates: Template[] = [
       { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } },
       { id: 'a', type: 'rounded', position: { x: -150, y: 120 }, data: { label: 'A' } },
       { id: 'b', type: 'rounded', position: { x: 150, y: 120 }, data: { label: 'B' } },
-      { id: 'a1', type: 'basic', position: { x: -250, y: 240 }, data: { label: 'A1', backgroundColor: 'var(--node-bg-default)', color: 'var(--text-color)' } },
-      { id: 'a2', type: 'basic', position: { x: -50, y: 240 }, data: { label: 'A2', backgroundColor: 'var(--node-bg-default)', color: 'var(--text-color)' } },
-      { id: 'b1', type: 'basic', position: { x: 150, y: 240 }, data: { label: 'B1', backgroundColor: 'var(--node-bg-default)', color: 'var(--text-color)' } },
+      { id: 'a1', type: 'basic', position: { x: -250, y: 240 }, data: { label: 'A1', backgroundColor: 'var(--node-bg-default)', color: 'var(--text-primary)' } },
+      { id: 'a2', type: 'basic', position: { x: -50, y: 240 }, data: { label: 'A2', backgroundColor: 'var(--node-bg-default)', color: 'var(--text-primary)' } },
+      { id: 'b1', type: 'basic', position: { x: 150, y: 240 }, data: { label: 'B1', backgroundColor: 'var(--node-bg-default)', color: 'var(--text-primary)' } },
     ],
     defaultEdges: [
       { id: 'e-r-a', source: 'root', target: 'a', type: 'mindmap-edge' },

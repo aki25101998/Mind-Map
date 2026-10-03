@@ -76,6 +76,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
+      console.error('Failed to copy link to clipboard:', err);
       setError('Failed to copy link to clipboard.');
     }
   };

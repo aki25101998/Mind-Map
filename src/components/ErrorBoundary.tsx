@@ -11,26 +11,33 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  prevDocumentId: string | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
-    error: null
+    error: null,
+    prevDocumentId: this.props.documentId
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
+  }
+
+  public static getDerivedStateFromProps(props: Props, state: State): Partial<State> | null {
+    if (props.documentId !== state.prevDocumentId) {
+      return {
+        hasError: false,
+        error: null,
+        prevDocumentId: props.documentId
+      };
+    }
+    return null;
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught rendering error:', error, errorInfo);
-  }
-
-  public componentDidUpdate(prevProps: Props) {
-    if (prevProps.documentId !== this.props.documentId) {
-      this.setState({ hasError: false, error: null });
-    }
   }
 
   public render() {

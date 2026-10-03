@@ -52,6 +52,7 @@ export const SharePage = () => {
            setError('This Mind Map is no longer shared or does not exist.');
         }
       } catch (err) {
+        console.error('Failed to load shared mind map:', err);
         if (mounted) setError('Failed to load shared mind map.');
       } finally {
         if (mounted) setIsLoading(false);
