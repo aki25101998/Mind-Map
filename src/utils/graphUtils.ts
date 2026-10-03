@@ -15,6 +15,16 @@ export const isRelationshipEdge = (edge: MindMapEdge): boolean => {
 };
 
 /**
+ * Returns all structural parent IDs of a node.
+ * In a general graph, a node may have multiple structural parents/incoming lines.
+ */
+export const getStructuralParents = (nodeId: string, edges: MindMapEdge[]): string[] => {
+  return edges
+    .filter(e => e.target === nodeId && isStructuralEdge(e))
+    .map(e => e.source);
+};
+
+/**
  * Returns the structural parent ID of a node (if any).
  * In a valid tree, each node has at most 1 structural parent.
  */
@@ -67,6 +77,8 @@ export const wouldCreateCycle = (
 export interface ConnectionCandidate {
   source?: string | null;
   target?: string | null;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
   data?: Record<string, unknown>;
 }
 
@@ -74,6 +86,7 @@ export interface ConnectionCandidate {
 export interface IsValidConnectionOptions {
   allowReparenting?: boolean;
   ignoredEdgeId?: string;
+  strictTree?: boolean;
 }
 
 /**
@@ -81,17 +94,11 @@ export interface IsValidConnectionOptions {
  * 1. Source and target must exist and be non-empty strings.
  * 2. Self-connections (A -> A) are disallowed.
  * 3. Source and target nodes must exist in the node list.
- * 4. Duplicate edges (same source and target) are disallowed.
- * 5. For structural edges (Parent -> Child):
- *    - Target cannot be the Root/main node (Root cannot have a parent).
- *    - Reverse structural edge (B -> A when A -> B exists) is disallowed.
- *    - If allowReparenting is true:
- *      * Existing parent edge on target is allowed to be replaced, provided the new connection does not create a cycle.
- *    - If allowReparenting is false:
- *      * Multiple structural parents (tree constraint) are disallowed.
- *      * Structural cycle is disallowed.
- * 6. For relationship edges (A <-> B):
- *    - No parent/cycle hierarchy rules applied.
+ * 4. Duplicate edges (same source, target, and matching handles) are disallowed.
+ * 5. Structural cycle is disallowed.
+ * 6. Target cannot be Root / main node in structural mode.
+ * 7. By default, nodes CAN connect multiple incoming and outgoing lines freely.
+ *    Single-parent tree constraint is only enforced if options?.strictTree === true.
  */
 export const isValidConnection = (
   connection: ConnectionCandidate,
@@ -118,7 +125,17 @@ export const isValidConnection = (
     ? edges.filter(e => e.id !== options.ignoredEdgeId)
     : edges;
 
-  const isDuplicate = effectiveEdges.some(e => e.source === source && e.target === target);
+  const isDuplicate = effectiveEdges.some(e => {
+    if (e.source !== source || e.target !== target) return false;
+    if (connection.sourceHandle && e.sourceHandle && connection.sourceHandle !== e.sourceHandle) {
+      return false;
+    }
+    if (connection.targetHandle && e.targetHandle && connection.targetHandle !== e.targetHandle) {
+      return false;
+    }
+    return true;
+  });
+
   if (isDuplicate) {
     return false;
   }
@@ -137,7 +154,7 @@ export const isValidConnection = (
     }
 
     if (options?.allowReparenting) {
-      // Exclude existing parent edge of target since it will be replaced by the new connection
+      // Exclude existing parent edge of target if reparenting
       const edgesWithoutOldParent = effectiveEdges.filter(e => !(e.target === target && isStructuralEdge(e)));
 
       // Disallow structural cycles in the resulting tree
@@ -150,10 +167,12 @@ export const isValidConnection = (
         return false;
       }
 
-      // Disallow multiple structural parents (tree constraint)
-      const existingParent = getStructuralParent(target, effectiveEdges);
-      if (existingParent) {
-        return false;
+      // Disallow multiple structural parents ONLY if strictTree constraint is explicitly enabled
+      if (options?.strictTree) {
+        const existingParent = getStructuralParent(target, effectiveEdges);
+        if (existingParent) {
+          return false;
+        }
       }
     }
   }
@@ -167,7 +186,8 @@ export const isValidConnection = (
 export const canConvertToStructural = (
   edge: MindMapEdge,
   edges: MindMapEdge[],
-  nodes: MindMapNode[]
+  nodes: MindMapNode[],
+  options?: { strictTree?: boolean }
 ): { allowed: boolean; reason?: string } => {
   const { source, target } = edge;
   const sourceNode = nodes.find(n => n.id === source);
@@ -183,13 +203,15 @@ export const canConvertToStructural = (
 
   const otherEdges = edges.filter(e => e.id !== edge.id);
 
-  // Check if target already has another structural parent
-  const existingParent = getStructuralParent(target, otherEdges);
-  if (existingParent) {
-    return { 
-      allowed: false, 
-      reason: 'Cannot convert this edge to a hierarchy edge because the target already has a parent.' 
-    };
+  // Check if target already has another structural parent (only in strict tree mode)
+  if (options?.strictTree) {
+    const existingParent = getStructuralParent(target, otherEdges);
+    if (existingParent) {
+      return { 
+        allowed: false, 
+        reason: 'Cannot convert this edge to a hierarchy edge because the target already has a parent.' 
+      };
+    }
   }
 
   // Check reverse structural edge
@@ -285,29 +307,23 @@ export const computeSubtreeVisibility = (
     }
     visited.add(id);
 
-    const parentId = getStructuralParent(id, edges);
-    if (!parentId) {
+    const parentIds = getStructuralParents(id, edges);
+    if (parentIds.length === 0) {
       // Root or disconnected node is not hidden by collapse
       isNodeHiddenMemo.set(id, false);
       return false;
     }
 
-    const parentNode = nodeMap.get(parentId);
-    if (!parentNode) {
-      isNodeHiddenMemo.set(id, false);
-      return false;
-    }
+    // A node is hidden if ALL of its structural parents are collapsed or hidden
+    const allParentsHidden = parentIds.every(parentId => {
+      const parentNode = nodeMap.get(parentId);
+      if (!parentNode) return false;
+      if (parentNode.data?.collapsed) return true;
+      return checkIsHidden(parentId, visited);
+    });
 
-    // If parent itself is collapsed, this node is hidden!
-    if (parentNode.data?.collapsed) {
-      isNodeHiddenMemo.set(id, true);
-      return true;
-    }
-
-    // Otherwise, inherit parent's hidden state
-    const parentHidden = checkIsHidden(parentId, visited);
-    isNodeHiddenMemo.set(id, parentHidden);
-    return parentHidden;
+    isNodeHiddenMemo.set(id, allParentsHidden);
+    return allParentsHidden;
   };
 
   const updatedNodes = nodes.map(node => {

@@ -39,7 +39,12 @@ export const buildHierarchyTree = (
     }
   });
 
+  const visited = new Set<string>();
+
   const buildSubtree = (nodeId: string, depth: number, parentSide?: LayoutSide): TreeNode | null => {
+    if (visited.has(nodeId)) return null;
+    visited.add(nodeId);
+
     const node = nodes.find(n => n.id === nodeId);
     if (!node || node.hidden) return null;
 

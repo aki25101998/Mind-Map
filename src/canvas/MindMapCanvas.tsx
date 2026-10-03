@@ -272,7 +272,7 @@ const CanvasInner = () => {
   }, [setContextMenu]);
 
   const isValidConnectionHandler = useCallback((connection: any) => {
-    return isValidConnection(connection, nodes, edges, { allowReparenting: true });
+    return isValidConnection(connection, nodes, edges);
   }, [nodes, edges]);
 
   const selectedEdge = edges.find(e => e.selected);

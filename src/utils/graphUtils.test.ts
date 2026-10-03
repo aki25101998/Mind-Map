@@ -107,9 +107,14 @@ describe('graphUtils', () => {
       expect(isValidConnection({ source: 'nodeD', target: 'root' }, nodes, structuralEdges)).toBe(false);
     });
 
-    it('rejects structural connection if target already has a structural parent (tree constraint)', () => {
-      // nodeB -> nodeC already exists, so root -> nodeC should be rejected
-      expect(isValidConnection({ source: 'root', target: 'nodeC' }, nodes, structuralEdges)).toBe(false);
+    it('allows connecting multiple lines to 1 node freely by default', () => {
+      // nodeB -> nodeC already exists; connecting root -> nodeC is now completely allowed!
+      expect(isValidConnection({ source: 'root', target: 'nodeC' }, nodes, structuralEdges)).toBe(true);
+    });
+
+    it('rejects structural connection if target already has a structural parent when strictTree is true', () => {
+      // nodeB -> nodeC already exists, so root -> nodeC is rejected when strictTree is true
+      expect(isValidConnection({ source: 'root', target: 'nodeC' }, nodes, structuralEdges, { strictTree: true })).toBe(false);
     });
 
     it('rejects structural connection if target is Root / main node', () => {
@@ -163,9 +168,15 @@ describe('graphUtils', () => {
       expect(res.allowed).toBe(true);
     });
 
-    it('rejects converting to structural if target already has another structural parent', () => {
+    it('allows converting to structural even if target already has another structural parent by default', () => {
       // nodeD already has parent nodeC via structuralEdges
       const res = canConvertToStructural(relationshipEdge, [...structuralEdges, relationshipEdge], nodes);
+      expect(res.allowed).toBe(true);
+    });
+
+    it('rejects converting to structural if target already has another structural parent when strictTree is true', () => {
+      // nodeD already has parent nodeC via structuralEdges
+      const res = canConvertToStructural(relationshipEdge, [...structuralEdges, relationshipEdge], nodes, { strictTree: true });
       expect(res.allowed).toBe(false);
       expect(res.reason).toContain('target already has a parent');
     });

@@ -398,8 +398,8 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     expect(useMindMapStore.getState().nodes.find(n => n.id === 'C')?.hidden).toBe(false);
   });
 
-  // Re-parenting without deleting old edge
-  it('Quick Re-parenting: dragging a new connection to a node replaces its old parent edge without manual deletion', () => {
+  // Connecting multiple lines freely to 1 node
+  it('Multiple lines: connects multiple lines to 1 node freely without deleting existing lines', () => {
     const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
     const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 200, y: -50 }, data: { label: 'A' } };
     const nodeB: MindMapNode = { id: 'B', type: 'basic', position: { x: 200, y: 50 }, data: { label: 'B' } };
@@ -412,7 +412,7 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
       hasChildrenMap: { root: true, A: false, B: false }
     });
 
-    // User connects A -> B directly (re-parenting B to A without deleting Root -> B first)
+    // User connects A -> B directly (now B connects to BOTH root and A freely!)
     useMindMapStore.getState().onConnect({
       source: 'A',
       target: 'B',
@@ -421,12 +421,13 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     });
 
     const state = useMindMapStore.getState();
-    // Old edgeRootB (root -> B) was replaced by new edge (A -> B)
-    expect(state.edges).toHaveLength(2);
+    // All 3 edges co-exist: root -> A, root -> B, A -> B!
+    expect(state.edges).toHaveLength(3);
     expect(state.edges.some(e => e.source === 'root' && e.target === 'A')).toBe(true);
+    expect(state.edges.some(e => e.source === 'root' && e.target === 'B')).toBe(true);
     expect(state.edges.some(e => e.source === 'A' && e.target === 'B')).toBe(true);
-    expect(state.edges.some(e => e.source === 'root' && e.target === 'B')).toBe(false);
     expect(state.hasChildrenMap['A']).toBe(true);
+    expect(state.hasChildrenMap['root']).toBe(true);
   });
 
   // Edge reconnection
