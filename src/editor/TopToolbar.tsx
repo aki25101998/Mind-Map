@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useAutoLayout } from '../hooks/useAutoLayout';
-import { exportToJSON, exportToPNG, exportToSVG } from '../utils/exportUtils';
-import { Undo, Redo, Download, Share2, Menu, LayoutTemplate, Image, FileJson, ChevronDown, Moon, Sun } from 'lucide-react';
+import { exportToJSON, exportToPNG, exportToSVG, exportToMarkdown } from '../utils/exportUtils';
+import { Undo, Redo, Download, Share2, Menu, LayoutTemplate, Image, FileJson, ChevronDown, Moon, Sun, FileText } from 'lucide-react';
 import { ShareModal } from './ShareModal';
 
 interface TopToolbarProps {
@@ -64,6 +64,12 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   const handleExportJSON = () => {
     if (!documentId) return;
     exportToJSON({ id: documentId, title: documentTitle, nodes, edges, viewport, templateId, createdAt, updatedAt });
+    setIsExportMenuOpen(false);
+  };
+
+  const handleExportMarkdown = () => {
+    if (!documentId) return;
+    exportToMarkdown({ id: documentId, title: documentTitle, nodes, edges, viewport, templateId, createdAt, updatedAt });
     setIsExportMenuOpen(false);
   };
 
@@ -381,6 +387,18 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <Image size={16} color="var(--accent)" /> Download SVG
+              </button>
+              <button 
+                onClick={handleExportMarkdown}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
+                  background: 'transparent', border: 'none', color: 'var(--text-primary)',
+                  cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: '500'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <FileText size={16} color="var(--accent)" /> Download Markdown (.md)
               </button>
               <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '4px 0' }} />
               <button 

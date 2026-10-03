@@ -4,9 +4,9 @@ import type { NodeProps, Node } from '@xyflow/react';
 import { useMindMapStore } from '../../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { NodeData } from '../../types';
-import { Lock, ExternalLink } from 'lucide-react';
 import { useNodeEditing } from './useNodeEditing';
 import { NodeTextEditor } from './NodeTextEditor';
+import { NodeBadges, NodeTags } from './NodeDecorations';
 
 export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'>>) => {
   const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse, isReadOnly } = useMindMapStore(
@@ -68,37 +68,7 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
         style={style} 
         onDoubleClick={handleStartEditing}
       >
-        {data.locked && (
-          <span 
-            title="Node position is locked"
-            style={{ 
-              position: 'absolute', top: '-8px', left: '-8px', 
-              background: 'var(--panel-bg)', borderRadius: '50%', padding: '3px',
-              border: '1px solid var(--panel-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-          >
-            <Lock size={11} color="var(--node-color-red)" />
-          </span>
-        )}
-
-        {data.url && (
-          <a 
-            href={String(data.url).startsWith('http') ? String(data.url) : `https://${data.url}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={`Open URL: ${data.url}`}
-            onClick={(e) => e.stopPropagation()}
-            style={{ 
-              position: 'absolute', top: '-8px', right: '-8px', 
-              background: 'var(--panel-bg)', borderRadius: '50%', padding: '3px',
-              border: '1px solid var(--panel-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: 'var(--shadow-sm)', color: 'var(--accent-secondary)'
-            }}
-          >
-            <ExternalLink size={11} />
-          </a>
-        )}
+        <NodeBadges data={data} isEditing={isEditing} />
 
         {isEditing ? (
           <NodeTextEditor
@@ -112,9 +82,12 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
             color={data.color || 'var(--node-text-default)'}
           />
         ) : (
-          <div style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
-            {data.label}
-          </div>
+          <>
+            <div style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
+              {data.label}
+            </div>
+            <NodeTags data={data} isEditing={isEditing} />
+          </>
         )}
         
         {/* 4-way handles for freeform connectivity */}

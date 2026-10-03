@@ -149,6 +149,9 @@ export const ContextMenu = () => {
           <button className="menu-item" onClick={handleToggleLock}>
             {targetNode?.data?.locked ? 'Unlock node' : 'Lock position'}
           </button>
+          <button className="menu-item" onClick={() => { setSelectedNodes([contextMenu.id!]); setContextMenu(null); }}>
+            {targetNode?.data?.note ? 'View / edit note...' : 'Add note & tags...'}
+          </button>
           {targetNode?.data?.url && (
             <button className="menu-item" onClick={handleOpenUrl} style={{ color: 'var(--accent-secondary)' }}>
               Open link ↗
