@@ -136,7 +136,24 @@ describe('graphUtils', () => {
       const newNode: MindMapNode = { id: 'newNode', type: 'basic', position: { x: 0, y: 0 }, data: { label: 'New' } };
       expect(isValidConnection({ source: 'nodeA', target: 'newNode' }, [...nodes, newNode], structuralEdges)).toBe(true);
     });
+
+    it('allows quick re-parenting when allowReparenting option is enabled', () => {
+      // nodeB -> nodeC already exists; connecting root -> nodeC with allowReparenting replaces the parent cleanly
+      expect(isValidConnection({ source: 'root', target: 'nodeC' }, nodes, structuralEdges, { allowReparenting: true })).toBe(true);
+    });
+
+    it('rejects re-parenting if new parent would introduce a cycle', () => {
+      // Hierarchy has root -> nodeB -> nodeC -> nodeD
+      // Trying to connect nodeD -> nodeB would make nodeB a child of its own descendant nodeD (cycle!)
+      expect(isValidConnection({ source: 'nodeD', target: 'nodeB' }, nodes, structuralEdges, { allowReparenting: true })).toBe(false);
+    });
+
+    it('allows reconnecting an existing edge when ignoredEdgeId is specified', () => {
+      // e-root-a is root -> nodeA. When reconnecting nodeB -> nodeA while ignoring e-root-a, nodeA has no other parent
+      expect(isValidConnection({ source: 'nodeB', target: 'nodeA' }, nodes, structuralEdges, { ignoredEdgeId: 'e-root-a' })).toBe(true);
+    });
   });
+
 
   describe('canConvertToStructural', () => {
     it('allows converting relationship edge to structural if target has no other parent', () => {

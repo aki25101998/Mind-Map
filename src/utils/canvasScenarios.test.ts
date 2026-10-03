@@ -397,4 +397,65 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     // After undo, visibility is recomputed: C is not hidden
     expect(useMindMapStore.getState().nodes.find(n => n.id === 'C')?.hidden).toBe(false);
   });
+
+  // Re-parenting without deleting old edge
+  it('Quick Re-parenting: dragging a new connection to a node replaces its old parent edge without manual deletion', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 200, y: -50 }, data: { label: 'A' } };
+    const nodeB: MindMapNode = { id: 'B', type: 'basic', position: { x: 200, y: 50 }, data: { label: 'B' } };
+    const edgeRootA: MindMapEdge = { id: 'e-ra', source: 'root', target: 'A', type: 'mindmap-edge' };
+    const edgeRootB: MindMapEdge = { id: 'e-rb', source: 'root', target: 'B', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, nodeA, nodeB],
+      edges: [edgeRootA, edgeRootB],
+      hasChildrenMap: { root: true, A: false, B: false }
+    });
+
+    // User connects A -> B directly (re-parenting B to A without deleting Root -> B first)
+    useMindMapStore.getState().onConnect({
+      source: 'A',
+      target: 'B',
+      sourceHandle: null,
+      targetHandle: null
+    });
+
+    const state = useMindMapStore.getState();
+    // Old edgeRootB (root -> B) was replaced by new edge (A -> B)
+    expect(state.edges).toHaveLength(2);
+    expect(state.edges.some(e => e.source === 'root' && e.target === 'A')).toBe(true);
+    expect(state.edges.some(e => e.source === 'A' && e.target === 'B')).toBe(true);
+    expect(state.edges.some(e => e.source === 'root' && e.target === 'B')).toBe(false);
+    expect(state.hasChildrenMap['A']).toBe(true);
+  });
+
+  // Edge reconnection
+  it('Edge Reconnection: dragging existing edge endpoint moves connection smoothly', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 200, y: 0 }, data: { label: 'A' } };
+    const nodeB: MindMapNode = { id: 'B', type: 'basic', position: { x: 400, y: 0 }, data: { label: 'B' } };
+    const edgeRootA: MindMapEdge = { id: 'e-ra', source: 'root', target: 'A', type: 'mindmap-edge' };
+    const edgeAB: MindMapEdge = { id: 'e-ab', source: 'A', target: 'B', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, nodeA, nodeB],
+      edges: [edgeRootA, edgeAB],
+      hasChildrenMap: { root: true, A: true, B: false }
+    });
+
+    // Reconnect edgeAB so that source is 'root' instead of 'A'
+    useMindMapStore.getState().onReconnectEdge(edgeAB, {
+      source: 'root',
+      target: 'B',
+      sourceHandle: null,
+      targetHandle: null
+    });
+
+    const state = useMindMapStore.getState();
+    expect(state.edges).toHaveLength(2);
+    expect(state.edges.some(e => e.id === 'e-ab' && e.source === 'root' && e.target === 'B')).toBe(true);
+    expect(state.hasChildrenMap['A']).toBeFalsy();
+    expect(state.hasChildrenMap['root']).toBe(true);
+  });
 });
+

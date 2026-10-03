@@ -25,7 +25,7 @@ import { CustomMindMapEdge } from './edges/MindMapEdge';
 import { ContextMenu } from '../editor/ContextMenu';
 import { CommandPalette } from '../components/CommandPalette';
 import { v4 as uuidv4 } from 'uuid';
-import type { MindMapNode } from '../types';
+import type { MindMapNode, MindMapEdge } from '../types';
 import { isValidConnection } from '../utils/graphUtils';
 
 const nodeTypes: NodeTypes = {
@@ -51,6 +51,7 @@ const CanvasInner = () => {
     onNodesChange, 
     onEdgesChange, 
     onConnect,
+    onReconnectEdge,
     setViewport,
     setSelectedNodes,
     selectedNodeIds,
@@ -76,6 +77,7 @@ const CanvasInner = () => {
     onNodesChange: state.onNodesChange,
     onEdgesChange: state.onEdgesChange,
     onConnect: state.onConnect,
+    onReconnectEdge: state.onReconnectEdge,
     setViewport: state.setViewport,
     setSelectedNodes: state.setSelectedNodes,
     selectedNodeIds: state.selectedNodeIds,
@@ -270,7 +272,7 @@ const CanvasInner = () => {
   }, [setContextMenu]);
 
   const isValidConnectionHandler = useCallback((connection: any) => {
-    return isValidConnection(connection, nodes, edges);
+    return isValidConnection(connection, nodes, edges, { allowReparenting: true });
   }, [nodes, edges]);
 
   const selectedEdge = edges.find(e => e.selected);
@@ -289,6 +291,13 @@ const CanvasInner = () => {
       onNodesChange={handleNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      edgesReconnectable={!isReadOnly}
+      onReconnect={(oldEdge, newConnection) => {
+        if (!isReadOnly) {
+          onReconnectEdge(oldEdge as MindMapEdge, newConnection);
+        }
+      }}
+      reconnectRadius={25}
       isValidConnection={isValidConnectionHandler}
       onNodeDragStart={onNodeDragStart}
       onNodeDragStop={onNodeDragStop}

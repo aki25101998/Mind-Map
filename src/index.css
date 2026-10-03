@@ -222,3 +222,21 @@ html, body {
   animation: modalFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Edge Reconnection Anchor Handles */
+.react-flow__edgeupdater {
+  cursor: grab !important;
+  fill: var(--accent) !important;
+  stroke: #ffffff !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
+  transition: transform var(--transition-fast), fill var(--transition-fast);
+  r: 7px;
+}
+
+.react-flow__edgeupdater:hover {
+  cursor: grabbing !important;
+  fill: var(--accent-hover) !important;
+  r: 9px;
+}
+
+

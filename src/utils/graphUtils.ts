@@ -70,24 +70,34 @@ export interface ConnectionCandidate {
   data?: Record<string, unknown>;
 }
 
+
+export interface IsValidConnectionOptions {
+  allowReparenting?: boolean;
+  ignoredEdgeId?: string;
+}
+
 /**
- * Validates a connection before creating an edge:
+ * Validates a connection before creating or reconnecting an edge:
  * 1. Source and target must exist and be non-empty strings.
  * 2. Self-connections (A -> A) are disallowed.
  * 3. Source and target nodes must exist in the node list.
  * 4. Duplicate edges (same source and target) are disallowed.
  * 5. For structural edges (Parent -> Child):
- *    - Reverse structural edge (B -> A when A -> B exists) is disallowed.
- *    - Cycle creation (A -> B -> C -> A) is disallowed.
- *    - Target already having a structural parent is disallowed (tree rule: <= 1 parent).
  *    - Target cannot be the Root/main node (Root cannot have a parent).
+ *    - Reverse structural edge (B -> A when A -> B exists) is disallowed.
+ *    - If allowReparenting is true:
+ *      * Existing parent edge on target is allowed to be replaced, provided the new connection does not create a cycle.
+ *    - If allowReparenting is false:
+ *      * Multiple structural parents (tree constraint) are disallowed.
+ *      * Structural cycle is disallowed.
  * 6. For relationship edges (A <-> B):
  *    - No parent/cycle hierarchy rules applied.
  */
 export const isValidConnection = (
   connection: ConnectionCandidate,
   nodes: MindMapNode[],
-  edges: MindMapEdge[]
+  edges: MindMapEdge[],
+  options?: IsValidConnectionOptions
 ): boolean => {
   const { source, target } = connection;
   if (!source || !target || typeof source !== 'string' || typeof target !== 'string') {
@@ -104,7 +114,11 @@ export const isValidConnection = (
     return false;
   }
 
-  const isDuplicate = edges.some(e => e.source === source && e.target === target);
+  const effectiveEdges = options?.ignoredEdgeId 
+    ? edges.filter(e => e.id !== options.ignoredEdgeId)
+    : edges;
+
+  const isDuplicate = effectiveEdges.some(e => e.source === source && e.target === target);
   if (isDuplicate) {
     return false;
   }
@@ -117,20 +131,30 @@ export const isValidConnection = (
     }
 
     // Disallow reverse structural edge
-    const hasReverse = edges.some(e => e.source === target && e.target === source && isStructuralEdge(e));
+    const hasReverse = effectiveEdges.some(e => e.source === target && e.target === source && isStructuralEdge(e));
     if (hasReverse) {
       return false;
     }
 
-    // Disallow structural cycles
-    if (wouldCreateCycle(source, target, edges)) {
-      return false;
-    }
+    if (options?.allowReparenting) {
+      // Exclude existing parent edge of target since it will be replaced by the new connection
+      const edgesWithoutOldParent = effectiveEdges.filter(e => !(e.target === target && isStructuralEdge(e)));
 
-    // Disallow multiple structural parents (tree constraint)
-    const existingParent = getStructuralParent(target, edges);
-    if (existingParent) {
-      return false;
+      // Disallow structural cycles in the resulting tree
+      if (wouldCreateCycle(source, target, edgesWithoutOldParent)) {
+        return false;
+      }
+    } else {
+      // Disallow structural cycles
+      if (wouldCreateCycle(source, target, effectiveEdges)) {
+        return false;
+      }
+
+      // Disallow multiple structural parents (tree constraint)
+      const existingParent = getStructuralParent(target, effectiveEdges);
+      if (existingParent) {
+        return false;
+      }
     }
   }
 

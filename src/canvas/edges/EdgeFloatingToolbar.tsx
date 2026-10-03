@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { 
-  Palette, Trash2, Minus, Spline, ArrowRight, CornerDownRight, Slash
+  Palette, Trash2, Minus, Spline, ArrowRight, CornerDownRight, Slash, ArrowLeftRight
 } from 'lucide-react';
 import { useMindMapStore } from '../../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -14,9 +14,10 @@ interface EdgeFloatingToolbarProps {
 }
 
 export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
-  const { updateEdge, deleteSelected, nodes, edges } = useMindMapStore(
+  const { updateEdge, onReconnectEdge, deleteSelected, nodes, edges } = useMindMapStore(
     useShallow(state => ({
       updateEdge: state.updateEdge,
+      onReconnectEdge: state.onReconnectEdge,
       deleteSelected: state.deleteSelected,
       nodes: state.nodes,
       edges: state.edges
@@ -81,6 +82,18 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
 
   const handleWidthChange = (width: number) => {
     updateEdge(edgeId, { data: { strokeWidth: width } });
+  };
+
+  const handleReverseDirection = () => {
+    if (!edge) return;
+    const newConnection = {
+      source: edge.target,
+      target: edge.source,
+      sourceHandle: edge.targetHandle ?? null,
+      targetHandle: edge.sourceHandle ?? null,
+      data: edge.data,
+    };
+    onReconnectEdge(edge, newConnection);
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -235,6 +248,13 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
           title="Arrow End"
         >
           <ArrowRight size={15} />
+        </button>
+        <button 
+          style={{ ...buttonStyle, color: 'var(--text-secondary)' }} 
+          onClick={handleReverseDirection} 
+          title="Reverse Line Direction (Flip Source/Target)"
+        >
+          <ArrowLeftRight size={15} />
         </button>
       </div>
 

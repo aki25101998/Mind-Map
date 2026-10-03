@@ -1,7 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { MindMapState, NodeEdgeSlice } from './types';
 import { 
-  addEdge, 
   applyNodeChanges, 
   applyEdgeChanges,
   getConnectedEdges,
@@ -45,17 +44,105 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
 
   onConnect: (connection) => {
     const { nodes, edges } = get();
-    if (!isValidConnection(connection, nodes, edges)) {
+    if (!isValidConnection(connection, nodes, edges, { allowReparenting: true })) {
       return;
     }
 
-    const newEdges = addEdge({ 
-      ...connection, 
-      id: uuidv4(), 
+    const connData = (connection as { data?: Record<string, unknown> }).data;
+    const isStructural = !(connData?.relationship === true);
+    let edgesToKeep = edges;
+
+    if (isStructural && connection.target) {
+      // Auto-reparent: remove any existing structural parent edge of target
+      edgesToKeep = edges.filter(e => !(e.target === connection.target && isStructuralEdge(e)));
+    }
+
+    const newEdge: MindMapEdge = {
+      id: uuidv4(),
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle ?? null,
+      targetHandle: connection.targetHandle ?? null,
       type: 'mindmap-edge',
-      data: { edgeStyle: 'curved' }
-    }, edges) as MindMapEdge[];
-    set({ edges: newEdges, hasChildrenMap: computeHasChildrenMap(newEdges) });
+      data: {
+        edgeStyle: 'curved',
+        ...(connData || {})
+      }
+    };
+
+    const newEdges = [...edgesToKeep, newEdge];
+
+    // If re-parenting in two-way layout, update target node's layoutSide to match new parent
+    let updatedNodes = nodes;
+    if (isStructural && connection.source && connection.target) {
+      const sourceNode = nodes.find(n => n.id === connection.source);
+      const targetNode = nodes.find(n => n.id === connection.target);
+      if (sourceNode && targetNode && sourceNode.data?.layoutSide && sourceNode.data.layoutSide !== 'center') {
+        if (targetNode.data?.layoutSide !== sourceNode.data.layoutSide) {
+          updatedNodes = nodes.map(n => 
+            n.id === targetNode.id 
+              ? { ...n, data: { ...n.data, layoutSide: sourceNode.data.layoutSide } }
+              : n
+          );
+        }
+      }
+    }
+
+    set({ 
+      nodes: updatedNodes,
+      edges: newEdges, 
+      hasChildrenMap: computeHasChildrenMap(newEdges) 
+    });
+    get().commitHistory();
+  },
+
+  onReconnectEdge: (oldEdge, newConnection) => {
+    const { nodes, edges } = get();
+    const edgesWithoutOld = edges.filter(e => e.id !== oldEdge.id);
+    if (!isValidConnection(newConnection, nodes, edgesWithoutOld, { allowReparenting: true })) {
+      return;
+    }
+
+    const connData = (newConnection as { data?: Record<string, unknown> }).data;
+    const isStructural = !(connData?.relationship === true || oldEdge.data?.relationship === true);
+    let edgesToKeep = edgesWithoutOld;
+
+    if (isStructural && newConnection.target) {
+      // Auto-reparent: remove any other structural parent edge of the new target
+      edgesToKeep = edgesWithoutOld.filter(e => !(e.target === newConnection.target && isStructuralEdge(e)));
+    }
+
+    const reconnectedEdge: MindMapEdge = {
+      ...oldEdge,
+      source: newConnection.source,
+      target: newConnection.target,
+      sourceHandle: newConnection.sourceHandle ?? null,
+      targetHandle: newConnection.targetHandle ?? null,
+    };
+
+    const newEdges = [...edgesToKeep, reconnectedEdge];
+
+    // Update target node layoutSide if parent changed
+    let updatedNodes = nodes;
+    if (isStructural && newConnection.source && newConnection.target) {
+      const sourceNode = nodes.find(n => n.id === newConnection.source);
+      const targetNode = nodes.find(n => n.id === newConnection.target);
+      if (sourceNode && targetNode && sourceNode.data?.layoutSide && sourceNode.data.layoutSide !== 'center') {
+        if (targetNode.data?.layoutSide !== sourceNode.data.layoutSide) {
+          updatedNodes = nodes.map(n => 
+            n.id === targetNode.id 
+              ? { ...n, data: { ...n.data, layoutSide: sourceNode.data.layoutSide } }
+              : n
+          );
+        }
+      }
+    }
+
+    set({
+      nodes: updatedNodes,
+      edges: newEdges,
+      hasChildrenMap: computeHasChildrenMap(newEdges)
+    });
     get().commitHistory();
   },
 

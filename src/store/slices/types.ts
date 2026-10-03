@@ -44,6 +44,7 @@ export interface NodeEdgeSlice {
   onNodesChange: (changes: NodeChange<MindMapNode>[]) => void;
   onEdgesChange: (changes: EdgeChange<MindMapEdge>[]) => void;
   onConnect: (connection: Connection) => void;
+  onReconnectEdge: (oldEdge: MindMapEdge, newConnection: Connection) => void;
   setNodes: (nodes: MindMapNode[]) => void;
   setEdges: (edges: MindMapEdge[]) => void;
   addNode: (node: MindMapNode) => void;
