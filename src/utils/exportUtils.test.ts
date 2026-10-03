@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateMarkdownOutline } from './exportUtils';
+import { generateMarkdownOutline, getExportBackgroundColor } from './exportUtils';
 import type { MindMapDocument } from '../types';
 
 describe('exportUtils - generateMarkdownOutline', () => {
@@ -97,3 +97,14 @@ describe('exportUtils - generateMarkdownOutline', () => {
     expect(md).toContain('Random Thought');
   });
 });
+
+describe('exportUtils - getExportBackgroundColor', () => {
+  it('returns slate canvas color for dark theme', () => {
+    expect(getExportBackgroundColor('dark')).toBe('#111827');
+  });
+
+  it('returns warm cream canvas color for light theme', () => {
+    expect(getExportBackgroundColor('light')).toBe('#fffaf5');
+  });
+});
+

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useAutoLayout } from '../hooks/useAutoLayout';
-import { exportToJSON, exportToPNG, exportToSVG, exportToMarkdown } from '../utils/exportUtils';
+import { exportToJSON, exportToPNG, exportToSVG, exportToMarkdown, getExportBackgroundColor } from '../utils/exportUtils';
 import { Undo, Redo, Download, Share2, Menu, LayoutTemplate, Image, FileJson, ChevronDown, Moon, Sun, FileText } from 'lucide-react';
 import { ShareModal } from './ShareModal';
 
@@ -93,10 +93,12 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
         zoom: 1
       };
 
+      const exportBgColor = getExportBackgroundColor(theme);
+
       if (format === 'png') {
-        await exportToPNG(documentTitle, width, height, imageViewport);
+        await exportToPNG(documentTitle, width, height, imageViewport, exportBgColor);
       } else {
-        await exportToSVG(documentTitle, width, height, imageViewport);
+        await exportToSVG(documentTitle, width, height, imageViewport, exportBgColor);
       }
     } catch (error) {
       console.error(`Export to ${format.toUpperCase()} failed:`, error);

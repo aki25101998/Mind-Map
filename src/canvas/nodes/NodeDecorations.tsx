@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, ExternalLink, FileText } from 'lucide-react';
+import { Lock, ExternalLink, FileText, Plus, Minus } from 'lucide-react';
 import type { NodeData } from '../../types';
 
 interface NodeDecorationsProps {
@@ -118,5 +118,42 @@ export const NodeTags: React.FC<NodeDecorationsProps> = ({ data, isEditing }) =>
         </span>
       ))}
     </div>
+  );
+};
+
+export interface NodeCollapseButtonProps {
+  id: string;
+  hasChildren: boolean;
+  isEditing?: boolean;
+  collapsed?: boolean;
+  layoutSide?: 'left' | 'right' | 'center';
+  onToggle: (id: string) => void;
+}
+
+export const NodeCollapseButton: React.FC<NodeCollapseButtonProps> = ({
+  id,
+  hasChildren,
+  isEditing,
+  collapsed,
+  layoutSide,
+  onToggle,
+}) => {
+  if (!hasChildren || isEditing) return null;
+
+  const isLeft = layoutSide === 'left';
+
+  return (
+    <button
+      type="button"
+      className={`nodrag nopan node-collapse-btn ${isLeft ? 'is-left' : 'is-right'}`}
+      aria-label={collapsed ? 'Expand branch' : 'Collapse branch'}
+      title={collapsed ? 'Expand branch' : 'Collapse branch'}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle(id);
+      }}
+    >
+      {collapsed ? <Plus size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}
+    </button>
   );
 };

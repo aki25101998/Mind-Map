@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { NodeData } from '../../types';
 import { useNodeEditing } from './useNodeEditing';
 import { NodeTextEditor } from './NodeTextEditor';
-import { NodeBadges, NodeTags } from './NodeDecorations';
+import { NodeBadges, NodeTags, NodeCollapseButton } from './NodeDecorations';
 
 export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'>>) => {
   const { updateNodeData, editingNodeId, setEditingNodeId, toggleCollapse, isReadOnly } = useMindMapStore(
@@ -90,23 +90,14 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
         <Handle type="target" position={Position.Top} id="top" />
         <Handle type="source" position={Position.Top} id="top-src" />
         
-        {hasChildren && !isEditing && (
-          <button
-            type="button"
-            className="nodrag nopan"
-            onClick={(e) => { e.stopPropagation(); toggleCollapse(id); }}
-            style={{
-              position: 'absolute', right: '-12px', top: '50%', transform: 'translateY(-50%)',
-              background: 'var(--panel-bg)', border: '1px solid var(--panel-border)',
-              borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', zIndex: 10, color: 'var(--text-primary)',
-              pointerEvents: 'all'
-            }}
-          >
-            {data.collapsed ? '+' : '-'}
-          </button>
-        )}
+        <NodeCollapseButton
+          id={id}
+          hasChildren={hasChildren}
+          isEditing={isEditing}
+          collapsed={data.collapsed}
+          layoutSide={data.layoutSide}
+          onToggle={toggleCollapse}
+        />
 
         <Handle type="target" position={Position.Right} id="right" />
         <Handle type="source" position={Position.Right} id="right-src" />

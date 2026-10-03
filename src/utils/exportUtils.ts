@@ -116,6 +116,10 @@ const downloadImage = (dataUrl: string, filename: string) => {
   a.click();
 };
 
+export const getExportBackgroundColor = (theme: 'light' | 'dark'): string => {
+  return theme === 'dark' ? '#111827' : '#fffaf5';
+};
+
 export const exportToPNG = async (
   title: string, 
   width: number, 

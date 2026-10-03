@@ -167,3 +167,58 @@ html, body {
 .react-flow__background {
   background-color: var(--canvas-bg);
 }
+
+/* Directional Node Collapse Button */
+.node-collapse-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  color: var(--text-primary);
+  pointer-events: all;
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+  transition: transform var(--transition-bounce), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.node-collapse-btn:hover {
+  transform: translateY(-50%) scale(1.18);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.node-collapse-btn.is-left {
+  left: -12px;
+  right: auto;
+}
+
+.node-collapse-btn.is-right {
+  right: -12px;
+  left: auto;
+}
+
+/* Modal Animations */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.confirm-modal-card {
+  animation: modalFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

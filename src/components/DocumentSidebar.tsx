@@ -7,6 +7,7 @@ import { FileText, Home, Plus, Trash2, X } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import { ConfirmModal } from './ConfirmModal';
 
 interface DocumentSidebarProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
   })));
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
 
   const loadRecentDocs = () => {
@@ -66,15 +69,28 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
     }
   };
 
-  const handleDeleteDoc = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, doc: MindMapDocument) => {
     e.stopPropagation();
-    await removeDocument(id);
-    if (id === documentId) {
-      setDeletedDocumentId(id);
-      closeDocument();
-      navigate('/mindmaps');
+    setDeleteTarget({ id: doc.id, title: doc.title || 'Untitled Mind Map' });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await removeDocument(deleteTarget.id);
+      if (deleteTarget.id === documentId) {
+        setDeletedDocumentId(deleteTarget.id);
+        closeDocument();
+        navigate('/mindmaps');
+      }
+      loadRecentDocs();
+    } catch (err) {
+      console.error('Failed to delete document from sidebar:', err);
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
-    loadRecentDocs();
   };
 
   const handleNewDocument = async () => {
@@ -198,7 +214,10 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
                 </div>
                 
                 <button 
-                  onClick={(e) => handleDeleteDoc(e, doc.id)}
+                  type="button"
+                  onClick={(e) => handleDeleteClick(e, doc)}
+                  title="Delete Mind Map"
+                  aria-label="Delete Mind Map"
                   style={{ background: 'transparent', border: 'none', color: 'var(--node-color-red)', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Trash2 size={14} />
@@ -218,6 +237,19 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Delete Mind Map?"
+        message={`Are you sure you want to delete "${deleteTarget?.title}"? All nodes, connections and notes in this map will be permanently removed.`}
+        confirmLabel="Delete Map"
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onClose={() => {
+          if (!isDeleting) setDeleteTarget(null);
+        }}
+      />
     </>
   );
 };

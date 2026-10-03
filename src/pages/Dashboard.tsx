@@ -8,6 +8,7 @@ import { MigrationPrompt } from '../components/auth/MigrationPrompt';
 import { v4 as uuidv4 } from 'uuid';
 import { FileText, Trash2, Sun, Moon, Settings, Lightbulb, FolderDown, Sparkles, Layers, Clock } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { useNavigate } from 'react-router-dom';
 import { ReactFlow } from '@xyflow/react';
 import { templates } from '../templates/definitions';
@@ -47,6 +48,8 @@ export const Dashboard = () => {
   const [legacyDocs, setLegacyDocs] = useState<MindMapDocument[]>([]);
   const [showMigration, setShowMigration] = useState(false);
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
 
   const previewTemplate = styledTemplates.find(t => t.id === previewTemplateId);
@@ -104,10 +107,23 @@ export const Dashboard = () => {
     navigate(`/mindmaps/${doc.id}`);
   };
 
-  const handleDeleteDoc = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, doc: MindMapDocument) => {
     e.stopPropagation();
-    await removeDocument(id);
-    loadRecentDocs();
+    setDeleteTarget({ id: doc.id, title: doc.title || 'Untitled Mind Map' });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await removeDocument(deleteTarget.id);
+      loadRecentDocs();
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -381,7 +397,7 @@ export const Dashboard = () => {
                       </div>
 
                       <button 
-                        onClick={(e) => handleDeleteDoc(e, doc.id)} 
+                        onClick={(e) => handleDeleteClick(e, doc)} 
                         style={{
                           background: 'transparent',
                           color: 'var(--text-muted)',
@@ -691,6 +707,19 @@ export const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Delete Mind Map?"
+        message={`Are you sure you want to delete "${deleteTarget?.title}"? All nodes, connections and notes in this map will be permanently removed.`}
+        confirmLabel="Delete Map"
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onClose={() => {
+          if (!isDeleting) setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 };
