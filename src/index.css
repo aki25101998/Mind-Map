@@ -70,7 +70,7 @@ html, body {
 
 /* Node Handle UX Optimization */
 .react-flow__node .react-flow__handle {
-  opacity: 0.15 !important;
+  opacity: 0 !important;
   transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
   width: 9px !important;
   height: 9px !important;
@@ -222,21 +222,11 @@ html, body {
   animation: modalFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Edge Reconnection Anchor Handles */
+/* Edge Reconnection Anchor Handles (Hidden) */
 .react-flow__edgeupdater {
-  cursor: grab !important;
-  fill: var(--accent) !important;
-  stroke: #ffffff !important;
-  stroke-width: 2.5px !important;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
-  transition: transform var(--transition-fast), fill var(--transition-fast);
-  r: 7px;
-}
-
-.react-flow__edgeupdater:hover {
-  cursor: grabbing !important;
-  fill: var(--accent-hover) !important;
-  r: 9px;
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 
