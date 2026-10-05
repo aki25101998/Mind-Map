@@ -68,58 +68,44 @@ html, body {
   transition: opacity 0.3s ease; /* Disable transform transition during drag */
 }
 
-/* Node Handle UX Optimization */
+/* Node Handle UX Optimization
+   Each side has a `source` handle (drag out) and a `target` handle (drop in) stacked
+   at the same spot. Only the `source` handle is ever drawn, so there is never a
+   second circle. Target handles stay in the DOM (invisible) so drops still connect. */
 .react-flow__node .react-flow__handle {
   opacity: 0 !important;
-  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  width: 9px !important;
-  height: 9px !important;
+  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
+  width: 10px !important;
+  height: 10px !important;
   border-radius: 50%;
   background: var(--accent) !important;
   border: 1.5px solid var(--panel-bg) !important;
-  pointer-events: all;
+  box-shadow: none !important;
 }
 
-/* Hide target handles when not in active connection mode so only a single handle is shown */
-.react-flow__handle.target:not(.connectionindicator) {
+.react-flow__node .react-flow__handle.target {
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+.react-flow__node .react-flow__handle.source {
+  pointer-events: all;
 }
 
 /* Show source handles on node hover or selection */
 .react-flow__node:hover .react-flow__handle.source,
 .react-flow__node.selected .react-flow__handle.source {
   opacity: 0.85 !important;
-  width: 10px !important;
-  height: 10px !important;
 }
 
-/* Highlight handle on hover - cleanly enlarge using width/height to preserve center translation */
-.react-flow__node .react-flow__handle:hover {
-  opacity: 1 !important;
-  width: 14px !important;
-  height: 14px !important;
-  box-shadow: 0 0 10px var(--accent);
-}
-
-/* During active connection, target handles are revealed to receive connections */
-.react-flow.connecting .react-flow__handle.target,
-.react-flow__pane.connecting .react-flow__handle.target,
-.react-flow__handle.target.connectionindicator {
-  opacity: 0.85 !important;
-  pointer-events: all !important;
-  width: 11px !important;
-  height: 11px !important;
-}
-
-.react-flow__handle.connectionindicator:hover,
-.react-flow__handle.connectingto {
+/* Enlarge by width/height only (keeps the translate(-50%,-50%) centering intact) */
+.react-flow__node .react-flow__handle.source:hover {
   opacity: 1 !important;
   width: 14px !important;
   height: 14px !important;
 }
 
-.react-flow__handle.connecting {
+.react-flow__node .react-flow__handle.source.connectingfrom {
   opacity: 1 !important;
 }
 
