@@ -458,6 +458,86 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     expect(state.hasChildrenMap['A']).toBeFalsy();
     expect(state.hasChildrenMap['root']).toBe(true);
   });
+
+  it('Edge Reconnection: moves target endpoint from one node to another cleanly', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 200, y: 0 }, data: { label: 'A' } };
+    const nodeB: MindMapNode = { id: 'B', type: 'basic', position: { x: 400, y: -50 }, data: { label: 'B' } };
+    const nodeC: MindMapNode = { id: 'C', type: 'basic', position: { x: 400, y: 50 }, data: { label: 'C' } };
+    const edgeRootA: MindMapEdge = { id: 'e-ra', source: 'root', target: 'A', type: 'mindmap-edge' };
+    const edgeAB: MindMapEdge = { id: 'e-ab', source: 'A', target: 'B', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, nodeA, nodeB, nodeC],
+      edges: [edgeRootA, edgeAB],
+      hasChildrenMap: { root: true, A: true, B: false, C: false }
+    });
+
+    // Move target of edgeAB from B to C
+    useMindMapStore.getState().onReconnectEdge(edgeAB, {
+      source: 'A',
+      target: 'C',
+      sourceHandle: null,
+      targetHandle: 'left'
+    });
+
+    const state = useMindMapStore.getState();
+    expect(state.edges).toHaveLength(2);
+    const reconnected = state.edges.find(e => e.id === 'e-ab')!;
+    expect(reconnected.target).toBe('C');
+    expect(reconnected.targetHandle).toBe('left');
+    expect(state.edges.some(e => e.target === 'B')).toBe(false);
+  });
+
+  it('Edge Reconnection: adjusts handle on same node without error', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 200, y: 0 }, data: { label: 'A' } };
+    const edgeRootA: MindMapEdge = { id: 'e-ra', source: 'root', target: 'A', sourceHandle: 'right-src', targetHandle: 'left', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, nodeA],
+      edges: [edgeRootA],
+      hasChildrenMap: { root: true, A: false }
+    });
+
+    // Move targetHandle from 'left' to 'top'
+    useMindMapStore.getState().onReconnectEdge(edgeRootA, {
+      source: 'root',
+      target: 'A',
+      sourceHandle: 'right-src',
+      targetHandle: 'top'
+    });
+
+    const state = useMindMapStore.getState();
+    const updatedEdge = state.edges.find(e => e.id === 'e-ra')!;
+    expect(updatedEdge.targetHandle).toBe('top');
+  });
+
+  it('Edge Reconnection: rejects reconnecting structural target to Root node', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 200, y: 0 }, data: { label: 'A' } };
+    const nodeB: MindMapNode = { id: 'B', type: 'basic', position: { x: 400, y: 0 }, data: { label: 'B' } };
+    const edgeRootA: MindMapEdge = { id: 'e-ra', source: 'root', target: 'A', type: 'mindmap-edge' };
+    const edgeAB: MindMapEdge = { id: 'e-ab', source: 'A', target: 'B', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, nodeA, nodeB],
+      edges: [edgeRootA, edgeAB],
+      hasChildrenMap: { root: true, A: true, B: false }
+    });
+
+    // Attempt to make root the target of A -> root
+    useMindMapStore.getState().onReconnectEdge(edgeAB, {
+      source: 'A',
+      target: 'root',
+      sourceHandle: null,
+      targetHandle: null
+    });
+
+    // Should be rejected: edgeAB should still target B
+    const state = useMindMapStore.getState();
+    expect(state.edges.find(e => e.id === 'e-ab')?.target).toBe('B');
+  });
   // Subtree deletion: deleting a parent node deletes all its descendants
   it('Subtree deletion: deleting parent node deletes all its descendants and connected edges', () => {
     const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };

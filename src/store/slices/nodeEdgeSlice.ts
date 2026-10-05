@@ -95,7 +95,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   onReconnectEdge: (oldEdge, newConnection) => {
     const { nodes, edges } = get();
     const edgesWithoutOld = edges.filter(e => e.id !== oldEdge.id);
-    if (!isValidConnection(newConnection, nodes, edgesWithoutOld, { ignoredEdgeId: oldEdge.id })) {
+    if (!isValidConnection(newConnection, nodes, edgesWithoutOld, { ignoredEdgeId: oldEdge.id, allowReparenting: true })) {
       return;
     }
 
@@ -113,26 +113,26 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     // Reconnecting only replaces the old edge; all other edges connected to target are preserved!
     const newEdges = [...edgesWithoutOld, reconnectedEdge];
 
-    // Update target node layoutSide if unset
+    // Update target node layoutSide if reconnecting in structural hierarchy
     let updatedNodes = nodes;
     if (isStructural && newConnection.source && newConnection.target) {
       const sourceNode = nodes.find(n => n.id === newConnection.source);
       const targetNode = nodes.find(n => n.id === newConnection.target);
       if (sourceNode && targetNode && sourceNode.data?.layoutSide && sourceNode.data.layoutSide !== 'center') {
-        if (!targetNode.data?.layoutSide || targetNode.data.layoutSide === 'center') {
-          updatedNodes = nodes.map(n => 
-            n.id === targetNode.id 
-              ? { ...n, data: { ...n.data, layoutSide: sourceNode.data.layoutSide } }
-              : n
-          );
-        }
+        updatedNodes = nodes.map(n => 
+          n.id === targetNode.id 
+            ? { ...n, data: { ...n.data, layoutSide: sourceNode.data.layoutSide } }
+            : n
+        );
       }
     }
 
+    const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(updatedNodes, newEdges);
+
     set({
-      nodes: updatedNodes,
-      edges: newEdges,
-      hasChildrenMap: computeHasChildrenMap(newEdges)
+      nodes: visibleNodes,
+      edges: visibleEdges,
+      hasChildrenMap: computeHasChildrenMap(visibleEdges)
     });
     get().commitHistory();
   },

@@ -85,7 +85,7 @@ html, body {
 
 .react-flow__node .react-flow__handle.target {
   opacity: 0 !important;
-  pointer-events: none !important;
+  pointer-events: all;
 }
 
 .react-flow__node .react-flow__handle.source {
@@ -224,11 +224,32 @@ html, body {
   animation: modalFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Edge Reconnection Anchor Handles (Hidden) */
+/* Edge Reconnection Anchor Handles */
 .react-flow__edgeupdater {
-  display: none !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+  cursor: grab !important;
+  pointer-events: all !important;
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 2.5px;
+  transition: r 0.2s cubic-bezier(0.16, 1, 0.3, 1), fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+}
+
+/* When the edge is hovered or selected, make the reconnection anchors clearly visible */
+.react-flow__edge:hover .react-flow__edgeupdater,
+.react-flow__edge.selected .react-flow__edgeupdater {
+  fill: var(--panel-bg, #ffffff) !important;
+  stroke: var(--accent, #3b82f6) !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
+}
+
+/* When hovering directly over an anchor */
+.react-flow__edgeupdater:hover {
+  cursor: grabbing !important;
+  fill: var(--accent, #3b82f6) !important;
+  stroke: #ffffff !important;
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 10px var(--accent, #3b82f6)) !important;
 }
 
 

@@ -6,9 +6,12 @@ import {
   MiniMap, 
   useReactFlow, 
   SelectionMode,
+  ConnectionMode,
   useNodesState,
   useNodesInitialized,
   type Node,
+  type Edge,
+  type Connection,
   type NodeChange
 } from '@xyflow/react';
 import type { NodeTypes, EdgeTypes } from '@xyflow/react';
@@ -25,7 +28,7 @@ import { CustomMindMapEdge } from './edges/MindMapEdge';
 import { ContextMenu } from '../editor/ContextMenu';
 import { CommandPalette } from '../components/CommandPalette';
 import { v4 as uuidv4 } from 'uuid';
-import type { MindMapNode } from '../types';
+import type { MindMapNode, MindMapEdge } from '../types';
 import { isValidConnection } from '../utils/graphUtils';
 
 const nodeTypes: NodeTypes = {
@@ -51,6 +54,7 @@ const CanvasInner = () => {
     onNodesChange, 
     onEdgesChange, 
     onConnect,
+    onReconnectEdge,
     setViewport,
     setSelectedNodes,
     selectedNodeIds,
@@ -76,6 +80,7 @@ const CanvasInner = () => {
     onNodesChange: state.onNodesChange,
     onEdgesChange: state.onEdgesChange,
     onConnect: state.onConnect,
+    onReconnectEdge: state.onReconnectEdge,
     setViewport: state.setViewport,
     setSelectedNodes: state.setSelectedNodes,
     selectedNodeIds: state.selectedNodeIds,
@@ -305,8 +310,25 @@ const CanvasInner = () => {
     setContextMenu(null);
   }, [setContextMenu]);
 
+  const reconnectingEdgeIdRef = useRef<string | null>(null);
+
+  const handleReconnectStart = useCallback((_event: React.MouseEvent | React.TouchEvent, edge: Edge) => {
+    reconnectingEdgeIdRef.current = edge.id;
+  }, []);
+
+  const handleReconnect = useCallback((oldEdge: Edge, newConnection: Connection) => {
+    onReconnectEdge(oldEdge as MindMapEdge, newConnection);
+  }, [onReconnectEdge]);
+
+  const handleReconnectEnd = useCallback(() => {
+    reconnectingEdgeIdRef.current = null;
+  }, []);
+
   const isValidConnectionHandler = useCallback((connection: any) => {
-    return isValidConnection(connection, nodes, edges);
+    return isValidConnection(connection, nodes, edges, {
+      ignoredEdgeId: reconnectingEdgeIdRef.current || undefined,
+      allowReparenting: true
+    });
   }, [nodes, edges]);
 
   const selectedEdge = edges.find(e => e.selected);
@@ -325,7 +347,12 @@ const CanvasInner = () => {
       onNodesChange={handleNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
-      edgesReconnectable={false}
+      edgesReconnectable={!isReadOnly}
+      onReconnect={handleReconnect}
+      onReconnectStart={handleReconnectStart}
+      onReconnectEnd={handleReconnectEnd}
+      reconnectRadius={20}
+      connectionMode={ConnectionMode.Loose}
       isValidConnection={isValidConnectionHandler}
       onNodeDragStart={onNodeDragStart}
       onNodeDragStop={onNodeDragStop}
