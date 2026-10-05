@@ -72,11 +72,38 @@ export const SharePage = () => {
   useEffect(() => {
     if (isReadOnly || !sharedDocInfo || !sharedDocInfo.ownerId) return;
 
+    let hasPending = false;
+    let pendingDoc: any = null;
+
+    const flush = async () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      if (!hasPending || !pendingDoc) return;
+      hasPending = false;
+      const docToSave = { ...pendingDoc, updatedAt: Date.now() };
+      try {
+        await saveSharedCloudDocument(sharedDocInfo.ownerId, docToSave);
+        setSyncStatus('saved');
+      } catch (err) {
+        console.error('Failed to sync shared edit:', err);
+        setSyncStatus('error');
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      flush();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
+
     const unsubscribe = useMindMapStore.subscribe((state, prevState) => {
       if (!state.documentId || state.documentId !== sharedDocInfo.id) return;
 
       const isChanged = 
-        state.historyIndex !== prevState.historyIndex || 
+        state.revision !== prevState.revision || 
         state.documentTitle !== prevState.documentTitle ||
         state.viewport.x !== prevState.viewport.x ||
         state.viewport.y !== prevState.viewport.y ||
@@ -85,6 +112,22 @@ export const SharePage = () => {
       if (isChanged && !state.isDragging) {
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         setSyncStatus('saving');
+        hasPending = true;
+
+        pendingDoc = {
+          id: state.documentId,
+          title: state.documentTitle,
+          nodes: state.nodes,
+          edges: state.edges,
+          viewport: state.viewport,
+          templateId: state.templateId,
+          createdAt: state.createdAt,
+          updatedAt: Date.now(),
+          shareEnabled: state.shareEnabled,
+          shareId: state.shareId || undefined,
+          sharePermission: state.sharePermission || 'view',
+          ownerId: sharedDocInfo.ownerId
+        };
 
         saveTimeoutRef.current = setTimeout(async () => {
           const currentState = useMindMapStore.getState();
@@ -105,6 +148,7 @@ export const SharePage = () => {
 
           try {
             await saveSharedCloudDocument(sharedDocInfo.ownerId, docToSave);
+            hasPending = false;
             setSyncStatus('saved');
           } catch (err) {
             console.error('Failed to sync shared edit:', err);
@@ -115,10 +159,13 @@ export const SharePage = () => {
     });
 
     return () => {
+      flush();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
       unsubscribe();
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, [isReadOnly, sharedDocInfo]);
+
   
   if (isLoading) {
     return (

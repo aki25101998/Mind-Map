@@ -34,20 +34,24 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
     }
   }, []);
 
+  // Auto-resize textarea height based on content
+  useLayoutEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, (fontSize || 14) * 1.3)}px`;
+    }
+  }, [value, fontSize]);
+
   return (
     <div
       style={{
         width: '100%',
-        height: '100%',
         minWidth: 0,
-        minHeight: 0,
-        maxWidth: '100%',
-        maxHeight: '100%',
+        minHeight: '100%',
         boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
         justifyContent: textAlign === 'left' ? 'flex-start' : textAlign === 'right' ? 'flex-end' : 'center',
-        overflow: 'hidden'
       }}
     >
       <textarea
@@ -61,11 +65,8 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
         onKeyDown={onKeyDown}
         style={{
           width: '100%',
-          height: '100%',
-          maxWidth: '100%',
-          maxHeight: '100%',
           minWidth: 0,
-          minHeight: 0,
+          minHeight: `${(fontSize || 14) * 1.3}px`,
           boxSizing: 'border-box',
           background: 'transparent',
           border: 'none',
@@ -77,14 +78,12 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
           fontSize: fontSize ? `${fontSize}px` : 'inherit',
           fontWeight: fontWeight || 'inherit',
           fontFamily: 'inherit',
-          lineHeight: '1.25',
+          lineHeight: '1.3',
           textAlign: textAlign,
           wordBreak: 'break-word',
           overflowWrap: 'break-word',
           whiteSpace: 'pre-wrap',
-          overflowX: 'hidden',
-          overflowY: 'auto',
-          scrollbarWidth: 'none',
+          overflow: 'hidden',
           display: 'block'
         }}
       />

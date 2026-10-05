@@ -158,7 +158,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('input')) return;
+    if ((e.target as HTMLElement).closest('button, input, textarea, a, select')) return;
     isDragging.current = true;
     dragStart.current = {
       x: e.clientX - position.x,
@@ -242,45 +242,47 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
           ))}
         </div>
 
-        {/* Shapes */}
-        <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>
-          <button 
-            style={buttonStyle} 
-            onClick={() => handleShapeChange('rectangle')} 
-            title="Rectangle"
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-          >
-            <Square size={15} />
-          </button>
-          <button 
-            style={buttonStyle} 
-            onClick={() => handleShapeChange('rounded')} 
-            title="Rounded"
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-          >
-            <SquareAsterisk size={15} />
-          </button>
-          <button 
-            style={buttonStyle} 
-            onClick={() => handleShapeChange('ellipse')} 
-            title="Ellipse"
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-          >
-            <Circle size={15} />
-          </button>
-          <button 
-            style={buttonStyle} 
-            onClick={() => handleShapeChange('text')} 
-            title="Text"
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-          >
-            <Type size={15} />
-          </button>
-        </div>
+        {/* Shapes (Hidden for root main node) */}
+        {!isMain && (
+          <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>
+            <button 
+              style={buttonStyle} 
+              onClick={() => handleShapeChange('rectangle')} 
+              title="Rectangle"
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            >
+              <Square size={15} />
+            </button>
+            <button 
+              style={buttonStyle} 
+              onClick={() => handleShapeChange('rounded')} 
+              title="Rounded"
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            >
+              <SquareAsterisk size={15} />
+            </button>
+            <button 
+              style={buttonStyle} 
+              onClick={() => handleShapeChange('ellipse')} 
+              title="Ellipse"
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            >
+              <Circle size={15} />
+            </button>
+            <button 
+              style={buttonStyle} 
+              onClick={() => handleShapeChange('text')} 
+              title="Text"
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--social-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            >
+              <Type size={15} />
+            </button>
+          </div>
+        )}
 
         {/* Typography & Formatting */}
         <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>

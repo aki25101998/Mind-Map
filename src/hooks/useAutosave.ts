@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { syncDocument } from '../persistence/persistenceService';
 import type { MindMapDocument } from '../types';
@@ -9,44 +9,82 @@ export const useAutosave = () => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveRequestIdRef = useRef<number>(0);
   const savePromiseRef = useRef<Promise<void>>(Promise.resolve());
+  const hasPendingChangesRef = useRef<boolean>(false);
+  const lastDirtyDocRef = useRef<MindMapDocument | null>(null);
+
+  const flushSave = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (!hasPendingChangesRef.current || !lastDirtyDocRef.current) {
+      return;
+    }
+
+    const docToSave = {
+      ...lastDirtyDocRef.current,
+      updatedAt: Date.now()
+    };
+    hasPendingChangesRef.current = false;
+
+    savePromiseRef.current = savePromiseRef.current
+      .then(async () => {
+        const result = await syncDocument(docToSave);
+        const finalState = useMindMapStore.getState();
+        if (finalState.documentId === docToSave.id) {
+          finalState.setUpdatedAt(docToSave.updatedAt);
+          if (!result.success) {
+            finalState.setSyncStatus(navigator.onLine ? 'error' : 'offline');
+          } else {
+            finalState.setSyncStatus('saved');
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Failed to flush save document:', err);
+      });
+  }, []);
 
   useEffect(() => {
+    const handleFlush = () => {
+      flushSave();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushSave();
+      }
+    };
+
+
+    window.addEventListener('beforeunload', handleFlush);
+    window.addEventListener('pagehide', handleFlush);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     const unsubscribe = useMindMapStore.subscribe((state, prevState) => {
       // Handle document switch or close: immediately flush save for the old document
       if (prevState.documentId && state.documentId !== prevState.documentId) {
         if (state.deletedDocumentId === prevState.documentId) {
-          // Document was just deleted, DO NOT flush save
+          // Document was just deleted, cancel pending save and DO NOT flush
+          hasPendingChangesRef.current = false;
+          lastDirtyDocRef.current = null;
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
           return;
         }
 
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
-        
-        const docToSave: MindMapDocument = {
-          id: prevState.documentId,
-          title: prevState.documentTitle,
-          nodes: prevState.nodes,
-          edges: prevState.edges,
-          viewport: prevState.viewport,
-          templateId: prevState.templateId,
-          createdAt: prevState.createdAt,
-          updatedAt: Date.now(),
-          shareEnabled: prevState.shareEnabled,
-          shareId: prevState.shareId || undefined,
-        };
-
-        savePromiseRef.current = savePromiseRef.current
-          .then(() => syncDocument(docToSave))
-          .catch(err => console.error('Failed to flush save old document:', err));
+        // Flush any pending save for the previous document
+        flushSave();
       }
 
       if (!state.documentId) return;
 
       const isDocumentChanged = 
         state.documentId === prevState.documentId && // Only auto-save if we are still on the same doc
-        (state.historyIndex !== prevState.historyIndex || 
+        (state.revision !== prevState.revision || 
         state.documentTitle !== prevState.documentTitle ||
         state.viewport.x !== prevState.viewport.x ||
         state.viewport.y !== prevState.viewport.y ||
@@ -60,8 +98,24 @@ export const useAutosave = () => {
         }
 
         state.setSyncStatus('saving');
+        hasPendingChangesRef.current = true;
         const currentSaveRequestId = ++saveRequestIdRef.current;
         const currentDocId = state.documentId;
+
+        const currentDoc: MindMapDocument = {
+          id: state.documentId,
+          title: state.documentTitle,
+          nodes: state.nodes,
+          edges: state.edges,
+          viewport: state.viewport,
+          templateId: state.templateId,
+          createdAt: state.createdAt,
+          updatedAt: Date.now(),
+          shareEnabled: state.shareEnabled,
+          shareId: state.shareId || undefined,
+          sharePermission: state.sharePermission || 'view',
+        };
+        lastDirtyDocRef.current = currentDoc;
 
         timeoutRef.current = setTimeout(() => {
           // Re-fetch current state to ensure we save the absolute latest
@@ -82,16 +136,23 @@ export const useAutosave = () => {
             updatedAt: now,
             shareEnabled: currentState.shareEnabled,
             shareId: currentState.shareId || undefined,
+            sharePermission: currentState.sharePermission || 'view',
           };
+          lastDirtyDocRef.current = doc;
 
           savePromiseRef.current = savePromiseRef.current.then(async () => {
             try {
-              await syncDocument(doc);
+              const result = await syncDocument(doc);
+              hasPendingChangesRef.current = false;
               if (saveRequestIdRef.current === currentSaveRequestId) {
                 const finalState = useMindMapStore.getState();
                 if (finalState.documentId === currentDocId) {
                   finalState.setUpdatedAt(now);
-                  finalState.setSyncStatus('saved');
+                  if (!result.success) {
+                    finalState.setSyncStatus(navigator.onLine ? 'error' : 'offline');
+                  } else {
+                    finalState.setSyncStatus('saved');
+                  }
                 }
               }
             } catch (err) {
@@ -110,11 +171,22 @@ export const useAutosave = () => {
       }
     });
 
-    return unsubscribe;
-  }, []);
+    return () => {
+      // Flush before unmounting
+      flushSave();
+      window.removeEventListener('beforeunload', handleFlush);
+      window.removeEventListener('pagehide', handleFlush);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      unsubscribe();
+    };
+  }, [flushSave]);
 
   useEffect(() => {
-    const handleOnline = () => setSyncStatus('saved');
+    const handleOnline = () => {
+      // When back online, flush any pending save or set status
+      flushSave();
+      setSyncStatus('saved');
+    };
     const handleOffline = () => setSyncStatus('offline');
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -122,5 +194,6 @@ export const useAutosave = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [setSyncStatus]);
+  }, [setSyncStatus, flushSave]);
 };
+

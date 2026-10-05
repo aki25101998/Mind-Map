@@ -72,7 +72,15 @@ export function useNodeEditing({
 
   const handleBlur = useCallback(() => {
     const finalLabel = draftLabel !== null ? draftLabel : dataLabel;
-    const dims = editDimensions || getCanonicalDimensions();
+    
+    // Capture post-edit geometry from container if available to get actual rendered height
+    let finalDims = editDimensions || getCanonicalDimensions();
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        finalDims = { width: Math.round(rect.width), height: Math.round(rect.height) };
+      }
+    }
 
     setEditingNodeId(null);
     setDraftLabel(null);
@@ -81,12 +89,13 @@ export function useNodeEditing({
     if (finalLabel !== dataLabel) {
       updateNodeData(id, {
         label: finalLabel,
-        ...(dims ? { width: dims.width, height: dims.height } : {})
+        ...(finalDims ? { width: finalDims.width, height: finalDims.height } : {})
       });
     }
   }, [id, draftLabel, dataLabel, editDimensions, getCanonicalDimensions, setEditingNodeId, updateNodeData]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation();
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleBlur();
@@ -99,14 +108,12 @@ export function useNodeEditing({
   }, [handleBlur, setEditingNodeId]);
 
   // CSS dimension locking rules:
-  // When editing, strictly lock width, height, minWidth, maxWidth, minHeight, maxHeight
+  // When editing, lock width to prevent horizontal jump, but allow height to expand naturally
   const dimensionStyle: React.CSSProperties = isEditing && activeDims ? {
     width: `${activeDims.width}px`,
-    height: `${activeDims.height}px`,
     minWidth: `${activeDims.width}px`,
     maxWidth: `${activeDims.width}px`,
     minHeight: `${activeDims.height}px`,
-    maxHeight: `${activeDims.height}px`,
     boxSizing: 'border-box',
     transition: 'none'
   } : {

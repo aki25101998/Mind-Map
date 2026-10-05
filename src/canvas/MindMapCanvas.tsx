@@ -103,10 +103,28 @@ const CanvasInner = () => {
   
   const [localNodes, setLocalNodes, onLocalNodesChange] = useNodesState(nodes || []);
   
-  // Sync local nodes with Zustand nodes when NOT dragging
+  // Sync local nodes with Zustand nodes when NOT dragging while preserving measurements
   useEffect(() => {
     if (!isDraggingRef.current) {
-      setLocalNodes(nodes || []);
+      setLocalNodes(currentLocalNodes => {
+        const measuredMap = new Map<string, { measured?: { width?: number; height?: number }; width?: number; height?: number }>();
+        currentLocalNodes.forEach(n => {
+          if (n.measured || n.width || n.height) {
+            measuredMap.set(n.id, { measured: n.measured, width: n.width, height: n.height });
+          }
+        });
+
+        return (nodes || []).map(node => {
+          const prevMeasurement = measuredMap.get(node.id);
+          if (!prevMeasurement) return node;
+          return {
+            ...node,
+            measured: node.measured || prevMeasurement.measured,
+            width: node.width ?? prevMeasurement.width,
+            height: node.height ?? prevMeasurement.height,
+          };
+        });
+      });
     }
   }, [nodes, setLocalNodes]);
 
@@ -120,10 +138,10 @@ const CanvasInner = () => {
       onLocalNodesChange(filteredChanges as unknown as NodeChange<MindMapNode>[]);
     }
     
-    // Forward selection changes to Zustand for persistence / UI sync
-    const selectionChanges = changes.filter(c => c.type === 'select');
-    if (selectionChanges.length > 0) {
-      onNodesChange(selectionChanges as unknown as NodeChange<MindMapNode>[]);
+    // Forward selection and dimensions changes to Zustand for persistence / UI sync / layout calculations
+    const forwardChanges = changes.filter(c => c.type === 'select' || c.type === 'dimensions');
+    if (forwardChanges.length > 0) {
+      onNodesChange(forwardChanges as unknown as NodeChange<MindMapNode>[]);
     }
   }, [onLocalNodesChange, onNodesChange, editingNodeId]);
 
@@ -149,41 +167,59 @@ const CanvasInner = () => {
     if (isReadOnly) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input
-      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+      // Don't intercept if user is typing in an input, textarea, select, or contenteditable element
+      const target = e.target as HTMLElement | null;
+      const isInteractive = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable ||
+        Boolean(target.closest?.('[contenteditable="true"]'))
+      );
+
+      if (isInteractive || editingNodeId) {
         if (e.key === 'Escape') {
           setEditingNodeId(null);
         }
         return;
       }
 
+      const key = e.key.toLowerCase();
+
       if (e.key === 'Tab') {
-        e.preventDefault();
-        if (selectedNodeIds.length === 1) createChildNode(selectedNodeIds[0]);
+        if (selectedNodeIds.length === 1) {
+          e.preventDefault();
+          createChildNode(selectedNodeIds[0]);
+        }
       } else if (e.key === 'Enter') {
-        e.preventDefault();
         if (selectedNodeIds.length === 1) {
           const selectedNode = nodes.find(n => n.id === selectedNodeIds[0]);
           if (selectedNode && selectedNode.type !== 'main') {
+            e.preventDefault();
             createSiblingNode(selectedNodeIds[0]);
           }
         }
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
         deleteSelected();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      } else if ((e.ctrlKey || e.metaKey) && key === 'z') {
+        e.preventDefault();
         if (e.shiftKey) {
           redo();
         } else {
           undo();
         }
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+      } else if ((e.ctrlKey || e.metaKey) && key === 'y') {
+        e.preventDefault();
+        redo();
+      } else if ((e.ctrlKey || e.metaKey) && key === 'c') {
         copySelected();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      } else if ((e.ctrlKey || e.metaKey) && key === 'v') {
         pasteFromClipboard();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      } else if ((e.ctrlKey || e.metaKey) && key === 'd') {
         e.preventDefault();
         duplicateSelected();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      } else if ((e.ctrlKey || e.metaKey) && key === 'a') {
         e.preventDefault();
         setSelectedNodes(nodes.map(n => n.id));
       } else if (e.key === 'F2' || e.key === ' ') {
@@ -191,7 +227,7 @@ const CanvasInner = () => {
           e.preventDefault();
           setEditingNodeId(selectedNodeIds[0]);
         }
-      } else if (e.key === 'f' || e.key === 'F') {
+      } else if (key === 'f') {
         if (selectedNodeIds.length === 1 && !e.ctrlKey && !e.metaKey) {
           e.preventDefault();
           const node = nodes.find(n => n.id === selectedNodeIds[0]);
@@ -207,7 +243,7 @@ const CanvasInner = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, nodes, createChildNode, createSiblingNode, deleteSelected, undo, redo, copySelected, pasteFromClipboard, duplicateSelected, setSelectedNodes, setEditingNodeId, setCenter, isReadOnly]);
+  }, [selectedNodeIds, nodes, createChildNode, createSiblingNode, deleteSelected, undo, redo, copySelected, pasteFromClipboard, duplicateSelected, setSelectedNodes, setEditingNodeId, setCenter, isReadOnly, editingNodeId]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     if (isReadOnly) return;
@@ -328,7 +364,7 @@ const CanvasInner = () => {
       {!isReadOnly && <CommandPalette />}
       
       {!isReadOnly && selectedNodeIds.length === 1 && !editingNodeId && (
-        <FloatingToolbar nodeId={selectedNodeIds[0]} />
+        <FloatingToolbar key={selectedNodeIds[0]} nodeId={selectedNodeIds[0]} />
       )}
 
       {!isReadOnly && selectedNodeIds.length === 0 && selectedEdge && (

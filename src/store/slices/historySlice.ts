@@ -52,7 +52,8 @@ export const createHistorySlice: StateCreator<MindMapState, [], [], HistorySlice
 
     set({
       history: newHistory,
-      historyIndex: newHistory.length - 1
+      historyIndex: newHistory.length - 1,
+      revision: (get().revision || 0) + 1
     });
   },
 
@@ -74,7 +75,8 @@ export const createHistorySlice: StateCreator<MindMapState, [], [], HistorySlice
         selectedNodeIds: [],
         editingNodeId: null,
         contextMenu: null,
-        historyIndex: prevIndex
+        historyIndex: prevIndex,
+        revision: (get().revision || 0) + 1
       });
     }
   },
@@ -97,8 +99,10 @@ export const createHistorySlice: StateCreator<MindMapState, [], [], HistorySlice
         selectedNodeIds: [],
         editingNodeId: null,
         contextMenu: null,
-        historyIndex: nextIndex
+        historyIndex: nextIndex,
+        revision: (get().revision || 0) + 1
       });
     }
   }
 });
+

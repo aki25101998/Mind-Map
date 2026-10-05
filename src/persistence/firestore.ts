@@ -1,14 +1,17 @@
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, orderBy, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import type { MindMapDocument, ShareConfig } from '../types';
+import { sanitizeDocumentForPersistence } from './sanitize';
 
 export const saveCloudDocument = async (document: MindMapDocument): Promise<void> => {
   const user = auth.currentUser;
   if (!user) throw new Error('Authentication required');
 
-  const docRef = doc(db, 'users', user.uid, 'mindmaps', document.id);
-  await setDoc(docRef, document);
+  const sanitized = sanitizeDocumentForPersistence(document);
+  const docRef = doc(db, 'users', user.uid, 'mindmaps', sanitized.id);
+  await setDoc(docRef, sanitized);
 };
+
 
 export const getCloudDocument = async (id: string): Promise<MindMapDocument | undefined> => {
   const user = auth.currentUser;
@@ -136,6 +139,8 @@ export const getPublicSharedDocument = async (shareId: string): Promise<PublicSh
 };
 
 export const saveSharedCloudDocument = async (ownerId: string, document: MindMapDocument): Promise<void> => {
-  const mapRef = doc(db, 'users', ownerId, 'mindmaps', document.id);
-  await setDoc(mapRef, document, { merge: true });
+  const sanitized = sanitizeDocumentForPersistence(document);
+  const mapRef = doc(db, 'users', ownerId, 'mindmaps', sanitized.id);
+  await setDoc(mapRef, sanitized, { merge: true });
 };
+

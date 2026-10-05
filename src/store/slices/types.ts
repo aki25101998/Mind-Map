@@ -16,6 +16,7 @@ export interface DocumentSlice {
   shareEnabled: boolean;
   shareId: string | null;
   sharePermission: 'view' | 'edit';
+  revision: number;
   loadDocument: (
     id: string, 
     title: string, 

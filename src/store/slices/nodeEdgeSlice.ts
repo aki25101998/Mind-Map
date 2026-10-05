@@ -12,7 +12,8 @@ import {
   computeHasChildrenMap, 
   isValidConnection, 
   isStructuralEdge, 
-  computeSubtreeVisibility 
+  computeSubtreeVisibility,
+  getDescendants
 } from '../../utils/graphUtils';
 
 export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSlice> = (set, get) => ({
@@ -192,10 +193,19 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
       return;
     }
 
-    const nodeIdsToDelete = new Set(nodesToDelete.map(n => n.id));
+    // Collect all descendants of deleted nodes (entire subtree)
+    const allNodesToDeleteMap = new Map<string, MindMapNode>();
+    nodesToDelete.forEach(n => {
+      allNodesToDeleteMap.set(n.id, n);
+      const { descendantNodes } = getDescendants(n.id, nodes, edges);
+      descendantNodes.forEach(dn => allNodesToDeleteMap.set(dn.id, dn));
+    });
+
+    const allNodesToDelete = Array.from(allNodesToDeleteMap.values());
+    const nodeIdsToDelete = new Set(allNodesToDelete.map(n => n.id));
     const edgeIdsToRemove = new Set(selectedEdges.map(e => e.id));
 
-    const connectedEdges = getConnectedEdges(nodesToDelete, edges);
+    const connectedEdges = getConnectedEdges(allNodesToDelete, edges);
     connectedEdges.forEach(e => edgeIdsToRemove.add(e.id));
 
     const remainingNodes = nodes.filter(n => !nodeIdsToDelete.has(n.id));
@@ -224,15 +234,22 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     const nodeToDelete = nodes.find(n => n.id === id);
     if (!nodeToDelete || nodeToDelete.type === 'main') return;
 
-    const remainingNodes = nodes.filter(n => n.id !== id);
-    const edgesToRemove = getConnectedEdges([nodeToDelete], edges);
-    const remainingEdges = edges.filter(e => !edgesToRemove.some(re => re.id === e.id));
+    // Collect all descendants of deleted node (entire subtree)
+    const { descendantNodes } = getDescendants(id, nodes, edges);
+    const allNodesToDelete = [nodeToDelete, ...descendantNodes];
+    const nodeIdsToDelete = new Set(allNodesToDelete.map(n => n.id));
+
+    const edgesToRemove = getConnectedEdges(allNodesToDelete, edges);
+    const edgeIdsToRemove = new Set(edgesToRemove.map(e => e.id));
+
+    const remainingNodes = nodes.filter(n => !nodeIdsToDelete.has(n.id));
+    const remainingEdges = edges.filter(e => !edgeIdsToRemove.has(e.id));
 
     const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(remainingNodes, remainingEdges);
 
-    const newEditingNodeId = editingNodeId === id ? null : editingNodeId;
-    const newContextMenu = contextMenu?.target === 'node' && contextMenu.id === id ? null : contextMenu;
-    const newSelectedNodeIds = selectedNodeIds.filter(selId => selId !== id);
+    const newEditingNodeId = editingNodeId && nodeIdsToDelete.has(editingNodeId) ? null : editingNodeId;
+    const newContextMenu = contextMenu?.target === 'node' && contextMenu.id && nodeIdsToDelete.has(contextMenu.id) ? null : contextMenu;
+    const newSelectedNodeIds = selectedNodeIds.filter(selId => !nodeIdsToDelete.has(selId));
 
     set({ 
       nodes: visibleNodes, 
@@ -267,12 +284,17 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   },
 
   updateNodeType: (id, type) => {
+    const node = get().nodes.find(n => n.id === id);
+    if (!node) return;
+    // Root node type cannot be changed, and no other node can be converted into 'main'
+    if (node.type === 'main' || type === 'main') return;
+
     set({
-      nodes: get().nodes.map((node) => {
-        if (node.id === id) {
-          return { ...node, type: type as MindMapNode['type'] };
+      nodes: get().nodes.map((n) => {
+        if (n.id === id) {
+          return { ...n, type: type as MindMapNode['type'] };
         }
-        return node;
+        return n;
       })
     });
     get().commitHistory();
@@ -323,7 +345,15 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     const parentNode = nodes.find(n => n.id === parentId);
     if (!parentNode) return;
 
-    const root = nodes.find(n => n.type === 'main') || nodes[0];
+    // Automatically uncollapse parent so newly created child is immediately visible
+    let updatedNodes = nodes;
+    if (parentNode.data?.collapsed) {
+      updatedNodes = nodes.map(n => 
+        n.id === parentId ? { ...n, data: { ...n.data, collapsed: false } } : n
+      );
+    }
+
+    const root = updatedNodes.find(n => n.type === 'main') || updatedNodes[0];
     const layoutType = getLayoutType(templateId);
     
     let leftCount = 0;
@@ -332,7 +362,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     if (parentNode.id === root?.id) {
       const rootEdges = edges.filter(e => e.source === root.id);
       rootEdges.forEach(e => {
-        const child = nodes.find(n => n.id === e.target);
+        const child = updatedNodes.find(n => n.id === e.target);
         if (child?.data?.layoutSide === 'left') leftCount++;
         else if (child?.data?.layoutSide === 'right') rightCount++;
       });
@@ -340,7 +370,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     
     const layoutSide = parentNode.id === root?.id && layoutType === 'two-way'
       ? (leftCount <= rightCount ? 'left' : 'right')
-      : resolveNodeLayoutSide(parentId, nodes, edges, layoutType);
+      : resolveNodeLayoutSide(parentId, updatedNodes, edges, layoutType);
 
     const isLeft = layoutSide === 'left';
     const offsetX = isLeft ? -200 : 200;
@@ -348,7 +378,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     const preferredX = parentNode.position.x + offsetX;
     const preferredY = parentNode.position.y;
     
-    const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, nodes, 'basic', 'New Topic');
+    const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, updatedNodes, 'basic', 'New Topic');
 
     const newId = uuidv4();
     const newNode: MindMapNode = {
@@ -368,10 +398,13 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     };
 
     const newEdges = [...edges, newEdge];
+    const allNodes = [...updatedNodes.map(n => ({...n, selected: false})), newNode];
+    const { nodes: visibleNodes, edges: visibleEdges } = computeSubtreeVisibility(allNodes, newEdges);
+
     set({ 
-      nodes: [...nodes.map(n => ({...n, selected: false})), newNode], 
-      edges: newEdges,
-      hasChildrenMap: computeHasChildrenMap(newEdges),
+      nodes: visibleNodes, 
+      edges: visibleEdges, 
+      hasChildrenMap: computeHasChildrenMap(visibleEdges), 
       selectedNodeIds: [newId],
       editingNodeId: newId
     });
@@ -400,12 +433,27 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
     
     const { x: newX, y: newY } = findNonCollidingPosition(preferredX, preferredY, nodes, targetNode.type, 'New Topic', targetNode.data?.fontSize);
 
+    // Whitelist styling attributes only; do NOT inherit metadata (note, url, tags, locked, collapsed)
+    const inheritedData: Record<string, unknown> = {};
+    if (targetNode.data?.backgroundColor) inheritedData.backgroundColor = targetNode.data.backgroundColor;
+    if (targetNode.data?.borderColor) inheritedData.borderColor = targetNode.data.borderColor;
+    if (targetNode.data?.color) inheritedData.color = targetNode.data.color;
+    if (targetNode.data?.fontSize) inheritedData.fontSize = targetNode.data.fontSize;
+    if (targetNode.data?.fontWeight) inheritedData.fontWeight = targetNode.data.fontWeight;
+    if (targetNode.data?.textAlign) inheritedData.textAlign = targetNode.data.textAlign;
+    if (targetNode.data?.shape) inheritedData.shape = targetNode.data.shape;
+    if (targetNode.data?.dashedEdges !== undefined) inheritedData.dashedEdges = targetNode.data.dashedEdges;
+
     const newId = uuidv4();
     const newNode: MindMapNode = {
       id: newId,
       type: targetNode.type,
       position: { x: newX, y: newY },
-      data: { ...targetNode.data, label: 'New Topic', ...(layoutSide ? { layoutSide } : {}) },
+      data: { 
+        ...inheritedData, 
+        label: 'New Topic', 
+        ...(layoutSide ? { layoutSide } : {}) 
+      },
       selected: true
     };
 

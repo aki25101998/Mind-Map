@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 
 export const isFirebaseConfigured = Boolean(
   import.meta.env.VITE_FIREBASE_API_KEY &&
@@ -19,4 +19,5 @@ const firebaseConfig = {
 const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null as any;
 
 export const auth = isFirebaseConfigured ? getAuth(app) : null as any;
-export const db = isFirebaseConfigured ? getFirestore(app) : null as any;
+export const db = isFirebaseConfigured ? initializeFirestore(app, { ignoreUndefinedProperties: true }) : null as any;
+

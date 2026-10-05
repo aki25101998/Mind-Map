@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { MindMapState, EditorSlice, SyncStatus, ContextMenuState } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { computeHasChildrenMap } from '../../utils/graphUtils';
+import type { MindMapNode } from '../../types';
 
 export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> = (set, get) => {
   // Read saved theme from localStorage on initialization
@@ -91,6 +92,7 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
       return {
         ...n,
         id: newId,
+        type: (n.type === 'main' ? 'basic' : n.type) as MindMapNode['type'],
         position: { x: n.position.x + 50, y: n.position.y + 50 },
         selected: true
       };
@@ -145,6 +147,7 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
       return {
         ...n,
         id: newId,
+        type: (n.type === 'main' ? 'basic' : n.type) as MindMapNode['type'],
         position: { x: n.position.x + offset, y: n.position.y + offset },
         selected: true
       };

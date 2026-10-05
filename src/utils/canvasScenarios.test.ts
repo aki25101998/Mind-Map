@@ -458,5 +458,127 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     expect(state.hasChildrenMap['A']).toBeFalsy();
     expect(state.hasChildrenMap['root']).toBe(true);
   });
+  // Subtree deletion: deleting a parent node deletes all its descendants
+  it('Subtree deletion: deleting parent node deletes all its descendants and connected edges', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const parent: MindMapNode = { id: 'P', type: 'basic', position: { x: 200, y: 0 }, data: { label: 'Parent' } };
+    const child1: MindMapNode = { id: 'C1', type: 'basic', position: { x: 400, y: -50 }, data: { label: 'Child 1' } };
+    const child2: MindMapNode = { id: 'C2', type: 'basic', position: { x: 400, y: 50 }, data: { label: 'Child 2' } };
+    const grandChild: MindMapNode = { id: 'GC', type: 'basic', position: { x: 600, y: 50 }, data: { label: 'Grandchild' } };
+    const unrelated: MindMapNode = { id: 'U', type: 'basic', position: { x: 200, y: 200 }, data: { label: 'Unrelated' } };
+
+    const edgeRootP: MindMapEdge = { id: 'e-rp', source: 'root', target: 'P', type: 'mindmap-edge' };
+    const edgePC1: MindMapEdge = { id: 'e-pc1', source: 'P', target: 'C1', type: 'mindmap-edge' };
+    const edgePC2: MindMapEdge = { id: 'e-pc2', source: 'P', target: 'C2', type: 'mindmap-edge' };
+    const edgeC2GC: MindMapEdge = { id: 'e-c2gc', source: 'C2', target: 'GC', type: 'mindmap-edge' };
+    const edgeRootU: MindMapEdge = { id: 'e-ru', source: 'root', target: 'U', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, parent, child1, child2, grandChild, unrelated],
+      edges: [edgeRootP, edgePC1, edgePC2, edgeC2GC, edgeRootU],
+      selectedNodeIds: ['P']
+    });
+
+    useMindMapStore.getState().deleteSelected();
+
+    const state = useMindMapStore.getState();
+    const remainingIds = state.nodes.map(n => n.id);
+    expect(remainingIds).toEqual(['root', 'U']);
+    expect(state.edges.map(e => e.id)).toEqual(['e-ru']);
+  });
+
+  // Root node protection
+  it('Root node protection: cannot convert root to other type, cannot duplicate root as main', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const other: MindMapNode = { id: 'other', type: 'basic', position: { x: 100, y: 100 }, data: { label: 'Other' } };
+
+    useMindMapStore.setState({
+      nodes: [root, other],
+      edges: [],
+      selectedNodeIds: ['root']
+    });
+
+    // Attempting to change root type should be ignored
+    useMindMapStore.getState().updateNodeType('root', 'basic');
+    expect(useMindMapStore.getState().nodes.find(n => n.id === 'root')?.type).toBe('main');
+
+    // Attempting to change other to main should be ignored
+    useMindMapStore.getState().updateNodeType('other', 'main');
+    expect(useMindMapStore.getState().nodes.find(n => n.id === 'other')?.type).toBe('basic');
+
+    // Duplicating root node should convert duplicated node to 'basic'
+    useMindMapStore.getState().duplicateSelected();
+    const duplicatedNode = useMindMapStore.getState().nodes.find(n => n.id !== 'root' && n.id !== 'other');
+    expect(duplicatedNode).toBeDefined();
+    expect(duplicatedNode?.type).toBe('basic');
+  });
+
+  // Sibling node creation data isolation
+  it('Sibling node creation: inherits style but does NOT inherit note, url, tags, locked, or collapsed', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const topic: MindMapNode = { 
+      id: 'topic-1', 
+      type: 'basic', 
+      position: { x: 200, y: 0 }, 
+      data: { 
+        label: 'My Topic',
+        backgroundColor: '#10b981',
+        fontSize: 18,
+        note: 'Secret notes',
+        url: 'https://example.com',
+        tags: ['work', 'urgent'],
+        locked: true,
+        collapsed: true
+      } 
+    };
+    const edge: MindMapEdge = { id: 'e-1', source: 'root', target: 'topic-1', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, topic],
+      edges: [edge],
+      selectedNodeIds: ['topic-1']
+    });
+
+    useMindMapStore.getState().createSiblingNode('topic-1');
+
+    const state = useMindMapStore.getState();
+    const sibling = state.nodes.find(n => n.id !== 'root' && n.id !== 'topic-1')!;
+    expect(sibling).toBeDefined();
+    // Inherited style
+    expect(sibling.data.backgroundColor).toBe('#10b981');
+    expect(sibling.data.fontSize).toBe(18);
+    // NOT inherited metadata
+    expect(sibling.data.note).toBeUndefined();
+    expect(sibling.data.url).toBeUndefined();
+    expect(sibling.data.tags).toBeUndefined();
+    expect(sibling.data.locked).toBeUndefined();
+    expect(sibling.data.collapsed).toBeUndefined();
+  });
+
+  // Parent auto-uncollapse on child creation
+  it('Parent auto-uncollapse: creating child on collapsed parent automatically uncollapses parent', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const parent: MindMapNode = { 
+      id: 'P', 
+      type: 'basic', 
+      position: { x: 200, y: 0 }, 
+      data: { label: 'Parent', collapsed: true } 
+    };
+    const edge: MindMapEdge = { id: 'e-rp', source: 'root', target: 'P', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, parent],
+      edges: [edge],
+      selectedNodeIds: ['P']
+    });
+
+    useMindMapStore.getState().createChildNode('P');
+
+    const state = useMindMapStore.getState();
+    const updatedParent = state.nodes.find(n => n.id === 'P')!;
+    expect(updatedParent.data.collapsed).toBe(false);
+    expect(state.nodes.find(n => n.selected)?.hidden).toBeFalsy();
+  });
 });
+
 
