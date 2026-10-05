@@ -71,7 +71,7 @@ html, body {
 /* Node Handle UX Optimization */
 .react-flow__node .react-flow__handle {
   opacity: 0 !important;
-  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
   width: 9px !important;
   height: 9px !important;
   border-radius: 50%;
@@ -80,27 +80,43 @@ html, body {
   pointer-events: all;
 }
 
-/* Show handles and enable interaction on node hover */
-.react-flow__node:hover .react-flow__handle,
-.react-flow__node.selected .react-flow__handle {
+/* Hide target handles when not in active connection mode so only a single handle is shown */
+.react-flow__handle.target:not(.connectionindicator) {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Show source handles on node hover or selection */
+.react-flow__node:hover .react-flow__handle.source,
+.react-flow__node.selected .react-flow__handle.source {
   opacity: 0.85 !important;
   width: 10px !important;
   height: 10px !important;
 }
 
-/* Highlight handle on hover */
+/* Highlight handle on hover - cleanly enlarge using width/height to preserve center translation */
 .react-flow__node .react-flow__handle:hover {
   opacity: 1 !important;
-  width: 13px !important;
-  height: 13px !important;
-  transform: scale(1.2);
+  width: 14px !important;
+  height: 14px !important;
   box-shadow: 0 0 10px var(--accent);
 }
 
-/* During active connection, make handles visible and indicate valid/invalid */
-.react-flow.connecting .react-flow__handle,
-.react-flow__pane.connecting .react-flow__handle {
-  opacity: 0.7 !important;
+/* During active connection, target handles are revealed to receive connections */
+.react-flow.connecting .react-flow__handle.target,
+.react-flow__pane.connecting .react-flow__handle.target,
+.react-flow__handle.target.connectionindicator {
+  opacity: 0.85 !important;
+  pointer-events: all !important;
+  width: 11px !important;
+  height: 11px !important;
+}
+
+.react-flow__handle.connectionindicator:hover,
+.react-flow__handle.connectingto {
+  opacity: 1 !important;
+  width: 14px !important;
+  height: 14px !important;
 }
 
 .react-flow__handle.connecting {
