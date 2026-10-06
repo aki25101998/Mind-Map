@@ -91,9 +91,29 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
       target: edge.source,
       sourceHandle: edge.targetHandle ?? null,
       targetHandle: edge.sourceHandle ?? null,
-      data: edge.data,
     };
     onReconnectEdge(edge, newConnection);
+  };
+
+  const handleSourceHandleChange = (side: 'left' | 'top' | 'right' | 'bottom') => {
+    if (!edge) return;
+    const newHandle = `${side}-src`;
+    onReconnectEdge(edge, {
+      source: edge.source,
+      target: edge.target,
+      sourceHandle: newHandle,
+      targetHandle: edge.targetHandle ?? null,
+    });
+  };
+
+  const handleTargetHandleChange = (side: 'left' | 'top' | 'right' | 'bottom') => {
+    if (!edge) return;
+    onReconnectEdge(edge, {
+      source: edge.source,
+      target: edge.target,
+      sourceHandle: edge.sourceHandle ?? null,
+      targetHandle: side,
+    });
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -224,6 +244,56 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
         >
           <CornerDownRight size={15} />
         </button>
+      </div>
+
+      {/* Wire Attachment Handles (Start / End) */}
+      <div style={{ display: 'flex', gap: '5px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} title="Vị trí đầu dây (Source node anchor)">
+          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginRight: '2px', userSelect: 'none' }}>Đầu:</span>
+          {(['left', 'top', 'right', 'bottom'] as const).map(side => {
+            const isSelected = edge.sourceHandle === `${side}-src` || edge.sourceHandle === side;
+            return (
+              <button
+                key={`src-${side}`}
+                onClick={() => handleSourceHandleChange(side)}
+                style={{
+                  ...buttonStyle,
+                  padding: '2px 4px',
+                  fontSize: '11px',
+                  fontWeight: isSelected ? '700' : '400',
+                  background: isSelected ? 'var(--social-bg)' : 'transparent',
+                  color: isSelected ? 'var(--accent)' : 'var(--text-secondary)'
+                }}
+                title={`Đầu dây gắn cạnh ${side === 'left' ? 'Trái' : side === 'right' ? 'Phải' : side === 'top' ? 'Trên' : 'Dưới'}`}
+              >
+                {side === 'left' ? '←' : side === 'right' ? '→' : side === 'top' ? '↑' : '↓'}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} title="Vị trí đuôi dây (Target node anchor)">
+          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '2px', marginRight: '2px', userSelect: 'none' }}>Đuôi:</span>
+          {(['left', 'top', 'right', 'bottom'] as const).map(side => {
+            const isSelected = edge.targetHandle === side || edge.targetHandle === `${side}-src`;
+            return (
+              <button
+                key={`tgt-${side}`}
+                onClick={() => handleTargetHandleChange(side)}
+                style={{
+                  ...buttonStyle,
+                  padding: '2px 4px',
+                  fontSize: '11px',
+                  fontWeight: isSelected ? '700' : '400',
+                  background: isSelected ? 'var(--social-bg)' : 'transparent',
+                  color: isSelected ? 'var(--accent)' : 'var(--text-secondary)'
+                }}
+                title={`Đuôi dây gắn cạnh ${side === 'left' ? 'Trái' : side === 'right' ? 'Phải' : side === 'top' ? 'Trên' : 'Dưới'}`}
+              >
+                {side === 'left' ? '←' : side === 'right' ? '→' : side === 'top' ? '↑' : '↓'}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Pattern & Arrows */}

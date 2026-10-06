@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   ReactFlow, 
   Background,
@@ -12,7 +12,8 @@ import {
   type Node,
   type Edge,
   type Connection,
-  type NodeChange
+  type NodeChange,
+  type HandleType
 } from '@xyflow/react';
 import type { NodeTypes, EdgeTypes } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
@@ -311,18 +312,89 @@ const CanvasInner = () => {
   }, [setContextMenu]);
 
   const reconnectingEdgeIdRef = useRef<string | null>(null);
+  const reconnectingEdgeRef = useRef<Edge | null>(null);
+  const reconnectedSuccessfullyRef = useRef<boolean>(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   const handleReconnectStart = useCallback((_event: React.MouseEvent | React.TouchEvent, edge: Edge) => {
     reconnectingEdgeIdRef.current = edge.id;
+    reconnectingEdgeRef.current = edge;
+    reconnectedSuccessfullyRef.current = false;
+    setIsReconnecting(true);
   }, []);
 
   const handleReconnect = useCallback((oldEdge: Edge, newConnection: Connection) => {
+    reconnectedSuccessfullyRef.current = true;
     onReconnectEdge(oldEdge as MindMapEdge, newConnection);
   }, [onReconnectEdge]);
 
-  const handleReconnectEnd = useCallback(() => {
+  const handleReconnectEnd = useCallback((
+    event: MouseEvent | TouchEvent,
+    edge: Edge,
+    handleType: HandleType
+  ) => {
+    // If not reconnected yet through standard handle drop, check if dropped on a node card surface
+    if (!reconnectedSuccessfullyRef.current) {
+      const oldEdge = reconnectingEdgeRef.current || edge;
+      const clientX = 'clientX' in event ? event.clientX : (event as TouchEvent).changedTouches?.[0]?.clientX;
+      const clientY = 'clientY' in event ? event.clientY : (event as TouchEvent).changedTouches?.[0]?.clientY;
+
+      if (clientX !== undefined && clientY !== undefined && oldEdge) {
+        const elements = document.elementsFromPoint(clientX, clientY);
+        const nodeEl = elements.find(el => el.classList.contains('react-flow__node'));
+        if (nodeEl) {
+          const targetNodeId = nodeEl.getAttribute('data-id');
+          if (targetNodeId) {
+            const rect = nodeEl.getBoundingClientRect();
+            const relX = (clientX - rect.left) / (rect.width || 1);
+            const relY = (clientY - rect.top) / (rect.height || 1);
+
+            let closestSide: 'top' | 'right' | 'bottom' | 'left' = 'right';
+            const dTop = relY;
+            const dBottom = 1 - relY;
+            const dLeft = relX;
+            const dRight = 1 - relX;
+            const minD = Math.min(dTop, dBottom, dLeft, dRight);
+            if (minD === dTop) closestSide = 'top';
+            else if (minD === dBottom) closestSide = 'bottom';
+            else if (minD === dLeft) closestSide = 'left';
+            else closestSide = 'right';
+
+            // In React Flow EdgeUpdateAnchors:
+            // handleType passed is oppositeHandle.type:
+            // 'source' means source was fixed, TARGET was moved
+            // 'target' means target was fixed, SOURCE was moved
+            const isMovingTarget = handleType === 'source';
+            const newConnection: Connection = isMovingTarget
+              ? {
+                  source: oldEdge.source,
+                  target: targetNodeId,
+                  sourceHandle: oldEdge.sourceHandle ?? null,
+                  targetHandle: closestSide,
+                }
+              : {
+                  source: targetNodeId,
+                  target: oldEdge.target,
+                  sourceHandle: `${closestSide}-src`,
+                  targetHandle: oldEdge.targetHandle ?? null,
+                };
+
+            if (isValidConnection(newConnection, nodes, edges, {
+              ignoredEdgeId: oldEdge.id,
+              allowReparenting: true
+            })) {
+              onReconnectEdge(oldEdge as MindMapEdge, newConnection);
+              reconnectedSuccessfullyRef.current = true;
+            }
+          }
+        }
+      }
+    }
+
     reconnectingEdgeIdRef.current = null;
-  }, []);
+    reconnectingEdgeRef.current = null;
+    setIsReconnecting(false);
+  }, [nodes, edges, onReconnectEdge]);
 
   const isValidConnectionHandler = useCallback((connection: any) => {
     return isValidConnection(connection, nodes, edges, {
@@ -342,6 +414,7 @@ const CanvasInner = () => {
 
   return (
     <ReactFlow
+      className={isReconnecting ? 'canvas-connecting' : undefined}
       nodes={displayNodes}
       edges={edges}
       onNodesChange={handleNodesChange}
@@ -351,7 +424,7 @@ const CanvasInner = () => {
       onReconnect={handleReconnect}
       onReconnectStart={handleReconnectStart}
       onReconnectEnd={handleReconnectEnd}
-      reconnectRadius={20}
+      reconnectRadius={8}
       connectionMode={ConnectionMode.Loose}
       isValidConnection={isValidConnectionHandler}
       onNodeDragStart={onNodeDragStart}

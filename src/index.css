@@ -68,59 +68,75 @@ html, body {
   transition: opacity 0.3s ease; /* Disable transform transition during drag */
 }
 
-/* Node Handle UX Optimization
-   Each side has a `source` handle (drag out) and a `target` handle (drop in) stacked
-   at the same spot. Only the `source` handle is ever drawn, so there is never a
-   second circle. Target handles stay in the DOM (invisible) so drops still connect. */
+/* Node Handle UX Optimization */
 .react-flow__node .react-flow__handle {
-  opacity: 0 !important;
-  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
-  width: 10px !important;
-  height: 10px !important;
+  opacity: 0;
+  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--accent) !important;
-  border: 1.5px solid var(--panel-bg) !important;
-  box-shadow: none !important;
-}
-
-.react-flow__node .react-flow__handle.target {
-  opacity: 0 !important;
+  background: var(--accent);
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
   pointer-events: all;
 }
 
+.react-flow__node .react-flow__handle.target,
 .react-flow__node .react-flow__handle.source {
   pointer-events: all;
 }
 
-/* Show source handles on node hover or selection */
-.react-flow__node:hover .react-flow__handle.source,
-.react-flow__node.selected .react-flow__handle.source {
-  opacity: 0.85 !important;
+/* Show handles on node hover or selection */
+.react-flow__node:hover .react-flow__handle,
+.react-flow__node.selected .react-flow__handle {
+  opacity: 0.85;
 }
 
-/* Enlarge by width/height only (keeps the translate(-50%,-50%) centering intact) */
-.react-flow__node .react-flow__handle.source:hover {
+/* Enlarge handle on direct hover */
+.react-flow__node .react-flow__handle:hover {
   opacity: 1 !important;
-  width: 14px !important;
-  height: 14px !important;
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Connecting & Reconnecting states: illuminate all handles across nodes */
+.canvas-connecting .react-flow__node .react-flow__handle,
+.react-flow.connecting .react-flow__node .react-flow__handle,
+.react-flow__handle.connectingto,
+.react-flow__handle.react-flow__handle-connecting {
+  opacity: 0.9 !important;
+  width: 12px !important;
+  height: 12px !important;
+  background: var(--accent) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 8px var(--accent) !important;
+}
+
+.canvas-connecting .react-flow__node:hover {
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
 .react-flow__node .react-flow__handle.source.connectingfrom {
   opacity: 1 !important;
 }
 
-.react-flow__handle.valid {
+.react-flow__handle.valid,
+.react-flow__node .react-flow__handle.valid {
   background: #10b981 !important;
   border-color: #ffffff !important;
-  box-shadow: 0 0 8px #10b981 !important;
+  box-shadow: 0 0 10px #10b981 !important;
   opacity: 1 !important;
+  width: 14px !important;
+  height: 14px !important;
 }
 
-.react-flow__handle.invalid {
+.react-flow__handle.invalid,
+.react-flow__node .react-flow__handle.invalid {
   background: #ef4444 !important;
   border-color: #ffffff !important;
   box-shadow: 0 0 8px #ef4444 !important;
-  opacity: 0.4 !important;
+  opacity: 0.45 !important;
   cursor: not-allowed !important;
 }
 
@@ -224,32 +240,37 @@ html, body {
   animation: modalFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Edge Reconnection Anchor Handles */
+/* Edge Reconnection Anchor Handles (Sleek, small anchors) */
 .react-flow__edgeupdater {
   cursor: grab !important;
   pointer-events: all !important;
-  fill: transparent;
-  stroke: transparent;
-  stroke-width: 2.5px;
-  transition: r 0.2s cubic-bezier(0.16, 1, 0.3, 1), fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+  fill: #ffffff !important;
+  stroke: var(--accent, #3b82f6) !important;
+  stroke-width: 2px !important;
+  r: 5.5px !important;
+  opacity: 0;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
+  transition: opacity 0.18s ease, r 0.18s cubic-bezier(0.16, 1, 0.3, 1), fill 0.18s ease, stroke 0.18s ease, filter 0.18s ease;
 }
 
-/* When the edge is hovered or selected, make the reconnection anchors clearly visible */
+/* When the edge is hovered or selected, make the reconnection anchors visible, clean and elegant */
 .react-flow__edge:hover .react-flow__edgeupdater,
 .react-flow__edge.selected .react-flow__edgeupdater {
-  fill: var(--panel-bg, #ffffff) !important;
+  opacity: 1 !important;
+  r: 6px !important;
+  fill: #ffffff !important;
   stroke: var(--accent, #3b82f6) !important;
   stroke-width: 2.5px !important;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
 }
 
 /* When hovering directly over an anchor */
 .react-flow__edgeupdater:hover {
   cursor: grabbing !important;
+  r: 8px !important;
   fill: var(--accent, #3b82f6) !important;
   stroke: #ffffff !important;
-  stroke-width: 3px !important;
-  filter: drop-shadow(0 0 10px var(--accent, #3b82f6)) !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 8px var(--accent, #3b82f6)) !important;
 }
 
 

@@ -513,6 +513,31 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     expect(updatedEdge.targetHandle).toBe('top');
   });
 
+  it('Edge Reconnection: adjusts source handle on same node without error', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 200, y: 0 }, data: { label: 'A' } };
+    const edgeRootA: MindMapEdge = { id: 'e-ra', source: 'root', target: 'A', sourceHandle: 'top-src', targetHandle: 'top', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, nodeA],
+      edges: [edgeRootA],
+      hasChildrenMap: { root: true, A: false }
+    });
+
+    // Move sourceHandle from 'top-src' to 'right-src' and targetHandle from 'top' to 'left'
+    useMindMapStore.getState().onReconnectEdge(edgeRootA, {
+      source: 'root',
+      target: 'A',
+      sourceHandle: 'right-src',
+      targetHandle: 'left'
+    });
+
+    const state = useMindMapStore.getState();
+    const updatedEdge = state.edges.find(e => e.id === 'e-ra')!;
+    expect(updatedEdge.sourceHandle).toBe('right-src');
+    expect(updatedEdge.targetHandle).toBe('left');
+  });
+
   it('Edge Reconnection: rejects reconnecting structural target to Root node', () => {
     const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
     const nodeA: MindMapNode = { id: 'A', type: 'basic', position: { x: 200, y: 0 }, data: { label: 'A' } };

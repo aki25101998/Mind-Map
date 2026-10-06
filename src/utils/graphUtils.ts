@@ -127,12 +127,13 @@ export const isValidConnection = (
 
   const isDuplicate = effectiveEdges.some(e => {
     if (e.source !== source || e.target !== target) return false;
-    if (connection.sourceHandle && e.sourceHandle && connection.sourceHandle !== e.sourceHandle) {
-      return false;
-    }
-    if (connection.targetHandle && e.targetHandle && connection.targetHandle !== e.targetHandle) {
-      return false;
-    }
+    const eSrc = e.sourceHandle ?? null;
+    const cSrc = connection.sourceHandle ?? null;
+    const eTgt = e.targetHandle ?? null;
+    const cTgt = connection.targetHandle ?? null;
+    if (cSrc !== null && eSrc !== null && cSrc !== eSrc) return false;
+    if (cTgt !== null && eTgt !== null && cTgt !== eTgt) return false;
+    if ((cSrc !== null || cTgt !== null) && (cSrc !== eSrc || cTgt !== eTgt)) return false;
     return true;
   });
 
