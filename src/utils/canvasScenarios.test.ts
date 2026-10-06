@@ -618,11 +618,11 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     useMindMapStore.getState().updateNodeType('other', 'main');
     expect(useMindMapStore.getState().nodes.find(n => n.id === 'other')?.type).toBe('basic');
 
-    // Duplicating root node should convert duplicated node to 'basic'
+    // Duplicating node preserves its exact type and style without deformation
     useMindMapStore.getState().duplicateSelected();
     const duplicatedNode = useMindMapStore.getState().nodes.find(n => n.id !== 'root' && n.id !== 'other');
     expect(duplicatedNode).toBeDefined();
-    expect(duplicatedNode?.type).toBe('basic');
+    expect(duplicatedNode?.type).toBe('main');
   });
 
   // Sibling node creation data isolation
@@ -735,6 +735,40 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     useMindMapStore.getState().deleteSelected();
     expect(useMindMapStore.getState().nodes).toHaveLength(0);
     expect(useMindMapStore.getState().edges).toHaveLength(0);
+  });
+
+  // Duplicate stability test: preserves type and strips stale dimensions
+  it('Duplicate stability: duplicating node keeps type and cleans stale dimensions to prevent deformation', () => {
+    const mainNode: MindMapNode = {
+      id: 'm1',
+      type: 'main',
+      position: { x: 100, y: 100 },
+      data: {
+        label: 'Main Idea',
+        backgroundColor: 'var(--node-color-orange)',
+        width: 80, // corrupted/stale dimension from previous bug
+        height: 70
+      }
+    };
+
+    useMindMapStore.setState({
+      nodes: [mainNode],
+      edges: [],
+      selectedNodeIds: ['m1']
+    });
+
+    useMindMapStore.getState().duplicateSelected();
+    const state = useMindMapStore.getState();
+    expect(state.nodes).toHaveLength(2);
+
+    const duplicate = state.nodes.find(n => n.id !== 'm1')!;
+    expect(duplicate).toBeDefined();
+    expect(duplicate.type).toBe('main');
+    expect(duplicate.data.label).toBe('Main Idea');
+    expect(duplicate.data.backgroundColor).toBe('var(--node-color-orange)');
+    // Stale dimensions stripped so node can auto-size naturally
+    expect(duplicate.data.width).toBeUndefined();
+    expect(duplicate.data.height).toBeUndefined();
   });
 });
 

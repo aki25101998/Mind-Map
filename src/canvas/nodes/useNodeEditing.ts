@@ -36,9 +36,11 @@ export function useNodeEditing({
     }
 
     if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        return { width: Math.round(rect.width), height: Math.round(rect.height) };
+      const el = containerRef.current;
+      const width = el.offsetWidth;
+      const height = el.offsetHeight;
+      if (width > 0 && height > 0) {
+        return { width: Math.round(width), height: Math.round(height) };
       }
     }
 
@@ -72,27 +74,15 @@ export function useNodeEditing({
 
   const handleBlur = useCallback(() => {
     const finalLabel = draftLabel !== null ? draftLabel : dataLabel;
-    
-    // Capture post-edit geometry from container if available to get actual rendered height
-    let finalDims = editDimensions || getCanonicalDimensions();
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        finalDims = { width: Math.round(rect.width), height: Math.round(rect.height) };
-      }
-    }
 
     setEditingNodeId(null);
     setDraftLabel(null);
     setEditDimensions(null);
 
     if (finalLabel !== dataLabel) {
-      updateNodeData(id, {
-        label: finalLabel,
-        ...(finalDims ? { width: finalDims.width, height: finalDims.height } : {})
-      });
+      updateNodeData(id, { label: finalLabel });
     }
-  }, [id, draftLabel, dataLabel, editDimensions, getCanonicalDimensions, setEditingNodeId, updateNodeData]);
+  }, [id, draftLabel, dataLabel, setEditingNodeId, updateNodeData]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
@@ -107,13 +97,12 @@ export function useNodeEditing({
     }
   }, [handleBlur, setEditingNodeId]);
 
-  // CSS dimension locking rules:
-  // When editing, lock width to prevent horizontal jump, but allow height to expand naturally
-  const dimensionStyle: React.CSSProperties = isEditing && activeDims ? {
-    width: `${activeDims.width}px`,
-    minWidth: `${activeDims.width}px`,
-    maxWidth: `${activeDims.width}px`,
-    minHeight: `${activeDims.height}px`,
+  // CSS dimension rules during editing:
+  // Prevent node from collapsing while typing, but allow it to naturally expand horizontally
+  const dimensionStyle: React.CSSProperties = isEditing ? {
+    minWidth: activeDims ? `${activeDims.width}px` : undefined,
+    minHeight: activeDims ? `${activeDims.height}px` : undefined,
+    maxWidth: '450px',
     boxSizing: 'border-box',
     transition: 'none'
   } : {
