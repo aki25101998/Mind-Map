@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
-import { useReactFlow } from '@xyflow/react';
+import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAutoLayout } from '../hooks/useAutoLayout';
 
@@ -21,7 +21,7 @@ export const ContextMenu = () => {
     updateNodeData
   } = useMindMapStore();
   
-  const { screenToFlowPosition, fitView, setCenter, setViewport } = useReactFlow();
+  const { screenToFlowPosition, fitView, setCenter, setViewport, getNodes } = useReactFlow();
   const menuRef = useRef<HTMLDivElement>(null);
   const handleAutoLayout = useAutoLayout();
 
@@ -75,7 +75,20 @@ export const ContextMenu = () => {
   };
 
   const handleResetView = () => {
-    handleAction(() => setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 600 }));
+    handleAction(() => {
+      const visibleNodes = getNodes().filter(node => !node.hidden);
+      if (visibleNodes.length === 0) {
+        setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 600 });
+        return;
+      }
+      const bounds = getNodesBounds(visibleNodes);
+      const centerX = bounds.x + bounds.width / 2;
+      const centerY = bounds.y + bounds.height / 2;
+      setCenter(centerX, centerY, {
+        zoom: 1,
+        duration: 600,
+      });
+    });
   };
 
   const targetNode = contextMenu.target === 'node' && contextMenu.id 

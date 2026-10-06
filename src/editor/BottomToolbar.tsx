@@ -5,7 +5,7 @@ import {
   Wand2,
   RotateCcw
 } from 'lucide-react';
-import { useReactFlow } from '@xyflow/react';
+import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAutoLayout } from '../hooks/useAutoLayout';
 
@@ -28,11 +28,22 @@ export const BottomToolbar = () => {
     isReadOnly: state.isReadOnly
   })));
 
-  const { setViewport } = useReactFlow();
+  const { getNodes, setCenter, setViewport } = useReactFlow();
   const handleAutoLayout = useAutoLayout();
 
   const handleResetView = () => {
-    setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 600 });
+    const visibleNodes = getNodes().filter(node => !node.hidden);
+    if (visibleNodes.length === 0) {
+      setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 600 });
+      return;
+    }
+    const bounds = getNodesBounds(visibleNodes);
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+    setCenter(centerX, centerY, {
+      zoom: 1,
+      duration: 600,
+    });
   };
 
   const handleColorChange = (color: string) => {
