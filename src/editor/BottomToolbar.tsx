@@ -51,9 +51,9 @@ export const BottomToolbar = () => {
     selectedNodeIds.forEach(id => updateNodeData(id, { backgroundColor: color }));
   };
 
-  const selectedNonRootNodes = nodes.filter(n => selectedNodeIds.includes(n.id) && n.type !== 'main');
+  const selectedNodesToDelete = nodes.filter(n => selectedNodeIds.includes(n.id));
   const selectedEdges = edges.filter(e => e.selected);
-  const canDelete = !isReadOnly && (selectedNonRootNodes.length > 0 || selectedEdges.length > 0);
+  const canDelete = !isReadOnly && (selectedNodesToDelete.length > 0 || selectedEdges.length > 0);
   const canDuplicate = !isReadOnly && selectedNodeIds.length > 0;
 
   const colors = [
@@ -155,7 +155,7 @@ export const BottomToolbar = () => {
         }}
         onMouseEnter={e => canDelete && (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)')}
         onMouseLeave={e => canDelete && (e.currentTarget.style.background = 'transparent')}
-        title={!canDelete && selectedNodeIds.length === 1 && nodes.find(n => n.id === selectedNodeIds[0])?.type === 'main' ? "Root Node cannot be deleted" : "Delete selected"}
+        title="Delete selected"
       >
         <Trash2 size={15} /> Delete
       </button>

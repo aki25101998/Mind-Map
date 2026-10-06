@@ -407,17 +407,15 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
           >
             <Copy size={15} />
           </button>
-          {!isMain && (
-            <button 
-              style={{ ...buttonStyle, color: 'var(--node-color-red)' }} 
-              onClick={deleteSelected} 
-              title="Delete"
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              <Trash2 size={15} />
-            </button>
-          )}
+          <button 
+            style={{ ...buttonStyle, color: 'var(--node-color-red)' }} 
+            onClick={deleteSelected} 
+            title="Delete"
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <Trash2 size={15} />
+          </button>
         </div>
       </div>
 

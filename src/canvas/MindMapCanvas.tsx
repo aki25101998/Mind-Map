@@ -28,6 +28,7 @@ import { EdgeFloatingToolbar } from './edges/EdgeFloatingToolbar';
 import { CustomMindMapEdge } from './edges/MindMapEdge';
 import { ContextMenu } from '../editor/ContextMenu';
 import { CommandPalette } from '../components/CommandPalette';
+import { Plus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import type { MindMapNode, MindMapEdge } from '../types';
 import { isValidConnection } from '../utils/graphUtils';
@@ -257,17 +258,18 @@ const CanvasInner = () => {
     if (target.classList.contains('react-flow__pane')) {
       const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
       const newId = uuidv4();
+      const isFirstNode = nodes.length === 0;
       addNode({
         id: newId,
-        type: 'basic',
+        type: isFirstNode ? 'main' : 'basic',
         position,
-        data: { label: 'New Topic' },
+        data: { label: isFirstNode ? 'Main Idea' : 'New Topic' },
         selected: true
       });
       setSelectedNodes([newId]);
       setEditingNodeId(newId);
     }
-  }, [screenToFlowPosition, addNode, setSelectedNodes, setEditingNodeId, isReadOnly]);
+  }, [screenToFlowPosition, addNode, setSelectedNodes, setEditingNodeId, isReadOnly, nodes.length]);
 
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent | MouseEvent, node: { id: string }) => {
@@ -469,6 +471,59 @@ const CanvasInner = () => {
 
       {!isReadOnly && selectedNodeIds.length === 0 && selectedEdge && (
         <EdgeFloatingToolbar edgeId={selectedEdge.id} />
+      )}
+
+      {!isReadOnly && nodes.length === 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px',
+          pointerEvents: 'none'
+        }}>
+          <button
+            onClick={() => {
+              const newId = uuidv4();
+              addNode({
+                id: newId,
+                type: 'main',
+                position: { x: 0, y: 0 },
+                data: { label: 'Main Idea' },
+                selected: true
+              });
+              setSelectedNodes([newId]);
+              setEditingNodeId(newId);
+            }}
+            style={{
+              pointerEvents: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 22px',
+              background: 'var(--accent)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 'var(--radius-pill)',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
+              transition: 'all var(--transition-fast)'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Plus size={16} /> Thêm bảng thông tin (Main Idea)
+          </button>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', userSelect: 'none' }}>
+            hoặc nhấp đúp chuột vào bất kỳ đâu trên bảng
+          </span>
+        </div>
       )}
     </ReactFlow>
   );

@@ -177,7 +177,7 @@ export const findNonCollidingPosition = (
 };
 
 export const normalizeTwoWayDocument = (nodes: MindMapNode[], edges: MindMapEdge[]): MindMapNode[] => {
-  const rootNode = nodes.find(n => n.type === 'main');
+  const rootNode = nodes.find(n => n.type === 'main') || nodes[0];
   if (!rootNode) return nodes;
 
   const adjList = new Map<string, string[]>();
@@ -216,7 +216,7 @@ export const normalizeTwoWayDocument = (nodes: MindMapNode[], edges: MindMapEdge
     let side = nodeSides.get(n.id);
     
     // Disconnected node fallback
-    if (!side && n.type !== 'main') {
+    if (!side && n.id !== rootNode.id) {
       side = n.data?.layoutSide as LayoutSide | undefined;
       if (side !== 'left' && side !== 'right') {
         side = n.position.x < (rootNode.position.x || 0) ? 'left' : 'right';

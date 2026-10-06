@@ -49,12 +49,13 @@ export const ContextMenu = () => {
   const handleNewNode = () => {
     const position = screenToFlowPosition({ x: contextMenu.x, y: contextMenu.y });
     const newId = uuidv4();
+    const isFirstNode = nodes.length === 0;
     handleAction(() => {
       addNode({
         id: newId,
-        type: 'basic',
+        type: isFirstNode ? 'main' : 'basic',
         position,
-        data: { label: 'New Topic' },
+        data: { label: isFirstNode ? 'Main Idea' : 'New Topic' },
         selected: true
       });
       setSelectedNodes([newId]);
@@ -173,11 +174,9 @@ export const ContextMenu = () => {
           <hr style={{ margin: '4px 0', borderColor: 'var(--panel-border)' }} />
           <button className="menu-item" onClick={() => { setSelectedNodes([contextMenu.id!]); handleAction(duplicateSelected); }}>Duplicate</button>
           <button className="menu-item" onClick={() => { setSelectedNodes([contextMenu.id!]); handleAction(copySelected); }}>Copy</button>
-          {!isRoot && (
-            <button className="menu-item" onClick={() => handleAction(() => deleteNodeById(contextMenu.id!))} style={{ color: 'var(--node-color-red)' }}>
-              Delete
-            </button>
-          )}
+          <button className="menu-item" onClick={() => handleAction(() => deleteNodeById(contextMenu.id!))} style={{ color: 'var(--node-color-red)' }}>
+            Delete
+          </button>
         </>
       )}
       

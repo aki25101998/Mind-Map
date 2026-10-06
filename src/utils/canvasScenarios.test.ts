@@ -288,18 +288,25 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     expect(stateAfterRedo.nodes[0].position).toEqual({ x: 300, y: 200 });
   });
 
-  // TEST 16: Delete Root -> Root remains
-  it('TEST 16: Attempting to delete Root node leaves Root intact', () => {
+  // TEST 16: Delete Root / last remaining node works and can be undone
+  it('TEST 16: Attempting to delete Root node deletes it and can be undone', () => {
     useMindMapStore.setState({
+      nodes: [{ id: 'root-1', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Main Idea' } }],
+      edges: [],
       selectedNodeIds: ['root-1']
     });
 
     useMindMapStore.getState().deleteSelected();
+    expect(useMindMapStore.getState().nodes).toHaveLength(0);
+
+    // Can undo deletion of root node
+    useMindMapStore.getState().undo();
     expect(useMindMapStore.getState().nodes).toHaveLength(1);
     expect(useMindMapStore.getState().nodes[0].id).toBe('root-1');
 
+    // deleteNodeById also deletes root node
     useMindMapStore.getState().deleteNodeById('root-1');
-    expect(useMindMapStore.getState().nodes).toHaveLength(1);
+    expect(useMindMapStore.getState().nodes).toHaveLength(0);
   });
 
   // TEST 17: Select Root -> Add Sibling -> No sibling created
@@ -683,6 +690,51 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     const updatedParent = state.nodes.find(n => n.id === 'P')!;
     expect(updatedParent.data.collapsed).toBe(false);
     expect(state.nodes.find(n => n.selected)?.hidden).toBeFalsy();
+  });
+
+  // Last remaining node deletion
+  it('Last remaining node: user can delete the final remaining node on canvas', () => {
+    const singleNode: MindMapNode = {
+      id: 'only-node',
+      type: 'main',
+      position: { x: 0, y: 0 },
+      data: { label: 'Main Idea' }
+    };
+    useMindMapStore.setState({
+      nodes: [singleNode],
+      edges: [],
+      selectedNodeIds: ['only-node'],
+      history: [{ nodes: [singleNode], edges: [] }],
+      historyIndex: 0
+    });
+
+    expect(useMindMapStore.getState().nodes).toHaveLength(1);
+    useMindMapStore.getState().deleteSelected();
+    expect(useMindMapStore.getState().nodes).toHaveLength(0);
+
+    // Verify undo restores it
+    useMindMapStore.getState().undo();
+    expect(useMindMapStore.getState().nodes).toHaveLength(1);
+    expect(useMindMapStore.getState().nodes[0].id).toBe('only-node');
+  });
+
+  // Deleting root with tree deletes entire tree
+  it('Root node deletion with children: deleting root node removes root and all child descendants', () => {
+    const root: MindMapNode = { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Root' } };
+    const child1: MindMapNode = { id: 'c1', type: 'basic', position: { x: 100, y: 0 }, data: { label: 'Child 1' } };
+    const child2: MindMapNode = { id: 'c2', type: 'basic', position: { x: 200, y: 0 }, data: { label: 'Child 2' } };
+    const edge1: MindMapEdge = { id: 'e1', source: 'root', target: 'c1', type: 'mindmap-edge' };
+    const edge2: MindMapEdge = { id: 'e2', source: 'c1', target: 'c2', type: 'mindmap-edge' };
+
+    useMindMapStore.setState({
+      nodes: [root, child1, child2],
+      edges: [edge1, edge2],
+      selectedNodeIds: ['root']
+    });
+
+    useMindMapStore.getState().deleteSelected();
+    expect(useMindMapStore.getState().nodes).toHaveLength(0);
+    expect(useMindMapStore.getState().edges).toHaveLength(0);
   });
 });
 

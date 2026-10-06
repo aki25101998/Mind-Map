@@ -186,9 +186,9 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   deleteSelected: () => {
     const { nodes, edges, selectedNodeIds, editingNodeId, contextMenu } = get();
     const selectedEdges = edges.filter(e => e.selected);
-    const nodesToDelete = nodes.filter(n => selectedNodeIds.includes(n.id) && n.type !== 'main');
+    const nodesToDelete = nodes.filter(n => selectedNodeIds.includes(n.id));
 
-    // If neither non-root nodes nor edges are selected, do nothing
+    // If neither nodes nor edges are selected, do nothing
     if (nodesToDelete.length === 0 && selectedEdges.length === 0) {
       return;
     }
@@ -232,7 +232,7 @@ export const createNodeEdgeSlice: StateCreator<MindMapState, [], [], NodeEdgeSli
   deleteNodeById: (id) => {
     const { nodes, edges, selectedNodeIds, editingNodeId, contextMenu } = get();
     const nodeToDelete = nodes.find(n => n.id === id);
-    if (!nodeToDelete || nodeToDelete.type === 'main') return;
+    if (!nodeToDelete) return;
 
     // Collect all descendants of deleted node (entire subtree)
     const { descendantNodes } = getDescendants(id, nodes, edges);
