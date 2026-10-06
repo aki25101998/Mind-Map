@@ -743,6 +743,9 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
       id: 'm1',
       type: 'main',
       position: { x: 100, y: 100 },
+      width: 260,
+      height: 60,
+      measured: { width: 260, height: 60 },
       data: {
         label: 'Main Idea',
         backgroundColor: 'var(--node-color-orange)',
@@ -766,9 +769,14 @@ describe('Canvas Scenarios (Phase 18 Testing Suite)', () => {
     expect(duplicate.type).toBe('main');
     expect(duplicate.data.label).toBe('Main Idea');
     expect(duplicate.data.backgroundColor).toBe('var(--node-color-orange)');
-    // Stale dimensions stripped so node can auto-size naturally
+    // Stale dimensions and measurements stripped so node can auto-size naturally
     expect(duplicate.data.width).toBeUndefined();
     expect(duplicate.data.height).toBeUndefined();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((duplicate as any).width).toBeUndefined();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((duplicate as any).height).toBeUndefined();
+    expect(duplicate.measured).toBeUndefined();
   });
 });
 

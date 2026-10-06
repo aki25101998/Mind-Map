@@ -114,10 +114,10 @@ const CanvasInner = () => {
   useEffect(() => {
     if (!isDraggingRef.current) {
       setLocalNodes(currentLocalNodes => {
-        const measuredMap = new Map<string, { measured?: { width?: number; height?: number }; width?: number; height?: number }>();
+        const measuredMap = new Map<string, { measured?: { width?: number; height?: number } }>();
         currentLocalNodes.forEach(n => {
-          if (n.measured || n.width || n.height) {
-            measuredMap.set(n.id, { measured: n.measured, width: n.width, height: n.height });
+          if (n.measured) {
+            measuredMap.set(n.id, { measured: n.measured });
           }
         });
 
@@ -127,8 +127,6 @@ const CanvasInner = () => {
           return {
             ...node,
             measured: node.measured || prevMeasurement.measured,
-            width: node.width ?? prevMeasurement.width,
-            height: node.height ?? prevMeasurement.height,
           };
         });
       });
@@ -146,7 +144,7 @@ const CanvasInner = () => {
     }
     
     // Forward selection and dimensions changes to Zustand for persistence / UI sync / layout calculations
-    const forwardChanges = changes.filter(c => c.type === 'select' || c.type === 'dimensions');
+    const forwardChanges = filteredChanges.filter(c => c.type === 'select' || c.type === 'dimensions');
     if (forwardChanges.length > 0) {
       onNodesChange(forwardChanges as unknown as NodeChange<MindMapNode>[]);
     }

@@ -51,7 +51,7 @@ export const EllipseNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'el
     boxShadow: selected ? '0 0 0 2px var(--accent-soft)' : 'var(--shadow-sm)',
     minWidth: '100px',
     maxWidth: '420px',
-    width: data.width && data.width > 100 ? `${data.width}px` : undefined,
+    width: data.width && data.width > 100 ? `${data.width}px` : 'fit-content',
     minHeight: data.height && data.height > 40 ? `${data.height}px` : undefined,
     textAlign: (data.textAlign as 'left' | 'center' | 'right') || 'center',
     aspectRatio: '2/1',

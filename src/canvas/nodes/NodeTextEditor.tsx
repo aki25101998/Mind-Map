@@ -45,15 +45,39 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
   return (
     <div
       style={{
+        display: 'inline-grid',
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        alignItems: 'center',
+        justifyItems: textAlign === 'left' ? 'start' : textAlign === 'right' ? 'end' : 'center',
         width: '100%',
         minWidth: 0,
-        minHeight: '100%',
         boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: textAlign === 'left' ? 'flex-start' : textAlign === 'right' ? 'flex-end' : 'center',
+        position: 'relative'
       }}
     >
+      {/* Invisible ghost mirror guarantees the editor matches the rendered text size exactly */}
+      <span
+        aria-hidden="true"
+        style={{
+          gridArea: '1 / 1',
+          visibility: 'hidden',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+          fontSize: fontSize ? `${fontSize}px` : 'inherit',
+          fontWeight: fontWeight || 'inherit',
+          fontFamily: 'inherit',
+          lineHeight: '1.3',
+          textAlign: textAlign,
+          minHeight: `${(fontSize || 14) * 1.3}px`,
+          padding: 0,
+          margin: 0,
+          pointerEvents: 'none',
+          userSelect: 'none'
+        }}
+      >
+        {(value || placeholder || ' ') + '\u200B'}
+      </span>
       <textarea
         ref={textareaRef}
         className="nodrag nopan"
@@ -64,8 +88,10 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
         onBlur={onBlur}
         onKeyDown={onKeyDown}
         style={{
+          gridArea: '1 / 1',
           width: '100%',
           minWidth: 0,
+          height: '100%',
           minHeight: `${(fontSize || 14) * 1.3}px`,
           boxSizing: 'border-box',
           background: 'transparent',

@@ -48,7 +48,7 @@ export const TextNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'text'
     boxShadow: selected ? '0 0 0 2px var(--accent-soft)' : 'none',
     minWidth: '60px',
     maxWidth: '450px',
-    width: data.width && data.width > 60 ? `${data.width}px` : undefined,
+    width: data.width && data.width > 60 ? `${data.width}px` : 'fit-content',
     minHeight: data.height && data.height > 24 ? `${data.height}px` : undefined,
     textAlign: (data.textAlign as 'left' | 'center' | 'right') || 'center',
     transition: isEditing ? 'none' : 'var(--transition-fast)',

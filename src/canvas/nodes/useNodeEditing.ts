@@ -98,10 +98,8 @@ export function useNodeEditing({
   }, [handleBlur, setEditingNodeId]);
 
   // CSS dimension rules during editing:
-  // Prevent node from collapsing while typing, but allow it to naturally expand horizontally
+  // Allow node to naturally fit content while respecting min/max bounds
   const dimensionStyle: React.CSSProperties = isEditing ? {
-    minWidth: activeDims ? `${activeDims.width}px` : undefined,
-    minHeight: activeDims ? `${activeDims.height}px` : undefined,
     maxWidth: '450px',
     boxSizing: 'border-box',
     transition: 'none'

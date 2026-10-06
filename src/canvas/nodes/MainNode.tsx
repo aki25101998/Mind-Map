@@ -51,7 +51,7 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
     boxShadow: selected ? '0 0 0 2px var(--accent)' : 'var(--shadow-sm)',
     minWidth: '120px',
     maxWidth: '450px',
-    width: data.width && data.width > 120 ? `${data.width}px` : undefined,
+    width: data.width && data.width > 120 ? `${data.width}px` : 'fit-content',
     minHeight: data.height && data.height > 40 ? `${data.height}px` : undefined,
     textAlign: (data.textAlign as 'left' | 'center' | 'right') || 'center',
     transition: isEditing ? 'none' : 'var(--transition-fast)',

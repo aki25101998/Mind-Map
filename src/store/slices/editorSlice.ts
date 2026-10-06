@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { MindMapState, EditorSlice, SyncStatus, ContextMenuState } from './types';
+import type { MindMapNode } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import { computeHasChildrenMap } from '../../utils/graphUtils';
 
@@ -91,14 +92,17 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
       const cleanData = { ...n.data };
       delete cleanData.width;
       delete cleanData.height;
+      // Strip top-level runtime dimensions & overrides so the duplicate auto-sizes cleanly
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+      const { width, height, measured, style, ...cleanNode } = n as Record<string, unknown>;
       return {
-        ...n,
+        ...cleanNode,
         id: newId,
         type: n.type,
         data: cleanData,
         position: { x: n.position.x + 50, y: n.position.y + 50 },
         selected: true
-      };
+      } as MindMapNode;
     });
 
     const selectedEdges = edges.filter(e => selectedNodeIds.includes(e.source) && selectedNodeIds.includes(e.target));
@@ -150,14 +154,17 @@ export const createEditorSlice: StateCreator<MindMapState, [], [], EditorSlice> 
       const cleanData = { ...n.data };
       delete cleanData.width;
       delete cleanData.height;
+      // Strip top-level runtime dimensions & overrides so the pasted node auto-sizes cleanly
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+      const { width, height, measured, style, ...cleanNode } = n as Record<string, unknown>;
       return {
-        ...n,
+        ...cleanNode,
         id: newId,
         type: n.type,
         data: cleanData,
         position: { x: n.position.x + offset, y: n.position.y + offset },
         selected: true
-      };
+      } as MindMapNode;
     });
 
     const newEdges = clipboardEdges.map(e => ({
