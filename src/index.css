@@ -241,26 +241,26 @@ html, body {
   animation: modalFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Edge Reconnection Anchor Handles (Sleek, small anchors) */
+/* Edge Reconnection Anchor Handles (White center with vivid blue border to stand out from wire) */
 .react-flow__edgeupdater {
   cursor: grab !important;
   pointer-events: all !important;
   fill: #ffffff !important;
-  stroke: var(--accent, #3b82f6) !important;
+  stroke: #2563eb !important;
   stroke-width: 2px !important;
   r: 5.5px !important;
   opacity: 0;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 2px 5px rgba(37, 99, 235, 0.35));
   transition: opacity 0.18s ease, r 0.18s cubic-bezier(0.16, 1, 0.3, 1), fill 0.18s ease, stroke 0.18s ease, filter 0.18s ease;
 }
 
-/* When the edge is hovered or selected, make the reconnection anchors visible, clean and elegant */
+/* When the edge is hovered or selected, make the reconnection anchors visible in white & blue */
 .react-flow__edge:hover .react-flow__edgeupdater,
 .react-flow__edge.selected .react-flow__edgeupdater {
   opacity: 1 !important;
   r: 6px !important;
   fill: #ffffff !important;
-  stroke: var(--accent, #3b82f6) !important;
+  stroke: #2563eb !important;
   stroke-width: 2.5px !important;
 }
 
@@ -268,10 +268,10 @@ html, body {
 .react-flow__edgeupdater:hover {
   cursor: grabbing !important;
   r: 8px !important;
-  fill: var(--accent, #3b82f6) !important;
+  fill: #2563eb !important;
   stroke: #ffffff !important;
   stroke-width: 2.5px !important;
-  filter: drop-shadow(0 0 8px var(--accent, #3b82f6)) !important;
+  filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.8)) !important;
 }
 
 
