@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
-import { useAutoLayout } from '../hooks/useAutoLayout';
 import { exportToJSON, exportToPNG, exportToSVG, exportToMarkdown, getExportBackgroundColor } from '../utils/exportUtils';
-import { Undo, Redo, Download, Share2, Menu, LayoutTemplate, Image, FileJson, ChevronDown, Moon, Sun, FileText } from 'lucide-react';
+import { Undo, Redo, Download, Share2, Menu, Image, FileJson, ChevronDown, Moon, Sun, FileText } from 'lucide-react';
 import { ShareModal } from './ShareModal';
 
 interface TopToolbarProps {
@@ -31,7 +30,6 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   } = useMindMapStore();
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
-  const handleAutoLayout = useAutoLayout();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentTitle);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -300,35 +298,6 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {theme === 'dark' ? <Sun size={15} color="var(--accent)" /> : <Moon size={15} color="var(--accent-secondary)" />}
-        </button>
-
-        {/* Auto Layout */}
-        <button 
-          onClick={handleAutoLayout}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '7px 12px',
-            borderRadius: 'var(--radius-md)',
-            background: 'transparent',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border-subtle)',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: '600',
-            transition: 'all var(--transition-fast)'
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'var(--social-bg)';
-            e.currentTarget.style.borderColor = 'var(--accent-secondary-border)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.borderColor = 'var(--border-subtle)';
-          }}
-        >
-          <LayoutTemplate size={14} color="var(--accent-secondary)" /> Auto Layout
         </button>
 
         {/* Export Dropdown */}
