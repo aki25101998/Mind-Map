@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 import { loadAllDocuments, removeDocument, syncDocument } from '../persistence/persistenceService';
@@ -57,6 +58,17 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
     }
     return () => { mounted = false; };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !deleteTarget) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, deleteTarget, onClose]);
 
   const handleOpenDoc = (doc: MindMapDocument) => {
     try {
@@ -120,24 +132,28 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
 
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <>
       {/* Backdrop */}
       <div 
+        className="document-sidebar-backdrop"
         onClick={onClose}
         style={{
-          position: 'fixed', inset: 0, zIndex: 40,
-          background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)'
+          position: 'fixed', inset: 0, zIndex: 'var(--z-sidebar-backdrop, 400)',
+          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)'
         }} 
       />
       
       {/* Sidebar */}
-      <div style={{
-        position: 'fixed', left: 0, top: 0, bottom: 0, width: '300px',
-        background: 'var(--panel-bg)', borderRight: '1px solid var(--panel-border)',
-        zIndex: 50, display: 'flex', flexDirection: 'column',
-        boxShadow: 'var(--shadow-lg)', color: 'var(--text-primary)'
-      }}>
+      <div 
+        className="document-sidebar-panel"
+        style={{
+          position: 'fixed', left: 0, top: 0, bottom: 0, width: '300px',
+          background: 'var(--panel-bg)', borderRight: '1px solid var(--panel-border)',
+          zIndex: 'var(--z-sidebar, 500)', display: 'flex', flexDirection: 'column',
+          boxShadow: 'var(--shadow-lg)', color: 'var(--text-primary)'
+        }}
+      >
         <div style={{ padding: 'var(--space-4)', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Documents</h2>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: 'var(--radius-sm)' }}
@@ -252,4 +268,6 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
       />
     </>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 };

@@ -1,6 +1,8 @@
 :root {
   /* Layout */
   --z-toolbar: 100;
+  --z-sidebar-backdrop: 400;
+  --z-sidebar: 500;
   --z-modal: 1000;
   
   /* Spacing System */

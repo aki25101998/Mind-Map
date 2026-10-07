@@ -241,6 +241,33 @@ html, body {
   animation: modalFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Sidebar Drawer Animations */
+@keyframes sidebarSlideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.document-sidebar-panel {
+  animation: sidebarSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.document-sidebar-backdrop {
+  animation: backdropFadeIn 0.2s ease forwards;
+}
+
 /* Edge Reconnection Anchor Handles (White center with vivid blue border to stand out from wire) */
 .react-flow__edgeupdater {
   cursor: grab !important;
