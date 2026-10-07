@@ -72,7 +72,7 @@ export const EllipseNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'el
         style={style} 
         onDoubleClick={handleStartEditing}
       >
-        <NodeBadges data={data} isEditing={isEditing} />
+        <NodeBadges data={data} nodeId={id} isEditing={isEditing} />
 
         {isEditing ? (
           <NodeTextEditor

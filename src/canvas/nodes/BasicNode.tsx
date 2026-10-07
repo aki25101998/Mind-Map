@@ -67,7 +67,7 @@ export const BasicNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'basi
         style={style} 
         onDoubleClick={handleStartEditing}
       >
-        <NodeBadges data={data} isEditing={isEditing} />
+        <NodeBadges data={data} nodeId={id} isEditing={isEditing} />
 
         {isEditing ? (
           <NodeTextEditor

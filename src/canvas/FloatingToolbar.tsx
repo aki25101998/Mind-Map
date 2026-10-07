@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Type, Square, Circle, SquareAsterisk, Palette, Copy, Trash2, Plus, ArrowRight, ALargeSmall, Minus,
   Lock, Unlock, Bold, AlignLeft, AlignCenter, AlignRight, Link as LinkIcon, Check, X,
@@ -51,6 +51,20 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   const toolbarRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleOpenToolbarNote = (e: Event) => {
+      const customEvent = e as CustomEvent<{ nodeId: string }>;
+      if (!customEvent.detail || customEvent.detail.nodeId === nodeId) {
+        setNoteInput((node?.data?.note as string) || '');
+        setIsNoteOpen(true);
+        setIsUrlOpen(false);
+        setIsTagOpen(false);
+      }
+    };
+    window.addEventListener('mindmap:open-toolbar-note', handleOpenToolbarNote);
+    return () => window.removeEventListener('mindmap:open-toolbar-note', handleOpenToolbarNote);
+  }, [nodeId, node?.data?.note]);
 
   if (!node) return null;
 
@@ -480,8 +494,8 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
           border: '1.5px solid var(--panel-border)',
           boxShadow: 'var(--shadow-md)',
           marginTop: '4px',
-          minWidth: '280px',
-          maxWidth: '380px'
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
@@ -499,6 +513,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
             rows={3}
             style={{
               width: '100%',
+              boxSizing: 'border-box',
               background: 'var(--social-bg)',
               border: '1px solid var(--border-subtle)',
               borderRadius: 'var(--radius-sm)',
@@ -547,8 +562,8 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
           border: '1.5px solid var(--panel-border)',
           boxShadow: 'var(--shadow-md)',
           marginTop: '4px',
-          minWidth: '280px',
-          maxWidth: '380px'
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
