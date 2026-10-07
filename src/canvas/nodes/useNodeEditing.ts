@@ -100,7 +100,6 @@ export function useNodeEditing({
   // CSS dimension rules during editing:
   // Allow node to naturally fit content while respecting min/max bounds
   const dimensionStyle: React.CSSProperties = isEditing ? {
-    maxWidth: '450px',
     boxSizing: 'border-box',
     transition: 'none'
   } : {

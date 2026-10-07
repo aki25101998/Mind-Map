@@ -82,7 +82,7 @@ export const MainNode = ({ id, data, selected }: NodeProps<Node<NodeData, 'main'
           />
         ) : (
           <>
-            <div style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
+            <div style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
               {data.label}
             </div>
             <NodeTags data={data} isEditing={isEditing} />

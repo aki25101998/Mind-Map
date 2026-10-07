@@ -25,41 +25,35 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-focus and place cursor at the end on mount
+  // Auto-focus and place cursor (or select default text if New Topic / Main Idea)
   useLayoutEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
       const length = textareaRef.current.value.length;
-      textareaRef.current.setSelectionRange(length, length);
+      if (textareaRef.current.value === 'New Topic' || textareaRef.current.value === 'Main Idea') {
+        textareaRef.current.setSelectionRange(0, length);
+      } else {
+        textareaRef.current.setSelectionRange(length, length);
+      }
     }
   }, []);
-
-  // Auto-resize textarea height based on content
-  useLayoutEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, (fontSize || 14) * 1.3)}px`;
-    }
-  }, [value, fontSize]);
 
   return (
     <div
       style={{
+        position: 'relative',
         display: 'inline-grid',
-        gridTemplateColumns: 'minmax(0, 1fr)',
         alignItems: 'center',
         justifyItems: textAlign === 'left' ? 'start' : textAlign === 'right' ? 'end' : 'center',
         width: '100%',
         minWidth: 0,
-        boxSizing: 'border-box',
-        position: 'relative'
+        boxSizing: 'border-box'
       }}
     >
-      {/* Invisible ghost mirror guarantees the editor matches the rendered text size exactly */}
+      {/* Invisible ghost mirror dictates the exact width and height based on text content */}
       <span
         aria-hidden="true"
         style={{
-          gridArea: '1 / 1',
           visibility: 'hidden',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
@@ -67,9 +61,9 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
           fontSize: fontSize ? `${fontSize}px` : 'inherit',
           fontWeight: fontWeight || 'inherit',
           fontFamily: 'inherit',
-          lineHeight: '1.3',
+          lineHeight: '1.5',
           textAlign: textAlign,
-          minHeight: `${(fontSize || 14) * 1.3}px`,
+          minHeight: `${(fontSize || 14) * 1.5}px`,
           padding: 0,
           margin: 0,
           pointerEvents: 'none',
@@ -82,17 +76,18 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
         ref={textareaRef}
         className="nodrag nopan"
         rows={1}
+        cols={1}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
         style={{
-          gridArea: '1 / 1',
+          position: 'absolute',
+          top: 0,
+          left: 0,
           width: '100%',
-          minWidth: 0,
           height: '100%',
-          minHeight: `${(fontSize || 14) * 1.3}px`,
           boxSizing: 'border-box',
           background: 'transparent',
           border: 'none',
@@ -104,7 +99,7 @@ export const NodeTextEditor: React.FC<NodeTextEditorProps> = ({
           fontSize: fontSize ? `${fontSize}px` : 'inherit',
           fontWeight: fontWeight || 'inherit',
           fontFamily: 'inherit',
-          lineHeight: '1.3',
+          lineHeight: '1.5',
           textAlign: textAlign,
           wordBreak: 'break-word',
           overflowWrap: 'break-word',
