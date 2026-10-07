@@ -1,6 +1,6 @@
 import type { MindMapNode, MindMapEdge, LayoutType } from '../types';
 import dagre from 'dagre';
-import type { LayoutSide } from './layoutUtils';
+import { estimateNodeSize, type LayoutSide } from './layoutUtils';
 import { isStructuralEdge } from './graphUtils';
 
 interface TreeNode {
@@ -55,8 +55,9 @@ export const buildHierarchyTree = (
       .map(childId => buildSubtree(childId, depth + 1, side))
       .filter((c): c is TreeNode => c !== null);
 
-    const width = node.data?.width ?? node.measured?.width ?? DEFAULT_WIDTH;
-    const height = node.data?.height ?? node.measured?.height ?? DEFAULT_HEIGHT;
+    const estimated = estimateNodeSize(node.type, node.data?.label, node.data?.fontSize);
+    const width = node.data?.width ?? node.measured?.width ?? estimated.width;
+    const height = node.data?.height ?? node.measured?.height ?? estimated.height;
 
     return {
       node,
@@ -139,6 +140,13 @@ export const applyClassicMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]):
   const tree = buildHierarchyTree(nodes, edges, 'free');
   if (!tree) return nodes;
 
+  // Preserve user vertical ordering
+  const sortChildrenVertically = (t: TreeNode) => {
+    t.children.sort((a, b) => a.node.position.y - b.node.position.y);
+    t.children.forEach(sortChildrenVertically);
+  };
+  sortChildrenVertically(tree);
+
   calculateSubtreeSizes(tree);
   tree.x = -(tree.width / 2);
   tree.y = -(tree.height / 2);
@@ -161,7 +169,7 @@ export const applyClassicMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]):
   const flattenTree = (t: TreeNode): MindMapNode[] => {
     return [{ 
       ...t.node, 
-      position: { x: t.x, y: t.y },
+      position: { x: Math.round(t.x), y: Math.round(t.y) },
       data: { ...t.node.data, layoutSide: t.side }
     }, ...t.children.flatMap(flattenTree)];
   };
@@ -176,25 +184,76 @@ export const applyTwoWayMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]): 
   const tree = buildHierarchyTree(nodes, edges, 'two-way');
   if (!tree) return nodes;
 
+  // Sort children of all subtrees by position.y to preserve user visual order
+  const sortSubtreeChildrenVertically = (t: TreeNode) => {
+    t.children.sort((a, b) => a.node.position.y - b.node.position.y);
+    t.children.forEach(sortSubtreeChildrenVertically);
+  };
+  sortSubtreeChildrenVertically(tree);
+
   calculateSubtreeSizes(tree);
 
   const leftChildren: TreeNode[] = [];
   const rightChildren: TreeNode[] = [];
-  let leftTotalHeight = 0;
-  let rightTotalHeight = 0;
+  const unassignedChildren: TreeNode[] = [];
 
-  // Sort by subtree height descending to balance optimally
-  const sortedChildren = [...tree.children].sort((a, b) => b.subtreeHeight - a.subtreeHeight);
+  const rootX = tree.node.position.x ?? 0;
 
-  sortedChildren.forEach(child => {
-    if (leftTotalHeight <= rightTotalHeight) {
+  tree.children.forEach(child => {
+    // 1. Explicit layoutSide on node data (from template or previous assignment)
+    if (child.node.data?.layoutSide === 'left') {
       leftChildren.push(child);
-      leftTotalHeight += child.subtreeHeight + (leftChildren.length > 1 ? NODE_SEP : 0);
-    } else {
-      rightChildren.push(child);
-      rightTotalHeight += child.subtreeHeight + (rightChildren.length > 1 ? NODE_SEP : 0);
+      return;
     }
+    if (child.node.data?.layoutSide === 'right') {
+      rightChildren.push(child);
+      return;
+    }
+
+    // 2. Physical position relative to root
+    const childX = child.node.position.x ?? 0;
+    if (childX < rootX - 20) {
+      leftChildren.push(child);
+      return;
+    }
+    if (childX > rootX + 20) {
+      rightChildren.push(child);
+      return;
+    }
+
+    // 3. Ambiguous position near center
+    unassignedChildren.push(child);
   });
+
+  // Calculate current heights
+  let leftTotalHeight = leftChildren.reduce((sum, c) => sum + c.subtreeHeight, 0) + 
+    Math.max(0, leftChildren.length - 1) * NODE_SEP;
+  let rightTotalHeight = rightChildren.reduce((sum, c) => sum + c.subtreeHeight, 0) + 
+    Math.max(0, rightChildren.length - 1) * NODE_SEP;
+
+  // If there are unassigned children, distribute them to the side with less height
+  if (unassignedChildren.length > 0) {
+    unassignedChildren.sort((a, b) => b.subtreeHeight - a.subtreeHeight);
+    unassignedChildren.forEach(child => {
+      if (leftTotalHeight <= rightTotalHeight) {
+        leftChildren.push(child);
+        leftTotalHeight += child.subtreeHeight + (leftChildren.length > 1 ? NODE_SEP : 0);
+      } else {
+        rightChildren.push(child);
+        rightTotalHeight += child.subtreeHeight + (rightChildren.length > 1 ? NODE_SEP : 0);
+      }
+    });
+  }
+
+  // Preserve user vertical ordering on both sides
+  leftChildren.sort((a, b) => a.node.position.y - b.node.position.y);
+  rightChildren.sort((a, b) => a.node.position.y - b.node.position.y);
+
+  // Recalculate heights after sorting
+  leftTotalHeight = leftChildren.reduce((sum, c) => sum + c.subtreeHeight, 0) + 
+    Math.max(0, leftChildren.length - 1) * NODE_SEP;
+  rightTotalHeight = rightChildren.reduce((sum, c) => sum + c.subtreeHeight, 0) + 
+    Math.max(0, rightChildren.length - 1) * NODE_SEP;
 
   const setSide = (t: TreeNode, side: LayoutSide) => {
     t.side = side;
@@ -223,8 +282,84 @@ export const applyTwoWayMindMap = (nodes: MindMapNode[], edges: MindMapEdge[]): 
   const flattenTree = (t: TreeNode): MindMapNode[] => {
     return [{ 
       ...t.node, 
-      position: { x: t.x, y: t.y },
+      position: { x: Math.round(t.x), y: Math.round(t.y) },
       data: { ...t.node.data, layoutSide: t.side }
+    }, ...t.children.flatMap(flattenTree)];
+  };
+
+  const layoutedNodesMap = new Map<string, MindMapNode>();
+  flattenTree(tree).forEach(n => layoutedNodesMap.set(n.id, n));
+
+  return nodes.map(n => layoutedNodesMap.get(n.id) || n);
+};
+
+const calculateSubtreeSizesTopDown = (tree: TreeNode) => {
+  const estimated = estimateNodeSize(tree.node.type, tree.node.data?.label, tree.node.data?.fontSize);
+  tree.width = tree.node.data?.width ?? tree.node.measured?.width ?? estimated.width;
+  tree.height = tree.node.data?.height ?? tree.node.measured?.height ?? estimated.height;
+
+  if (tree.children.length === 0) {
+    tree.subtreeWidth = tree.width;
+    tree.subtreeHeight = tree.height;
+    return;
+  }
+
+  let totalWidth = 0;
+  let maxHeight = 0;
+
+  tree.children.forEach((child, index) => {
+    calculateSubtreeSizesTopDown(child);
+    totalWidth += child.subtreeWidth;
+    if (index < tree.children.length - 1) {
+      totalWidth += NODE_SEP;
+    }
+    if (child.subtreeHeight > maxHeight) {
+      maxHeight = child.subtreeHeight;
+    }
+  });
+
+  tree.subtreeWidth = Math.max(tree.width, totalWidth);
+  tree.subtreeHeight = tree.height + RANK_SEP + maxHeight;
+};
+
+const positionSubtreeBottom = (tree: TreeNode, startX: number, startY: number) => {
+  tree.x = startX + (tree.subtreeWidth - tree.width) / 2;
+  tree.y = startY;
+
+  if (tree.children.length === 0) return;
+
+  const childrenTotalWidth = tree.children.reduce((sum, c) => sum + c.subtreeWidth, 0) + 
+    Math.max(0, tree.children.length - 1) * NODE_SEP;
+  
+  let currentX = startX + (tree.subtreeWidth - childrenTotalWidth) / 2;
+  tree.children.forEach(child => {
+    positionSubtreeBottom(child, currentX, startY + tree.height + RANK_SEP);
+    currentX += child.subtreeWidth + NODE_SEP;
+  });
+};
+
+export const applyTopDownTree = (nodes: MindMapNode[], edges: MindMapEdge[]): MindMapNode[] => {
+  const tree = buildHierarchyTree(nodes, edges, 'tree');
+  if (!tree) return nodes;
+
+  const sortChildrenHorizontally = (t: TreeNode) => {
+    t.children.sort((a, b) => a.node.position.x - b.node.position.x);
+    t.children.forEach(sortChildrenHorizontally);
+  };
+  sortChildrenHorizontally(tree);
+
+  calculateSubtreeSizesTopDown(tree);
+
+  const startX = -(tree.subtreeWidth / 2);
+  const startY = -(tree.height / 2);
+
+  positionSubtreeBottom(tree, startX, startY);
+
+  const flattenTree = (t: TreeNode): MindMapNode[] => {
+    return [{ 
+      ...t.node, 
+      position: { x: Math.round(t.x), y: Math.round(t.y) },
+      data: { ...t.node.data, layoutSide: 'center' }
     }, ...t.children.flatMap(flattenTree)];
   };
 

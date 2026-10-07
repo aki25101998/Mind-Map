@@ -6,7 +6,7 @@ export const templates: Template[] = [
     name: 'Blank Canvas',
     category: 'Mind Map',
     description: 'Start from scratch with a single central node.',
-    layoutType: 'free',
+    layoutType: 'two-way',
     defaultNodes: [
       { id: 'root', type: 'main', position: { x: 0, y: 0 }, data: { label: 'Main Idea' } },
     ],

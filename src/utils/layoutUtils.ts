@@ -5,9 +5,9 @@ import { isStructuralEdge, getStructuralParent } from './graphUtils';
 export type LayoutSide = 'left' | 'right' | 'center';
 
 export const getLayoutType = (templateId?: string): LayoutType => {
-  if (!templateId) return 'free';
+  if (!templateId || templateId === 'blank') return 'two-way';
   const template = templates.find(t => t.id === templateId);
-  return template?.layoutType || 'free';
+  return template?.layoutType || 'two-way';
 };
 
 /**
@@ -236,7 +236,13 @@ export const normalizeTwoWayDocument = (nodes: MindMapNode[], edges: MindMapEdge
   });
 };
 
-import { applyClassicMindMap, applyTwoWayMindMap, applyRadialMindMap, applyDagreLayout } from './hierarchyLayout';
+import { 
+  applyClassicMindMap, 
+  applyTwoWayMindMap, 
+  applyRadialMindMap, 
+  applyTopDownTree, 
+  applyDagreLayout 
+} from './hierarchyLayout';
 
 /**
  * Calculates auto layout positions for nodes based on template/layoutType.
@@ -247,13 +253,14 @@ export const applyAutoLayout = (
   edges: MindMapEdge[],
   layoutType: LayoutType
 ): MindMapNode[] => {
-  if (nodes.length === 0 || layoutType === 'free') return nodes;
+  if (nodes.length === 0) return nodes;
 
   let layoutedNodes: MindMapNode[] = [];
 
   switch (layoutType) {
     case 'tree':
-      layoutedNodes = applyClassicMindMap(nodes, edges);
+    case 'org':
+      layoutedNodes = applyTopDownTree(nodes, edges);
       break;
     case 'two-way':
       layoutedNodes = applyTwoWayMindMap(nodes, edges);
@@ -261,16 +268,16 @@ export const applyAutoLayout = (
     case 'radial':
       layoutedNodes = applyRadialMindMap(nodes, edges);
       break;
-    case 'org':
-      layoutedNodes = applyDagreLayout(nodes, edges, 'TB');
-      break;
     case 'flow':
-    case 'brace':
       layoutedNodes = applyDagreLayout(nodes, edges, 'LR');
       break;
+    case 'brace':
     case 'one-way':
-    default:
       layoutedNodes = applyClassicMindMap(nodes, edges);
+      break;
+    case 'free':
+    default:
+      layoutedNodes = applyTwoWayMindMap(nodes, edges);
       break;
   }
 
