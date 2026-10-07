@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { 
-  Palette, Trash2, Minus, Spline, ArrowRight, CornerDownRight, Slash, ArrowLeftRight
+  Palette, Trash2, Minus, Spline, ArrowRight, CornerDownRight, Slash
 } from 'lucide-react';
 import { useMindMapStore } from '../../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -14,10 +14,9 @@ interface EdgeFloatingToolbarProps {
 }
 
 export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
-  const { updateEdge, onReconnectEdge, deleteSelected, nodes, edges } = useMindMapStore(
+  const { updateEdge, deleteSelected, nodes, edges } = useMindMapStore(
     useShallow(state => ({
       updateEdge: state.updateEdge,
-      onReconnectEdge: state.onReconnectEdge,
       deleteSelected: state.deleteSelected,
       nodes: state.nodes,
       edges: state.edges
@@ -82,38 +81,6 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
 
   const handleWidthChange = (width: number) => {
     updateEdge(edgeId, { data: { strokeWidth: width } });
-  };
-
-  const handleReverseDirection = () => {
-    if (!edge) return;
-    const newConnection = {
-      source: edge.target,
-      target: edge.source,
-      sourceHandle: edge.targetHandle ?? null,
-      targetHandle: edge.sourceHandle ?? null,
-    };
-    onReconnectEdge(edge, newConnection);
-  };
-
-  const handleSourceHandleChange = (side: 'left' | 'top' | 'right' | 'bottom') => {
-    if (!edge) return;
-    const newHandle = `${side}-src`;
-    onReconnectEdge(edge, {
-      source: edge.source,
-      target: edge.target,
-      sourceHandle: newHandle,
-      targetHandle: edge.targetHandle ?? null,
-    });
-  };
-
-  const handleTargetHandleChange = (side: 'left' | 'top' | 'right' | 'bottom') => {
-    if (!edge) return;
-    onReconnectEdge(edge, {
-      source: edge.source,
-      target: edge.target,
-      sourceHandle: edge.sourceHandle ?? null,
-      targetHandle: side,
-    });
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -246,56 +213,6 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
         </button>
       </div>
 
-      {/* Wire Attachment Handles (Start / End) */}
-      <div style={{ display: 'flex', gap: '5px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} title="Vị trí đầu dây (Source node anchor)">
-          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginRight: '2px', userSelect: 'none' }}>Đầu:</span>
-          {(['left', 'top', 'right', 'bottom'] as const).map(side => {
-            const isSelected = edge.sourceHandle === `${side}-src` || edge.sourceHandle === side;
-            return (
-              <button
-                key={`src-${side}`}
-                onClick={() => handleSourceHandleChange(side)}
-                style={{
-                  ...buttonStyle,
-                  padding: '2px 4px',
-                  fontSize: '11px',
-                  fontWeight: isSelected ? '700' : '400',
-                  background: isSelected ? 'var(--social-bg)' : 'transparent',
-                  color: isSelected ? 'var(--accent)' : 'var(--text-secondary)'
-                }}
-                title={`Đầu dây gắn cạnh ${side === 'left' ? 'Trái' : side === 'right' ? 'Phải' : side === 'top' ? 'Trên' : 'Dưới'}`}
-              >
-                {side === 'left' ? '←' : side === 'right' ? '→' : side === 'top' ? '↑' : '↓'}
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} title="Vị trí đuôi dây (Target node anchor)">
-          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '2px', marginRight: '2px', userSelect: 'none' }}>Đuôi:</span>
-          {(['left', 'top', 'right', 'bottom'] as const).map(side => {
-            const isSelected = edge.targetHandle === side || edge.targetHandle === `${side}-src`;
-            return (
-              <button
-                key={`tgt-${side}`}
-                onClick={() => handleTargetHandleChange(side)}
-                style={{
-                  ...buttonStyle,
-                  padding: '2px 4px',
-                  fontSize: '11px',
-                  fontWeight: isSelected ? '700' : '400',
-                  background: isSelected ? 'var(--social-bg)' : 'transparent',
-                  color: isSelected ? 'var(--accent)' : 'var(--text-secondary)'
-                }}
-                title={`Đuôi dây gắn cạnh ${side === 'left' ? 'Trái' : side === 'right' ? 'Phải' : side === 'top' ? 'Trên' : 'Dưới'}`}
-              >
-                {side === 'left' ? '←' : side === 'right' ? '→' : side === 'top' ? '↑' : '↓'}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Pattern & Arrows */}
       <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>
         <button 
@@ -318,13 +235,6 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
           title="Arrow End"
         >
           <ArrowRight size={15} />
-        </button>
-        <button 
-          style={{ ...buttonStyle, color: 'var(--text-secondary)' }} 
-          onClick={handleReverseDirection} 
-          title="Reverse Line Direction (Flip Source/Target)"
-        >
-          <ArrowLeftRight size={15} />
         </button>
       </div>
 
