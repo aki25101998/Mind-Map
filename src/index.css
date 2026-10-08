@@ -313,4 +313,15 @@ html, body {
   filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.8)) !important;
 }
 
+/* Mobile Optimizations (<= 768px): Hide Controls & MiniMap to avoid screen clutter and overlapping */
+@media (max-width: 768px) {
+  .react-flow__controls {
+    display: none !important;
+  }
+  .react-flow__minimap {
+    display: none !important;
+  }
+}
+
+
 

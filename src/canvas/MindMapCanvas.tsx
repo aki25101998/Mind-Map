@@ -516,7 +516,9 @@ const CanvasInner = () => {
         elementsSelectable={true}
       >
         <Background gap={15} size={1} color="var(--node-border-default)" />
-        <Controls showInteractive={false} position={isMobile ? "bottom-left" : "bottom-right"} />
+        {!isMobile && (
+          <Controls showInteractive={false} position="bottom-right" />
+        )}
         {!isMobile && (
           <MiniMap zoomable pannable nodeColor={(node) => {
             return node.data?.backgroundColor as string || 'var(--node-bg-default)';
