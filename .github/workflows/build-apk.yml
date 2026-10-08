@@ -36,6 +36,13 @@ jobs:
         run: npm ci
 
       - name: Run Quality Gate Checks
+        env:
+          VITE_FIREBASE_API_KEY: 'AIzaSyBa-VjXKmN9SsdBEUZTU6hiAojirVLfH5I'
+          VITE_FIREBASE_AUTH_DOMAIN: 'mind-map-yoogi-2026.firebaseapp.com'
+          VITE_FIREBASE_PROJECT_ID: 'mind-map-yoogi-2026'
+          VITE_FIREBASE_STORAGE_BUCKET: 'mind-map-yoogi-2026.firebasestorage.app'
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '29280470857'
+          VITE_FIREBASE_APP_ID: '1:29280470857:web:c59547d3b9d4f48fee3c98'
         run: |
           npm run lint
           npm run test
