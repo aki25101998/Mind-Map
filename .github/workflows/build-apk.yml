@@ -43,6 +43,7 @@ jobs:
         run: |
           sed -i 's/\r$//' android/gradlew
           chmod +x android/gradlew
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Copy Web Assets to Android
@@ -52,9 +53,21 @@ jobs:
           npx --yes @capacitor/cli copy android || true
 
       - name: Build Debug APK with Gradle
+        id: gradle_build
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../gradle-build.log
+        continue-on-error: true
+
+      - name: Handle Gradle Failure
+        if: steps.gradle_build.outcome == 'failure'
+        run: |
+          echo "### ❌ Gradle Build Error Details" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -n 120 gradle-build.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -n 120 gradle-build.log
+          exit 1
 
       - name: Prepare APK Artifact
         run: |
