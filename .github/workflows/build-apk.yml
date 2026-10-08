@@ -53,27 +53,22 @@ jobs:
           npx --yes @capacitor/cli copy android || true
 
       - name: Build Debug APK with Gradle
-        id: gradle_build
         run: |
           cd android
-          ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee ../gradle-build.log
-        continue-on-error: true
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace > ../gradle-build.log 2>&1
 
-      - name: Handle Gradle Failure
-        if: steps.gradle_build.outcome == 'failure'
+      - name: Show Gradle Build Log
+        if: always()
         run: |
-          echo "### ❌ Gradle Build Error Details" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Gradle Build Log" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          tail -n 120 gradle-build.log >> $GITHUB_STEP_SUMMARY
+          tail -n 100 gradle-build.log >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          tail -n 120 gradle-build.log
-          exit 1
+          tail -n 60 gradle-build.log || true
 
       - name: Prepare APK Artifact
         run: |
           mkdir -p release-output
-          echo "=== Files in android/app/build/outputs ==="
-          ls -R android/app/build/outputs || true
           APK_FILE=$(find android -type f -name "*.apk" | head -n 1)
           echo "Found APK: $APK_FILE"
           cp "$APK_FILE" release-output/Freeform-MindMap-v1.0.apk
