@@ -45,8 +45,8 @@ jobs:
           chmod +x android/gradlew
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Sync Capacitor Android
-        run: npx cap sync android
+      - name: Copy Web Assets to Android
+        run: npx cap copy android
 
       - name: Build Debug APK with Gradle
         run: |
