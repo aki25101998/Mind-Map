@@ -39,13 +39,14 @@ jobs:
           npm run test
           npm run build
 
-      - name: Sync Capacitor Android
-        run: npx cap sync android
-
-      - name: Accept Android SDK Licenses & Permissions
+      - name: Prepare Gradlew & Accept Android Licenses
         run: |
+          sed -i 's/\r$//' android/gradlew
           chmod +x android/gradlew
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
 
       - name: Build Debug APK with Gradle
         run: |
