@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { login, loginWithGoogle } from '../../auth/authService';
 import { useAuth } from '../../auth/useAuth';
 
+import { Capacitor } from '@capacitor/core';
+
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,6 +12,7 @@ export const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isNative = Capacitor.isNativePlatform();
 
   React.useEffect(() => {
     if (user) {
@@ -19,6 +22,12 @@ export const Login: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     setError(null);
+    if (isNative) {
+      setError(
+        'Đăng nhập Google qua cửa sổ ngoài bị hạn chế bởi chính sách bảo mật của Android WebView. Vui lòng nhập Email & Mật khẩu (hoặc bấm "Register" bên dưới để tạo tài khoản trong 5 giây) để sử dụng trực tiếp trong ứng dụng.'
+      );
+      return;
+    }
     setIsLoading(true);
     try {
       await loginWithGoogle();
@@ -68,6 +77,16 @@ export const Login: React.FC = () => {
         boxShadow: 'var(--shadow-lg)'
       }}>
         <h1 style={{ marginBottom: 'var(--space-6)', fontSize: '24px', fontWeight: '700', textAlign: 'center' }}>Log In</h1>
+        
+        {isNative && (
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.08)', color: 'var(--text-secondary)', padding: '10px 14px',
+            borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-4)', fontSize: '13px', lineHeight: '1.5',
+            border: '1px solid rgba(59, 130, 246, 0.25)', textAlign: 'left'
+          }}>
+            💡 <strong>Bản ứng dụng Android:</strong> Đăng nhập tiện lợi bằng <strong>Email & Mật khẩu</strong> hoặc bấm <strong>Register</strong> bên dưới nếu bạn chưa tạo tài khoản.
+          </div>
+        )}
         
         {error && (
           <div style={{
