@@ -16,6 +16,11 @@
   color-scheme: light;
   color: var(--text-primary);
   background-color: var(--canvas-bg);
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 html, body {
@@ -28,6 +33,7 @@ html, body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
@@ -35,6 +41,12 @@ html, body {
   max-width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  html, body {
+    touch-action: manipulation;
+  }
 }
 
 /* Custom Scrollbar for playful sleekness */

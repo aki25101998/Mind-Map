@@ -32,6 +32,7 @@ import { Plus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import type { MindMapNode, MindMapEdge } from '../types';
 import { isValidConnection } from '../utils/graphUtils';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const nodeTypes: NodeTypes = {
   main: MainNode,
@@ -403,6 +404,58 @@ const CanvasInner = () => {
     });
   }, [nodes, edges]);
 
+  const isMobile = useIsMobile(768);
+
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isReadOnly || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+
+    longPressTimerRef.current = setTimeout(() => {
+      if (touchStartPosRef.current) {
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        const nodeEl = target?.closest('.react-flow__node');
+        const nodeId = nodeEl?.getAttribute('data-id');
+
+        if (nodeId) {
+          setContextMenu({ x: touch.clientX, y: touch.clientY, target: 'node', id: nodeId });
+        } else {
+          setContextMenu({ x: touch.clientX, y: touch.clientY, target: 'canvas' });
+        }
+
+        if ('vibrate' in navigator) {
+          try { navigator.vibrate(40); } catch {
+            // Ignore vibration error on unsupported platforms
+          }
+        }
+      }
+    }, 550);
+  }, [isReadOnly, setContextMenu]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartPosRef.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
+    if (dx > 10 || dy > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    touchStartPosRef.current = null;
+  }, []);
+
   const selectedEdge = edges.find(e => e.selected);
 
   const displayNodes = useMemo(() => {
@@ -413,117 +466,127 @@ const CanvasInner = () => {
   }, [localNodes, isReadOnly]);
 
   return (
-    <ReactFlow
-      className={isReconnecting ? 'canvas-connecting' : undefined}
-      nodes={displayNodes}
-      edges={edges}
-      onNodesChange={handleNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      edgesReconnectable={!isReadOnly}
-      onReconnect={handleReconnect}
-      onReconnectStart={handleReconnectStart}
-      onReconnectEnd={handleReconnectEnd}
-      reconnectRadius={8}
-      connectionMode={ConnectionMode.Loose}
-      isValidConnection={isValidConnectionHandler}
-      onNodeDragStart={onNodeDragStart}
-      onNodeDragStop={onNodeDragStop}
-      onMoveEnd={onMoveEnd}
-      onDoubleClick={handleDoubleClick}
-      onNodeContextMenu={onNodeContextMenu}
-      onPaneContextMenu={onPaneContextMenu}
-      onPaneClick={onPaneClick}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      deleteKeyCode={null}
-      defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
-      minZoom={0.1}
-      maxZoom={4}
-      colorMode={theme}
-      panOnDrag={true}
-      panOnScroll={false}
-      zoomOnScroll={true}
-      zoomOnPinch={true}
-      zoomOnDoubleClick={false}
-      selectionMode={SelectionMode.Partial}
-      selectionOnDrag={!isReadOnly}
-      snapToGrid={false}
-      snapGrid={SNAP_GRID}
-      proOptions={PRO_OPTIONS}
-      nodesDraggable={!isReadOnly}
-      nodesConnectable={!isReadOnly}
-      elementsSelectable={true}
+    <div
+      style={{ width: '100%', height: '100%', position: 'relative' }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
-      <Background gap={15} size={1} color="var(--node-border-default)" />
-      <Controls showInteractive={false} position="bottom-right" />
-      <MiniMap zoomable pannable nodeColor={(node) => {
-        return node.data?.backgroundColor as string || 'var(--node-bg-default)';
-      }} />
-      {!isReadOnly && <ContextMenu />}
-      {!isReadOnly && <CommandPalette />}
-      
-      {!isReadOnly && selectedNodeIds.length === 1 && !editingNodeId && (
-        <FloatingToolbar key={selectedNodeIds[0]} nodeId={selectedNodeIds[0]} />
-      )}
+      <ReactFlow
+        className={isReconnecting ? 'canvas-connecting' : undefined}
+        nodes={displayNodes}
+        edges={edges}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        edgesReconnectable={!isReadOnly}
+        onReconnect={handleReconnect}
+        onReconnectStart={handleReconnectStart}
+        onReconnectEnd={handleReconnectEnd}
+        reconnectRadius={8}
+        connectionMode={ConnectionMode.Loose}
+        isValidConnection={isValidConnectionHandler}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDragStop={onNodeDragStop}
+        onMoveEnd={onMoveEnd}
+        onDoubleClick={handleDoubleClick}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneContextMenu={onPaneContextMenu}
+        onPaneClick={onPaneClick}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        deleteKeyCode={null}
+        defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
+        minZoom={0.1}
+        maxZoom={4}
+        colorMode={theme}
+        panOnDrag={true}
+        panOnScroll={false}
+        zoomOnScroll={true}
+        zoomOnPinch={true}
+        zoomOnDoubleClick={false}
+        selectionMode={SelectionMode.Partial}
+        selectionOnDrag={!isReadOnly && !isMobile}
+        snapToGrid={false}
+        snapGrid={SNAP_GRID}
+        proOptions={PRO_OPTIONS}
+        nodesDraggable={!isReadOnly}
+        nodesConnectable={!isReadOnly}
+        elementsSelectable={true}
+      >
+        <Background gap={15} size={1} color="var(--node-border-default)" />
+        <Controls showInteractive={false} position={isMobile ? "bottom-left" : "bottom-right"} />
+        {!isMobile && (
+          <MiniMap zoomable pannable nodeColor={(node) => {
+            return node.data?.backgroundColor as string || 'var(--node-bg-default)';
+          }} />
+        )}
+        {!isReadOnly && <ContextMenu />}
+        {!isReadOnly && <CommandPalette />}
+        
+        {!isReadOnly && selectedNodeIds.length === 1 && !editingNodeId && (
+          <FloatingToolbar key={selectedNodeIds[0]} nodeId={selectedNodeIds[0]} />
+        )}
 
-      {!isReadOnly && selectedNodeIds.length === 0 && selectedEdge && (
-        <EdgeFloatingToolbar edgeId={selectedEdge.id} />
-      )}
+        {!isReadOnly && selectedNodeIds.length === 0 && selectedEdge && (
+          <EdgeFloatingToolbar edgeId={selectedEdge.id} />
+        )}
 
-      {!isReadOnly && nodes.length === 0 && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '12px',
-          pointerEvents: 'none'
-        }}>
-          <button
-            onClick={() => {
-              const newId = uuidv4();
-              addNode({
-                id: newId,
-                type: 'main',
-                position: { x: 0, y: 0 },
-                data: { label: 'Main Idea' },
-                selected: true
-              });
-              setSelectedNodes([newId]);
-              setEditingNodeId(newId);
-            }}
-            style={{
-              pointerEvents: 'auto',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 22px',
-              background: 'var(--accent)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 'var(--radius-pill)',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
-              transition: 'all var(--transition-fast)'
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <Plus size={16} /> Thêm bảng thông tin (Main Idea)
-          </button>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', userSelect: 'none' }}>
-            hoặc nhấp đúp chuột vào bất kỳ đâu trên bảng
-          </span>
-        </div>
-      )}
-    </ReactFlow>
+        {!isReadOnly && nodes.length === 0 && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
+            pointerEvents: 'none'
+          }}>
+            <button
+              onClick={() => {
+                const newId = uuidv4();
+                addNode({
+                  id: newId,
+                  type: 'main',
+                  position: { x: 0, y: 0 },
+                  data: { label: 'Main Idea' },
+                  selected: true
+                });
+                setSelectedNodes([newId]);
+                setEditingNodeId(newId);
+              }}
+              style={{
+                pointerEvents: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 22px',
+                background: 'var(--accent)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-pill)',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
+                transition: 'all var(--transition-fast)'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <Plus size={16} /> Thêm bảng thông tin (Main Idea)
+            </button>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)', userSelect: 'none' }}>
+              hoặc nhấp đúp chuột vào bất kỳ đâu trên bảng
+            </span>
+          </div>
+        )}
+      </ReactFlow>
+    </div>
   );
 };
 

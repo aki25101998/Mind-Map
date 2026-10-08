@@ -11,6 +11,7 @@ import { validateDocument } from '../utils/validation';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useNavigate } from 'react-router-dom';
 import { ReactFlow } from '@xyflow/react';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { templates } from '../templates/definitions';
 import { cloneTemplate } from '../templates/templateUtils';
 import { MainNode } from '../canvas/nodes/MainNode';
@@ -43,6 +44,7 @@ const getCategoryColor = (category: string) => {
 export const Dashboard = () => {
   const { theme, toggleTheme } = useMindMapStore();
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
+  const isMobile = useIsMobile(768);
   
   const { user } = useAuth();
   const [legacyDocs, setLegacyDocs] = useState<MindMapDocument[]>([]);
@@ -162,111 +164,126 @@ export const Dashboard = () => {
   return (
     <div style={{
       width: '100%', maxWidth: '100%', minHeight: '100vh', height: '100vh', background: 'var(--canvas-ambient)',
-      overflowY: 'auto', overflowX: 'hidden', padding: '40px 24px 60px 24px', color: 'var(--text-primary)',
+      overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '20px 16px 40px 16px' : '40px 24px 60px 24px', color: 'var(--text-primary)',
       transition: 'background var(--transition-normal), color var(--transition-normal)'
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
         
-        {/* Top Control Buttons (Theme Toggle & Settings) */}
-        <div style={{ position: 'absolute', top: '0', right: '0', display: 'flex', gap: '10px', zIndex: 10 }}>
-          <button
-            onClick={toggleTheme}
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '14px',
-              background: 'var(--panel-bg)',
-              color: 'var(--text-primary)',
-              border: '1.5px solid var(--panel-border)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--shadow-sm)',
-              transition: 'all var(--transition-fast)'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = 'var(--panel-border)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-            }}
-            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {theme === 'dark' ? <Sun size={20} color="var(--accent)" /> : <Moon size={20} color="var(--accent-secondary)" />}
-          </button>
-          
-          <button
-            onClick={() => navigate('/settings')}
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '14px',
-              background: 'var(--panel-bg)',
-              color: 'var(--text-primary)',
-              border: '1.5px solid var(--panel-border)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--shadow-sm)',
-              transition: 'all var(--transition-fast)'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = 'var(--accent-secondary)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = 'var(--panel-border)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-            }}
-            title="Settings"
-          >
-            <Settings size={20} />
-          </button>
-        </div>
-        
-        {/* User Pill Status Badge */}
-        {user && (
-          <div style={{ paddingTop: '8px', marginBottom: '12px' }}>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-pill)',
-              background: 'var(--accent-soft)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
-              fontSize: '13px',
-              fontWeight: '600',
-              color: 'var(--accent)'
-            }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 8px var(--accent)' }}></span>
-              Workspace of <strong>{user.email}</strong>
-            </span>
+        {/* Top Header Row with User Pill & Controls */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '16px',
+          flexWrap: 'wrap'
+        }}>
+          {user ? (
+            <div style={{ minWidth: 0, flex: '1 1 auto' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-pill)',
+                background: 'var(--accent-soft)',
+                border: '1.5px solid rgba(249, 115, 22, 0.25)',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: 'var(--accent)',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, boxShadow: '0 0 8px var(--accent)' }}></span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Workspace of <strong>{user.email}</strong>
+                </span>
+              </span>
+            </div>
+          ) : <div />}
+
+          {/* Theme & Settings Buttons */}
+          <div style={{ display: 'flex', gap: '10px', flexShrink: 0, marginLeft: 'auto' }}>
+            <button
+              onClick={toggleTheme}
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '14px',
+                background: 'var(--panel-bg)',
+                color: 'var(--text-primary)',
+                border: '1.5px solid var(--panel-border)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'var(--shadow-sm)',
+                transition: 'all var(--transition-fast)'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.borderColor = 'var(--accent)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = 'var(--panel-border)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+              }}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark' ? <Sun size={20} color="var(--accent)" /> : <Moon size={20} color="var(--accent-secondary)" />}
+            </button>
+            
+            <button
+              onClick={() => navigate('/settings')}
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '14px',
+                background: 'var(--panel-bg)',
+                color: 'var(--text-primary)',
+                border: '1.5px solid var(--panel-border)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'var(--shadow-sm)',
+                transition: 'all var(--transition-fast)'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.borderColor = 'var(--accent-secondary)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = 'var(--panel-border)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+              }}
+              title="Settings"
+            >
+              <Settings size={20} />
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Dashboard Title & Creative Tagline */}
         <h1 style={{
           marginBottom: '8px',
-          fontSize: '38px',
+          fontSize: isMobile ? '28px' : '38px',
           fontWeight: '800',
           letterSpacing: '-0.03em',
-          marginTop: user ? '8px' : '32px',
+          marginTop: '12px',
           color: 'var(--text-primary)'
         }}>
           Your Creative Studio
         </h1>
         <p style={{
-          marginBottom: '32px',
-          fontSize: '17px',
+          marginBottom: isMobile ? '24px' : '32px',
+          fontSize: isMobile ? '15px' : '17px',
           color: 'var(--text-secondary)',
           fontWeight: '500',
           lineHeight: 1.4
@@ -606,14 +623,14 @@ export const Dashboard = () => {
       {previewTemplate && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)',
-          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px'
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: isMobile ? '10px' : '20px'
         }}>
           <div style={{
             background: 'var(--panel-bg)',
             borderRadius: 'var(--radius-2xl)',
             width: '100%',
             maxWidth: '850px',
-            height: '82vh',
+            height: isMobile ? '92vh' : '82vh',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -621,16 +638,18 @@ export const Dashboard = () => {
             boxShadow: 'var(--shadow-toolbar)'
           }}>
             <div style={{
-              padding: '24px 28px',
+              padding: isMobile ? '16px' : '24px 28px',
               borderBottom: '1.5px solid var(--panel-border)',
               display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              gap: isMobile ? '12px' : '16px',
               background: 'var(--panel-bg)'
             }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                  <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                  <h2 style={{ margin: 0, fontSize: isMobile ? '20px' : '24px', fontWeight: '800', color: 'var(--text-primary)' }}>
                     {previewTemplate.name}
                   </h2>
                   <span style={{
@@ -645,12 +664,12 @@ export const Dashboard = () => {
                     {previewTemplate.category}
                   </span>
                 </div>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '13px' }}>
                   {previewTemplate.description}
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'flex-end' : 'flex-start' }}>
                 <button 
                   onClick={() => setPreviewTemplateId(null)} 
                   style={{

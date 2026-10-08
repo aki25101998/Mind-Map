@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { exportToJSON, exportToPNG, exportToSVG, exportToMarkdown, getExportBackgroundColor } from '../utils/exportUtils';
-import { Undo, Redo, Download, Share2, Menu, Image, FileJson, ChevronDown, Moon, Sun, FileText } from 'lucide-react';
+import { Undo, Redo, Download, Share2, Menu, Image, FileJson, ChevronDown, Moon, Sun, FileText, Pencil } from 'lucide-react';
 import { ShareModal } from './ShareModal';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface TopToolbarProps {
   onMenuClick?: () => void;
@@ -48,6 +49,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   const exportMenuRef = useRef<HTMLDivElement>(null);
   
   const { getNodes } = useReactFlow();
+  const isMobile = useIsMobile(768);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -114,22 +116,30 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
 
   return (
     <div style={{
-      position: 'absolute', top: '16px', left: '16px', right: '16px',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      zIndex: 'var(--z-toolbar)', pointerEvents: 'none'
+      position: 'absolute',
+      top: isMobile ? 'calc(10px + var(--safe-top))' : '16px',
+      left: isMobile ? 'calc(10px + var(--safe-left))' : '16px',
+      right: isMobile ? 'calc(10px + var(--safe-right))' : '16px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      zIndex: 'var(--z-toolbar)',
+      pointerEvents: 'none',
+      gap: isMobile ? '6px' : '12px'
     }}>
       {/* Left Dock: Menu, Undo/Redo, Title */}
       <div style={{
         background: 'var(--panel-bg)',
-        padding: '6px 14px',
+        padding: isMobile ? '4px 8px' : '6px 14px',
         borderRadius: 'var(--radius-lg)',
         border: '1.5px solid var(--panel-border)',
         pointerEvents: 'auto',
         boxShadow: 'var(--shadow-toolbar)',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        transition: 'all var(--transition-fast)'
+        gap: isMobile ? '6px' : '10px',
+        transition: 'all var(--transition-fast)',
+        maxWidth: isMobile ? 'calc(100vw - 165px)' : 'none'
       }}>
         <button 
           onClick={onMenuClick}
@@ -140,7 +150,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
             justifyContent: 'center',
             background: 'transparent',
             color: 'var(--text-secondary)',
-            padding: '6px',
+            padding: isMobile ? '6px 4px' : '6px',
             cursor: 'pointer',
             border: 'none',
             borderRadius: 'var(--radius-sm)',
@@ -154,12 +164,12 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
 
         <div style={{ width: '1px', height: '18px', background: 'var(--border-subtle)' }} />
 
-        <div style={{ display: 'flex', gap: '4px' }}>
+        <div style={{ display: 'flex', gap: isMobile ? '2px' : '4px' }}>
           <button 
             onClick={undo} 
             disabled={!canUndo}
             style={{
-              padding: '6px',
+              padding: isMobile ? '6px 4px' : '6px',
               borderRadius: 'var(--radius-sm)',
               background: 'transparent',
               color: canUndo ? 'var(--text-secondary)' : 'var(--text-muted)',
@@ -181,7 +191,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
             onClick={redo} 
             disabled={!canRedo}
             style={{
-              padding: '6px',
+              padding: isMobile ? '6px 4px' : '6px',
               borderRadius: 'var(--radius-sm)',
               background: 'transparent',
               color: canRedo ? 'var(--text-secondary)' : 'var(--text-muted)',
@@ -205,22 +215,30 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
 
         {/* Editable Title Bubble */}
         <div 
+          onClick={() => isMobile && setEditingTitle(true)}
           onDoubleClick={() => setEditingTitle(true)}
           style={{
             fontWeight: '600',
-            minWidth: '160px',
+            minWidth: isMobile ? '40px' : '140px',
+            maxWidth: isMobile ? '120px' : '260px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
             cursor: 'text',
-            fontSize: '14px',
+            fontSize: isMobile ? '13px' : '14px',
             color: 'var(--text-primary)',
-            padding: '4px 10px',
+            padding: '4px 8px',
             borderRadius: 'var(--radius-md)',
             background: 'var(--social-bg)',
             border: '1px solid transparent',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
             transition: 'border-color var(--transition-fast)'
           }}
           onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-secondary-border)'}
           onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
-          title="Double click to rename"
+          title={isMobile ? "Tap to rename" : "Double click to rename"}
         >
           {editingTitle ? (
             <input 
@@ -232,7 +250,12 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
               style={{ background: 'transparent', border: 'none', color: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%', padding: 0 }}
             />
           ) : (
-            documentTitle
+            <>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {documentTitle}
+              </span>
+              {isMobile && <Pencil size={11} style={{ opacity: 0.5, flexShrink: 0 }} />}
+            </>
           )}
         </div>
       </div>
@@ -240,13 +263,13 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
       {/* Right Dock: Status, Theme, Layout, Export, Share */}
       <div style={{
         background: 'var(--panel-bg)',
-        padding: '6px 12px',
+        padding: isMobile ? '4px 6px' : '6px 12px',
         borderRadius: 'var(--radius-lg)',
         border: '1.5px solid var(--panel-border)',
         pointerEvents: 'auto',
         boxShadow: 'var(--shadow-toolbar)',
         display: 'flex',
-        gap: '8px',
+        gap: isMobile ? '4px' : '8px',
         alignItems: 'center'
       }}>
         {/* Sync Status Badge */}
@@ -257,11 +280,12 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           fontSize: '12px',
           fontWeight: '600',
           color: 'var(--text-secondary)',
-          padding: '4px 8px',
+          padding: isMobile ? '6px 8px' : '4px 8px',
           background: 'var(--social-bg)',
           borderRadius: 'var(--radius-pill)',
-          marginRight: '4px'
-        }}>
+        }}
+        title={`Sync status: ${syncStatus}`}
+        >
           <span style={{
             width: '7px',
             height: '7px',
@@ -269,7 +293,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
             background: getSyncDotColor(),
             boxShadow: `0 0 6px ${getSyncDotColor()}`
           }} />
-          {syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Sync failed' : syncStatus === 'offline' ? 'Offline' : 'Saved'}
+          {!isMobile && (syncStatus === 'saving' ? 'Saving...' : syncStatus === 'error' ? 'Sync failed' : syncStatus === 'offline' ? 'Offline' : 'Saved')}
         </div>
 
         {/* Theme Toggle */}
@@ -308,8 +332,8 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
             style={{ 
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 12px', 
+              gap: isMobile ? '2px' : '6px',
+              padding: isMobile ? '7px 8px' : '7px 12px', 
               borderRadius: 'var(--radius-md)',
               background: 'transparent',
               color: 'var(--text-primary)',
@@ -322,10 +346,11 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
             }}
             onMouseEnter={e => !isExporting && (e.currentTarget.style.background = 'var(--social-bg)')}
             onMouseLeave={e => !isExporting && (e.currentTarget.style.background = 'transparent')}
+            title="Export Mind Map"
           >
             <Download size={14} /> 
-            {isExporting ? 'Exporting...' : 'Export'}
-            <ChevronDown size={14} />
+            {!isMobile && (isExporting ? 'Exporting...' : 'Export')}
+            {!isMobile && <ChevronDown size={14} />}
           </button>
           
           {isExportMenuOpen && (
@@ -394,8 +419,8 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
+            gap: isMobile ? '0px' : '6px',
+            padding: isMobile ? '8px 10px' : '8px 16px',
             borderRadius: 'var(--radius-md)',
             background: 'var(--gradient-primary)',
             color: '#ffffff',
@@ -410,7 +435,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
           onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
           title="Share Mind Map"
         >
-          <Share2 size={14} /> Share
+          <Share2 size={14} /> {!isMobile && 'Share'}
         </button>
       </div>
       <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />

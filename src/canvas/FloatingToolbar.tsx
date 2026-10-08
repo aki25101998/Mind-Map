@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Type, Square, Circle, SquareAsterisk, Palette, Copy, Trash2, Plus, ArrowRight, ALargeSmall, Minus,
   Lock, Unlock, Bold, AlignLeft, AlignCenter, AlignRight, Link as LinkIcon, Check, X,
-  FileText, Tag
+  FileText, Tag, Pencil
 } from 'lucide-react';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 let persistedPosition: { x: number; y: number } | null = null;
 
@@ -21,7 +22,8 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
     deleteSelected, 
     createChildNode, 
     createSiblingNode,
-    updateOutgoingEdges
+    updateOutgoingEdges,
+    setEditingNodeId
   } = useMindMapStore(useShallow(state => ({
     updateNodeData: state.updateNodeData,
     updateNodeType: state.updateNodeType,
@@ -29,10 +31,12 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
     deleteSelected: state.deleteSelected,
     createChildNode: state.createChildNode,
     createSiblingNode: state.createSiblingNode,
-    updateOutgoingEdges: state.updateOutgoingEdges
+    updateOutgoingEdges: state.updateOutgoingEdges,
+    setEditingNodeId: state.setEditingNodeId
   })));
 
   const node = useMindMapStore(state => state.nodes.find(n => n.id === nodeId));
+  const isMobile = useIsMobile(768);
 
   const [position, setPosition] = useState<{ x: number, y: number }>(() => {
     if (persistedPosition) return persistedPosition;
@@ -172,7 +176,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('button, input, textarea, a, select')) return;
+    if (isMobile || (e.target as HTMLElement).closest('button, input, textarea, a, select')) return;
     isDragging.current = true;
     dragStart.current = {
       x: e.clientX - position.x,
@@ -185,7 +189,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging.current) return;
+    if (isMobile || !isDragging.current) return;
     const newPos = {
       x: e.clientX - dragStart.current.x,
       y: e.clientY - dragStart.current.y
@@ -195,6 +199,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isMobile) return;
     isDragging.current = false;
     if (toolbarRef.current) {
       toolbarRef.current.releasePointerCapture(e.pointerId);
@@ -213,10 +218,13 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       style={{
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        transform: `translate(calc(${position.x}px - 50%), ${position.y}px)`,
+        position: isMobile ? 'fixed' : 'absolute',
+        left: isMobile ? '50%' : 0,
+        top: isMobile ? 'auto' : 0,
+        bottom: isMobile ? 'calc(75px + var(--safe-bottom))' : 'auto',
+        transform: isMobile ? 'translateX(-50%)' : `translate(calc(${position.x}px - 50%), ${position.y}px)`,
+        width: isMobile ? 'calc(100% - 24px)' : 'auto',
+        maxWidth: isMobile ? '480px' : 'none',
         background: 'var(--panel-bg)',
         border: '1.5px solid var(--panel-border)',
         borderRadius: 'var(--radius-xl)',
@@ -227,13 +235,40 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
         boxShadow: 'var(--shadow-toolbar)',
         zIndex: 1000,
         pointerEvents: 'auto',
-        cursor: 'grab',
+        cursor: isMobile ? 'default' : 'grab',
         userSelect: 'none',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        overflowX: isMobile ? 'auto' : 'visible',
+        WebkitOverflowScrolling: 'touch',
+        maxWidth: '100%',
+        paddingBottom: isMobile ? '3px' : 0
+      }}>
+        {/* Quick Edit Text (Crucial for Mobile Touch Screens & Convenient for Desktop) */}
+        <button 
+          style={{
+            ...buttonStyle,
+            background: 'var(--accent-soft)',
+            color: 'var(--accent)',
+            padding: '5px 8px',
+            gap: '4px',
+            borderRight: '1.5px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-sm)',
+            flexShrink: 0
+          }}
+          onClick={() => setEditingNodeId(nodeId)}
+          title="Edit Node Text"
+        >
+          <Pencil size={14} />
+          <span style={{ fontSize: '12px', fontWeight: '600' }}>Edit</span>
+        </button>
+
         {/* Colors */}
-        <div style={{ display: 'flex', gap: '6px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '6px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '8px', alignItems: 'center', flexShrink: 0 }}>
           <Palette size={15} style={{ color: 'var(--accent)' }} />
           {vibrantSwatches.map(color => (
             <button
@@ -247,7 +282,8 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
                 border: '2px solid var(--panel-bg)',
                 cursor: 'pointer',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                transition: 'transform var(--transition-fast)'
+                transition: 'transform var(--transition-fast)',
+                flexShrink: 0
               }}
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
@@ -258,7 +294,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
 
         {/* Shapes (Hidden for root main node) */}
         {!isMain && (
-          <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>
+          <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px', flexShrink: 0 }}>
             <button 
               style={buttonStyle} 
               onClick={() => handleShapeChange('rectangle')} 
@@ -299,7 +335,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
         )}
 
         {/* Typography & Formatting */}
-        <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>
+        <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px', flexShrink: 0 }}>
           <button 
             style={buttonStyle} 
             onClick={() => handleFontSizeChange(12)} 
@@ -352,7 +388,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
         </div>
 
         {/* URL, Note, Tags, Outgoing Edge, Lock */}
-        <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px' }}>
+        <div style={{ display: 'flex', gap: '3px', borderRight: '1.5px solid var(--border-subtle)', paddingRight: '6px', flexShrink: 0 }}>
           <button 
             style={{ ...buttonStyle, background: node.data?.url ? 'var(--accent-secondary-soft)' : 'transparent', color: node.data?.url ? 'var(--accent-secondary)' : 'var(--text-secondary)' }} 
             onClick={handleOpenUrl} 
@@ -391,7 +427,7 @@ export const FloatingToolbar = ({ nodeId }: FloatingToolbarProps) => {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '3px' }}>
+        <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
           {!isMain && (
             <button 
               style={buttonStyle} 

@@ -123,25 +123,31 @@ export const ContextMenu = () => {
     }
   };
 
-  return (
-    <div
-      ref={menuRef}
-      style={{
-        position: 'fixed',
-        left: contextMenu.x,
-        top: contextMenu.y,
-        zIndex: 'var(--z-modal)',
-        background: 'var(--panel-bg)',
-        border: '1px solid var(--panel-border)',
-        borderRadius: '8px',
-        padding: '4px',
-        boxShadow: 'var(--shadow)',
-        minWidth: '160px',
-        display: 'flex',
-        flexDirection: 'column',
-        fontSize: '13px',
-      }}
-    >
+    const menuWidth = 180;
+    const menuHeight = contextMenu.target === 'canvas' ? 240 : 340;
+    const clampedX = Math.min(Math.max(10, contextMenu.x), typeof window !== 'undefined' ? window.innerWidth - menuWidth - 10 : contextMenu.x);
+    const clampedY = Math.min(Math.max(10, contextMenu.y), typeof window !== 'undefined' ? window.innerHeight - menuHeight - 10 : contextMenu.y);
+
+    return (
+      <div
+        ref={menuRef}
+        style={{
+          position: 'fixed',
+          left: clampedX,
+          top: clampedY,
+          zIndex: 'var(--z-modal)',
+          background: 'var(--panel-bg)',
+          border: '1px solid var(--panel-border)',
+          borderRadius: '8px',
+          padding: '4px',
+          boxShadow: 'var(--shadow)',
+          minWidth: `${menuWidth}px`,
+          maxWidth: 'calc(100vw - 20px)',
+          display: 'flex',
+          flexDirection: 'column',
+          fontSize: '13px',
+        }}
+      >
       {contextMenu.target === 'canvas' ? (
         <>
           <button className="menu-item" onClick={handleNewNode}>New topic</button>

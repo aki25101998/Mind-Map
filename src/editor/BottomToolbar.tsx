@@ -8,6 +8,7 @@ import {
 import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAutoLayout } from '../hooks/useAutoLayout';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export const BottomToolbar = () => {
   const { 
@@ -30,6 +31,7 @@ export const BottomToolbar = () => {
 
   const { getNodes, setCenter, setViewport } = useReactFlow();
   const handleAutoLayout = useAutoLayout();
+  const isMobile = useIsMobile(768);
 
   const handleResetView = () => {
     const visibleNodes = getNodes().filter(node => !node.hidden);
@@ -68,18 +70,30 @@ export const BottomToolbar = () => {
 
   return (
     <div style={{
-      position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-      display: 'flex', gap: '8px', alignItems: 'center',
-      background: 'var(--panel-bg)', padding: '6px 16px', borderRadius: 'var(--radius-pill)',
-      border: '1.5px solid var(--panel-border)', zIndex: 'var(--z-toolbar)',
-      boxShadow: 'var(--shadow-toolbar)', pointerEvents: 'auto',
+      position: 'absolute',
+      bottom: isMobile ? 'calc(16px + var(--safe-bottom))' : '24px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      display: 'flex',
+      gap: isMobile ? '4px' : '8px',
+      alignItems: 'center',
+      background: 'var(--panel-bg)',
+      padding: isMobile ? '4px 8px' : '6px 16px',
+      borderRadius: 'var(--radius-pill)',
+      border: '1.5px solid var(--panel-border)',
+      zIndex: 'var(--z-toolbar)',
+      boxShadow: 'var(--shadow-toolbar)',
+      pointerEvents: 'auto',
+      maxWidth: 'calc(100vw - 20px)',
+      overflowX: 'auto',
       transition: 'all var(--transition-fast)'
     }}>
       <button 
         onClick={handleAutoLayout}
         disabled={isReadOnly}
         style={{
-          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: isMobile ? '8px 10px' : '8px 14px',
           borderRadius: 'var(--radius-pill)', background: 'transparent', 
           color: isReadOnly ? 'var(--text-muted)' : 'var(--text-primary)',
           border: 'none', cursor: isReadOnly ? 'not-allowed' : 'pointer', 
@@ -98,14 +112,16 @@ export const BottomToolbar = () => {
             e.currentTarget.style.color = 'var(--text-primary)';
           }
         }}
+        title="Auto Layout"
       >
-        <Wand2 size={15} color="var(--accent)" /> Auto Layout
+        <Wand2 size={15} color="var(--accent)" /> {!isMobile && 'Auto Layout'}
       </button>
 
       <button 
         onClick={handleResetView}
         style={{
-          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: isMobile ? '8px 10px' : '8px 14px',
           borderRadius: 'var(--radius-pill)', background: 'transparent', color: 'var(--text-primary)',
           border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
           transition: 'all var(--transition-fast)'
@@ -120,7 +136,7 @@ export const BottomToolbar = () => {
         }}
         title="Reset View (1:1)"
       >
-        <RotateCcw size={15} color="var(--accent-secondary)" /> Reset View
+        <RotateCcw size={15} color="var(--accent-secondary)" /> {!isMobile && 'Reset View'}
       </button>
       
       <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
@@ -129,7 +145,8 @@ export const BottomToolbar = () => {
         onClick={duplicateSelected}
         disabled={!canDuplicate}
         style={{
-          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: isMobile ? '8px 10px' : '8px 14px',
           borderRadius: 'var(--radius-pill)', background: 'transparent',
           color: canDuplicate ? 'var(--text-primary)' : 'var(--text-muted)',
           border: 'none', cursor: canDuplicate ? 'pointer' : 'not-allowed',
@@ -138,15 +155,17 @@ export const BottomToolbar = () => {
         }}
         onMouseEnter={e => canDuplicate && (e.currentTarget.style.background = 'var(--social-bg)')}
         onMouseLeave={e => canDuplicate && (e.currentTarget.style.background = 'transparent')}
+        title="Duplicate"
       >
-        <Copy size={15} /> Duplicate
+        <Copy size={15} /> {!isMobile && 'Duplicate'}
       </button>
       
       <button 
         onClick={deleteSelected}
         disabled={!canDelete}
         style={{
-          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: isMobile ? '8px 10px' : '8px 14px',
           borderRadius: 'var(--radius-pill)', background: 'transparent',
           color: canDelete ? 'var(--node-color-red)' : 'var(--text-muted)',
           border: 'none', cursor: canDelete ? 'pointer' : 'not-allowed',
@@ -157,7 +176,7 @@ export const BottomToolbar = () => {
         onMouseLeave={e => canDelete && (e.currentTarget.style.background = 'transparent')}
         title="Delete selected"
       >
-        <Trash2 size={15} /> Delete
+        <Trash2 size={15} /> {!isMobile && 'Delete'}
       </button>
 
       {!isReadOnly && (
@@ -165,19 +184,22 @@ export const BottomToolbar = () => {
           <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
 
           {/* Vibrant Color Swatches */}
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', padding: '2px 4px' }}>
+          <div style={{ display: 'flex', gap: isMobile ? '4px' : '6px', alignItems: 'center', padding: '2px 4px' }}>
             {colors.map(c => (
               <button 
                 key={c.label}
                 onClick={() => handleColorChange(c.value)} 
                 disabled={selectedNodeIds.length === 0}
                 style={{
-                  width: '22px', height: '22px', borderRadius: '50%',
+                  width: isMobile ? '20px' : '22px',
+                  height: isMobile ? '20px' : '22px',
+                  borderRadius: '50%',
                   background: c.value, border: '2px solid var(--panel-bg)',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
                   cursor: selectedNodeIds.length === 0 ? 'not-allowed' : 'pointer',
                   opacity: selectedNodeIds.length === 0 ? 0.4 : 1,
-                  transition: 'transform var(--transition-bounce)'
+                  transition: 'transform var(--transition-bounce)',
+                  flexShrink: 0
                 }}
                 onMouseEnter={e => selectedNodeIds.length > 0 && (e.currentTarget.style.transform = 'scale(1.25)')}
                 onMouseLeave={e => selectedNodeIds.length > 0 && (e.currentTarget.style.transform = 'scale(1)')}
