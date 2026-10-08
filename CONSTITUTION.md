@@ -55,11 +55,14 @@ Do chính sách bảo mật PowerShell trên Windows chặn chạy file script `
 ### Điều 10: Tự Động Kiểm Định & Triển Khai (3-Phase Gate & Firebase Deploy)
 Không hoàn tất nhiệm vụ khi chưa vượt qua Cổng Kiểm Định 3 Pha: 103 bài test Vitest PASS 100% -> Oxlint 0 lỗi -> Build thành công. Sau khi pass, AI bắt buộc tự động commit, push GitHub và deploy lên Firebase Hosting.
 
+### Điều 11: Đóng Gói Mobile & Biên Dịch Đám Mây (Mobile Packaging & Cloud Build Pipeline)
+Toàn bộ quy trình đóng gói ứng dụng di động Android (Capacitor) phải được tự động hóa biên dịch qua GitHub Actions đám mây và đồng bộ về nhánh `build-output`. Khi người dùng yêu cầu file APK, AI có trách nhiệm tự động lấy file APK về máy, sao chép ra Desktop/Downloads và hiển thị vị trí lưu.
+
 ---
 
-## 3. Hệ Thống 5 Bộ Luật Chi Tiết (Detailed Sub-Constitutions)
+## 3. Hệ Thống 6 Bộ Luật Chi Tiết (Detailed Sub-Constitutions)
 
-Để nắm rõ các quy định cụ thể, ví dụ mã nguồn và phạm vi file chịu ảnh hưởng, tham khảo 5 bộ luật con tương ứng:
+Để nắm rõ các quy định cụ thể, ví dụ mã nguồn và phạm vi file chịu ảnh hưởng, tham khảo 6 bộ luật con tương ứng:
 
 | Mã số | Tên Bộ Luật | Đường dẫn file | Nội dung trọng tâm |
 |:---:|:---|:---|:---|
@@ -68,6 +71,7 @@ Không hoàn tất nhiệm vụ khi chưa vượt qua Cổng Kiểm Định 3 Ph
 | **03** | **Bố Cục & Layout** | [`docs/constitution/03-layout-engine.md`](file:///d:/Project/Mind%20map/docs/constitution/03-layout-engine.md) | Bảo toàn nhánh Trái/Phải, Tree Top-down, Org layout, Chống va chạm spiral search |
 | **04** | **Lưu Trữ & Dữ Liệu** | [`docs/constitution/04-persistence-data.md`](file:///d:/Project/Mind%20map/docs/constitution/04-persistence-data.md) | Sanitization sạch undefined, IndexedDB offline-first, Timestamp conflict resolution |
 | **05** | **Kiểm Định & CI/CD** | [`docs/constitution/05-verification-quality.md`](file:///d:/Project/Mind%20map/docs/constitution/05-verification-quality.md) | Cổng 3 pha (Vitest + Oxlint + Build), Lệnh Windows `cmd.exe /c`, Tự động Deploy Firebase |
+| **06** | **Đóng Gói Mobile APK** | [`docs/constitution/06-mobile-build-pipeline.md`](file:///d:/Project/Mind%20map/docs/constitution/06-mobile-build-pipeline.md) | Capacitor Android, GitHub Actions Cloud Build, Nhánh build-output, Tự động kéo APK về máy |
 
 ---
 

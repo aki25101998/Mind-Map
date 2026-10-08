@@ -14,6 +14,7 @@ Trước khi chỉnh sửa bất kỳ file mã nguồn nào trong thư mục `sr
    - Liên quan đến Auto Layout/tọa độ/hướng nhánh: đọc [`03-layout-engine.md`](file:///d:/Project/Mind%20map/docs/constitution/03-layout-engine.md).
    - Liên quan đến lưu trữ/Firestore/IndexedDB/sanitize: đọc [`04-persistence-data.md`](file:///d:/Project/Mind%20map/docs/constitution/04-persistence-data.md).
    - Liên quan đến kiểm thử/lệnh terminal/build: đọc [`05-verification-quality.md`](file:///d:/Project/Mind%20map/docs/constitution/05-verification-quality.md).
+   - Liên quan đến đóng gói/biên dịch Android APK: đọc [`06-mobile-build-pipeline.md`](file:///d:/Project/Mind%20map/docs/constitution/06-mobile-build-pipeline.md).
 3. **CẤM:** Không được tùy tiện sửa đổi hành vi cốt lõi để làm việc dễ hơn (ví dụ: cấm hạ thấp điều kiện kiểm tra, cấm xóa bài test, cấm thay đổi cấu trúc dữ liệu đã được bảo vệ).
 
 ---
@@ -65,3 +66,25 @@ git add . ; git commit -m "Mô tả ngắn gọn, rõ ràng về thay đổi v�
 **LƯU Ý QUAN TRỌNG:** 
 - Đừng chờ người dùng nhắc nhở hay ra lệnh push code hay deploy.
 - Hãy tự động chạy các lệnh này thông qua công cụ `run_command` của bạn ngay khi code xong và test đã pass.
+
+---
+
+## 5. Quy Chuẩn Đóng Gói & Xuất Bản File APK (Mobile APK Pipeline)
+
+Bất cứ khi nào người dùng yêu cầu build, đóng gói hoặc lấy file APK để cài đặt trên điện thoại, AI **BẮT BUỘC** tuân thủ hướng dẫn tại [`docs/constitution/06-mobile-build-pipeline.md`](file:///d:/Project/Mind%20map/docs/constitution/06-mobile-build-pipeline.md) và tự động thực hiện trọn vẹn 4 bước sau mà không cần người dùng can thiệp thủ công:
+
+1. **Đồng bộ mã nguồn & kích hoạt build cloud:** Đảm bảo test pass, build web pass, commit và push lên nhánh `main`. Nhánh `main` sẽ kích hoạt GitHub Actions workflow `.github/workflows/build-apk.yml`.
+2. **Theo dõi tiến trình:** Giám sát workflow cho đến khi hoàn thành và tự động đẩy file `Freeform-MindMap.apk` lên nhánh `build-output`.
+3. **Tải file APK về thư mục dự án cục bộ:**
+   ```powershell
+   git fetch origin build-output:build-output
+   git checkout build-output -- Freeform-MindMap.apk
+   git restore --staged Freeform-MindMap.apk
+   ```
+4. **Sao chép ra Desktop/Downloads & Mở Explorer:**
+   ```powershell
+   Copy-Item 'D:\Project\Mind map\Freeform-MindMap.apk' 'C:\Users\aki25\Desktop\Freeform-MindMap.apk' -Force
+   Copy-Item 'D:\Project\Mind map\Freeform-MindMap.apk' 'C:\Users\aki25\Downloads\Freeform-MindMap.apk' -Force
+   Start-Process explorer.exe -ArgumentList '/select,"D:\Project\Mind map\Freeform-MindMap.apk"'
+   ```
+
