@@ -110,7 +110,7 @@ export const EditorPage = () => {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
+    <div style={{ width: '100%', maxWidth: '100%', height: '100dvh', minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflowX: 'hidden', overflowY: 'hidden' }}>
       <DocumentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <ReactFlowProvider>
         <ErrorBoundary documentId={documentId} onReset={() => {

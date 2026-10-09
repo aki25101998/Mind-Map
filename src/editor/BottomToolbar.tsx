@@ -8,7 +8,7 @@ import {
 import { useReactFlow, getNodesBounds } from '@xyflow/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAutoLayout } from '../hooks/useAutoLayout';
-import { useIsMobile } from '../hooks/useIsMobile';
+import { useIsMobile, useIsLandscape } from '../hooks/useIsMobile';
 
 export const BottomToolbar = () => {
   const { 
@@ -32,6 +32,7 @@ export const BottomToolbar = () => {
   const { getNodes, setCenter, setViewport } = useReactFlow();
   const handleAutoLayout = useAutoLayout();
   const isMobile = useIsMobile(768);
+  const isLandscape = useIsLandscape();
 
   const handleResetView = () => {
     const visibleNodes = getNodes().filter(node => !node.hidden);
@@ -71,14 +72,14 @@ export const BottomToolbar = () => {
   return (
     <div style={{
       position: 'absolute',
-      bottom: isMobile ? 'calc(16px + var(--safe-bottom))' : '24px',
+      bottom: isMobile ? (isLandscape ? 'calc(8px + var(--safe-bottom))' : 'calc(16px + var(--safe-bottom))') : '24px',
       left: '50%',
       transform: 'translateX(-50%)',
       display: 'flex',
       gap: isMobile ? '4px' : '8px',
       alignItems: 'center',
       background: 'var(--panel-bg)',
-      padding: isMobile ? '4px 8px' : '6px 16px',
+      padding: isLandscape ? '3px 8px' : (isMobile ? '4px 8px' : '6px 16px'),
       borderRadius: 'var(--radius-pill)',
       border: '1.5px solid var(--panel-border)',
       zIndex: 'var(--z-toolbar)',
@@ -93,7 +94,7 @@ export const BottomToolbar = () => {
         disabled={isReadOnly}
         style={{
           display: 'flex', alignItems: 'center', gap: '6px',
-          padding: isMobile ? '8px 10px' : '8px 14px',
+          padding: isLandscape ? '6px 8px' : (isMobile ? '8px 10px' : '8px 14px'),
           borderRadius: 'var(--radius-pill)', background: 'transparent', 
           color: isReadOnly ? 'var(--text-muted)' : 'var(--text-primary)',
           border: 'none', cursor: isReadOnly ? 'not-allowed' : 'pointer', 

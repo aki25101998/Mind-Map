@@ -6,7 +6,7 @@ import { useMindMapStore } from '../../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { MindMapEdgeStyle } from '../../types';
 import { canConvertToStructural } from '../../utils/graphUtils';
-import { useIsMobile } from '../../hooks/useIsMobile';
+import { useIsMobile, useIsLandscape } from '../../hooks/useIsMobile';
 
 let persistedEdgePosition: { x: number; y: number } | null = null;
 
@@ -26,6 +26,7 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
 
   const edge = edges.find(e => e.id === edgeId);
   const isMobile = useIsMobile(768);
+  const isLandscape = useIsLandscape();
 
   const [position, setPosition] = useState<{ x: number; y: number }>(() => {
     if (persistedEdgePosition) return persistedEdgePosition;
@@ -145,14 +146,14 @@ export const EdgeFloatingToolbar = ({ edgeId }: EdgeFloatingToolbarProps) => {
         position: isMobile ? 'fixed' : 'absolute',
         left: isMobile ? '50%' : 0,
         top: isMobile ? 'auto' : 0,
-        bottom: isMobile ? 'calc(75px + var(--safe-bottom))' : 'auto',
+        bottom: isMobile ? (isLandscape ? 'calc(50px + var(--safe-bottom))' : 'calc(75px + var(--safe-bottom))') : 'auto',
         transform: isMobile ? 'translateX(-50%)' : `translate(calc(${position.x}px - 50%), ${position.y}px)`,
         width: isMobile ? 'calc(100% - 24px)' : 'auto',
-        maxWidth: isMobile ? '480px' : 'none',
+        maxWidth: isMobile ? (isLandscape ? '600px' : '480px') : 'none',
         background: 'var(--panel-bg)',
         border: '1.5px solid var(--panel-border)',
         borderRadius: 'var(--radius-xl)',
-        padding: '6px 10px',
+        padding: isLandscape ? '4px 8px' : '6px 10px',
         display: 'flex',
         flexDirection: 'column',
         gap: '6px',

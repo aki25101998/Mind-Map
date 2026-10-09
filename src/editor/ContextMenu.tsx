@@ -143,6 +143,8 @@ export const ContextMenu = () => {
           boxShadow: 'var(--shadow)',
           minWidth: `${menuWidth}px`,
           maxWidth: 'calc(100vw - 20px)',
+          maxHeight: 'calc(100vh - 20px)',
+          overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
           fontSize: '13px',

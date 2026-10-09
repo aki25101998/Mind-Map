@@ -149,6 +149,7 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
         className="document-sidebar-panel"
         style={{
           position: 'fixed', left: 0, top: 0, bottom: 0, width: '300px', maxWidth: '85vw',
+          paddingLeft: 'var(--safe-left)',
           background: 'var(--panel-bg)', borderRight: '1px solid var(--panel-border)',
           zIndex: 'var(--z-sidebar, 500)', display: 'flex', flexDirection: 'column',
           boxShadow: 'var(--shadow-lg)', color: 'var(--text-primary)'

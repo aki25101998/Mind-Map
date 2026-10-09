@@ -4,7 +4,7 @@ import { useMindMapStore } from '../store/useMindMapStore';
 import { exportToJSON, exportToPNG, exportToSVG, exportToMarkdown, getExportBackgroundColor } from '../utils/exportUtils';
 import { Undo, Redo, Download, Share2, Menu, Image, FileJson, ChevronDown, Moon, Sun, FileText, Pencil } from 'lucide-react';
 import { ShareModal } from './ShareModal';
-import { useIsMobile } from '../hooks/useIsMobile';
+import { useIsMobile, useIsLandscape } from '../hooks/useIsMobile';
 
 interface TopToolbarProps {
   onMenuClick?: () => void;
@@ -50,6 +50,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   
   const { getNodes } = useReactFlow();
   const isMobile = useIsMobile(768);
+  const isLandscape = useIsLandscape();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -117,7 +118,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
   return (
     <div style={{
       position: 'absolute',
-      top: isMobile ? 'calc(10px + var(--safe-top))' : '16px',
+      top: isMobile ? (isLandscape ? 'calc(6px + var(--safe-top))' : 'calc(10px + var(--safe-top))') : '16px',
       left: isMobile ? 'calc(10px + var(--safe-left))' : '16px',
       right: isMobile ? 'calc(10px + var(--safe-right))' : '16px',
       display: 'flex',
@@ -130,7 +131,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
       {/* Left Dock: Menu, Undo/Redo, Title */}
       <div style={{
         background: 'var(--panel-bg)',
-        padding: isMobile ? '4px 8px' : '6px 14px',
+        padding: isLandscape ? '3px 6px' : (isMobile ? '4px 8px' : '6px 14px'),
         borderRadius: 'var(--radius-lg)',
         border: '1.5px solid var(--panel-border)',
         pointerEvents: 'auto',
@@ -263,7 +264,7 @@ export const TopToolbar = ({ onMenuClick }: TopToolbarProps) => {
       {/* Right Dock: Status, Theme, Layout, Export, Share */}
       <div style={{
         background: 'var(--panel-bg)',
-        padding: isMobile ? '4px 6px' : '6px 12px',
+        padding: isLandscape ? '3px 6px' : (isMobile ? '4px 6px' : '6px 12px'),
         borderRadius: 'var(--radius-lg)',
         border: '1.5px solid var(--panel-border)',
         pointerEvents: 'auto',
