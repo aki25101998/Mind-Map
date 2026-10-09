@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register, loginWithGoogle } from '../../auth/authService';
 import { useAuth } from '../../auth/useAuth';
+import { useAuthDeepLink } from '../../auth/useAuthDeepLink';
 
 import { Capacitor } from '@capacitor/core';
 
@@ -15,6 +16,8 @@ export const Register: React.FC = () => {
   const { user } = useAuth();
   const isNative = Capacitor.isNativePlatform();
 
+  useAuthDeepLink(setIsLoading, setError);
+
   React.useEffect(() => {
     if (user) {
       navigate('/mindmaps');
@@ -24,19 +27,28 @@ export const Register: React.FC = () => {
   const handleGoogleLogin = async () => {
     setError(null);
     if (isNative) {
-      setError(
-        'Đăng nhập Google qua cửa sổ ngoài bị hạn chế bởi chính sách bảo mật của Android WebView. Vui lòng nhập Email và Mật khẩu ở form trên để đăng ký tài khoản trực tiếp.'
-      );
+      setIsLoading(true);
+      const authUrl = 'https://mind-map-yoogi-2026.web.app/auth/mobile.html?auto=true';
+      const win = window as unknown as { AndroidAuth?: { openSystemBrowser?: (url: string) => void } };
+      if (win.AndroidAuth?.openSystemBrowser) {
+        win.AndroidAuth.openSystemBrowser(authUrl);
+      } else {
+        window.location.href = authUrl;
+      }
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 3000);
       return;
     }
     setIsLoading(true);
     try {
       await loginWithGoogle();
       navigate('/mindmaps');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (err.code !== 'auth/popup-closed-by-user') {
-        setError(err.message || 'An error occurred during Google sign-in.');
+      const fbErr = err as { code?: string; message?: string };
+      if (fbErr.code !== 'auth/popup-closed-by-user') {
+        setError(fbErr.message || 'An error occurred during Google sign-in.');
       }
     } finally {
       setIsLoading(false);
@@ -62,18 +74,19 @@ export const Register: React.FC = () => {
     try {
       await register(email, password);
       navigate('/mindmaps');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
+      const fbErr = err as { code?: string; message?: string };
+      if (fbErr.code === 'auth/email-already-in-use') {
         setError('Email is already in use.');
-      } else if (err.code === 'auth/invalid-email') {
+      } else if (fbErr.code === 'auth/invalid-email') {
         setError('Invalid email format.');
-      } else if (err.code === 'auth/weak-password') {
+      } else if (fbErr.code === 'auth/weak-password') {
         setError('Password is too weak.');
-      } else if (err.code === 'auth/network-request-failed') {
+      } else if (fbErr.code === 'auth/network-request-failed') {
         setError('Network error. Please try again.');
       } else {
-        setError(err.message || 'An error occurred during registration. Please try again.');
+        setError(fbErr.message || 'An error occurred during registration. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -91,16 +104,6 @@ export const Register: React.FC = () => {
         boxShadow: 'var(--shadow-lg)'
       }}>
         <h1 style={{ marginBottom: 'var(--space-6)', fontSize: '24px', fontWeight: '700', textAlign: 'center' }}>Register</h1>
-        
-        {isNative && (
-          <div style={{
-            background: 'rgba(59, 130, 246, 0.08)', color: 'var(--text-secondary)', padding: '10px 14px',
-            borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-4)', fontSize: '13px', lineHeight: '1.5',
-            border: '1px solid rgba(59, 130, 246, 0.25)', textAlign: 'left'
-          }}>
-            💡 <strong>Bản ứng dụng Android:</strong> Nhập <strong>Email & Mật khẩu</strong> bên dưới để tạo tài khoản và sử dụng ngay lập tức mà không cần xác nhận phức tạp.
-          </div>
-        )}
         
         {error && (
           <div style={{

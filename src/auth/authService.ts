@@ -3,7 +3,8 @@ import {
   createUserWithEmailAndPassword, 
   signOut as firebaseSignOut,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  signInWithCredential
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -27,6 +28,40 @@ export const loginWithGoogle = async () => {
   }
   
   return userCredential;
+};
+
+export const loginWithGoogleCredential = async (idToken: string, accessToken?: string) => {
+  const credential = GoogleAuthProvider.credential(idToken, accessToken || null);
+  const userCredential = await signInWithCredential(auth, credential);
+  const user = userCredential.user;
+  
+  const userRef = doc(db, 'users', user.uid);
+  const snapshot = await getDoc(userRef);
+  if (!snapshot.exists()) {
+    await setDoc(userRef, {
+      email: user.email,
+      createdAt: Date.now()
+    });
+  }
+  
+  return userCredential;
+};
+
+export const handleDeepLinkUrl = async (urlStr: string): Promise<boolean> => {
+  if (!urlStr || !urlStr.startsWith('com.yoogi.mindmap://')) {
+    return false;
+  }
+
+  const queryPart = urlStr.includes('?') ? urlStr.split('?')[1] : '';
+  const params = new URLSearchParams(queryPart);
+  const idToken = params.get('idToken');
+  const accessToken = params.get('accessToken');
+
+  if (idToken) {
+    await loginWithGoogleCredential(idToken, accessToken || undefined);
+    return true;
+  }
+  return false;
 };
 
 export const register = async (email: string, password: string) => {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login, loginWithGoogle } from '../../auth/authService';
 import { useAuth } from '../../auth/useAuth';
+import { useAuthDeepLink } from '../../auth/useAuthDeepLink';
 
 import { Capacitor } from '@capacitor/core';
 
@@ -14,6 +15,8 @@ export const Login: React.FC = () => {
   const { user } = useAuth();
   const isNative = Capacitor.isNativePlatform();
 
+  useAuthDeepLink(setIsLoading, setError);
+
   React.useEffect(() => {
     if (user) {
       navigate('/mindmaps');
@@ -23,19 +26,28 @@ export const Login: React.FC = () => {
   const handleGoogleLogin = async () => {
     setError(null);
     if (isNative) {
-      setError(
-        'Đăng nhập Google qua cửa sổ ngoài bị hạn chế bởi chính sách bảo mật của Android WebView. Vui lòng nhập Email & Mật khẩu (hoặc bấm "Register" bên dưới để tạo tài khoản trong 5 giây) để sử dụng trực tiếp trong ứng dụng.'
-      );
+      setIsLoading(true);
+      const authUrl = 'https://mind-map-yoogi-2026.web.app/auth/mobile.html?auto=true';
+      const win = window as unknown as { AndroidAuth?: { openSystemBrowser?: (url: string) => void } };
+      if (win.AndroidAuth?.openSystemBrowser) {
+        win.AndroidAuth.openSystemBrowser(authUrl);
+      } else {
+        window.location.href = authUrl;
+      }
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 3000);
       return;
     }
     setIsLoading(true);
     try {
       await loginWithGoogle();
       navigate('/mindmaps');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (err.code !== 'auth/popup-closed-by-user') {
-        setError(err.message || 'An error occurred during Google sign-in.');
+      const fbErr = err as { code?: string; message?: string };
+      if (fbErr.code !== 'auth/popup-closed-by-user') {
+        setError(fbErr.message || 'An error occurred during Google sign-in.');
       }
     } finally {
       setIsLoading(false);
@@ -50,16 +62,17 @@ export const Login: React.FC = () => {
     try {
       await login(email, password);
       navigate('/mindmaps');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+      const fbErr = err as { code?: string; message?: string };
+      if (fbErr.code === 'auth/invalid-credential' || fbErr.code === 'auth/user-not-found' || fbErr.code === 'auth/wrong-password') {
         setError('Invalid email or password.');
-      } else if (err.code === 'auth/invalid-email') {
+      } else if (fbErr.code === 'auth/invalid-email') {
         setError('Invalid email format.');
-      } else if (err.code === 'auth/network-request-failed') {
+      } else if (fbErr.code === 'auth/network-request-failed') {
         setError('Network error. Please try again.');
       } else {
-        setError(err.message || 'An error occurred during login. Please try again.');
+        setError(fbErr.message || 'An error occurred during login. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -77,16 +90,6 @@ export const Login: React.FC = () => {
         boxShadow: 'var(--shadow-lg)'
       }}>
         <h1 style={{ marginBottom: 'var(--space-6)', fontSize: '24px', fontWeight: '700', textAlign: 'center' }}>Log In</h1>
-        
-        {isNative && (
-          <div style={{
-            background: 'rgba(59, 130, 246, 0.08)', color: 'var(--text-secondary)', padding: '10px 14px',
-            borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-4)', fontSize: '13px', lineHeight: '1.5',
-            border: '1px solid rgba(59, 130, 246, 0.25)', textAlign: 'left'
-          }}>
-            💡 <strong>Bản ứng dụng Android:</strong> Đăng nhập tiện lợi bằng <strong>Email & Mật khẩu</strong> hoặc bấm <strong>Register</strong> bên dưới nếu bạn chưa tạo tài khoản.
-          </div>
-        )}
         
         {error && (
           <div style={{
