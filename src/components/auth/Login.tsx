@@ -27,7 +27,7 @@ export const Login: React.FC = () => {
     setError(null);
     if (isNative) {
       setIsLoading(true);
-      const authUrl = 'https://mind-map-yoogi-2026.web.app/auth/mobile.html?auto=true';
+      const authUrl = 'https://mind-map-yoogi-2026.firebaseapp.com/auth/mobile.html';
       const win = window as unknown as { AndroidAuth?: { openSystemBrowser?: (url: string) => void } };
       if (win.AndroidAuth?.openSystemBrowser) {
         win.AndroidAuth.openSystemBrowser(authUrl);
