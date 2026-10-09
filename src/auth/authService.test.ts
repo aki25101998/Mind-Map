@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockSignInWithCredential = vi.fn();
+const mockSignInAnonymously = vi.fn();
 const mockCredential = vi.fn();
 const mockSetDoc = vi.fn();
 const mockGetDoc = vi.fn();
@@ -13,7 +14,8 @@ vi.mock('firebase/auth', () => ({
     credential: (...args: unknown[]) => mockCredential(...args)
   },
   signInWithPopup: vi.fn(),
-  signInWithCredential: (...args: unknown[]) => mockSignInWithCredential(...args)
+  signInWithCredential: (...args: unknown[]) => mockSignInWithCredential(...args),
+  signInAnonymously: (...args: unknown[]) => mockSignInAnonymously(...args)
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -27,7 +29,7 @@ vi.mock('../lib/firebase', () => ({
   db: {}
 }));
 
-import { handleDeepLinkUrl, loginWithGoogleCredential } from './authService';
+import { handleDeepLinkUrl, loginWithGoogleCredential, loginAnonymously } from './authService';
 
 describe('authService deep link and credential login', () => {
   beforeEach(() => {
@@ -66,5 +68,31 @@ describe('authService deep link and credential login', () => {
 
     expect(mockCredential).toHaveBeenCalledWith('token-123', null);
     expect(mockSetDoc).not.toHaveBeenCalled();
+  });
+
+  it('successfully handles valid deep link with accessToken only', async () => {
+    const mockUser = { uid: 'test-uid-access', email: 'access@example.com' };
+    mockCredential.mockReturnValue({ providerId: 'google.com' });
+    mockSignInWithCredential.mockResolvedValue({ user: mockUser });
+    mockGetDoc.mockResolvedValue({ exists: () => true });
+
+    const url = 'com.yoogi.mindmap://oauth?accessToken=mock-access-token';
+    const result = await handleDeepLinkUrl(url);
+
+    expect(result).toBe(true);
+    expect(mockCredential).toHaveBeenCalledWith(null, 'mock-access-token');
+    expect(mockSignInWithCredential).toHaveBeenCalled();
+  });
+
+  it('successfully logs in anonymously', async () => {
+    const mockAnonUser = { uid: 'anon-uid', email: null };
+    mockSignInAnonymously.mockResolvedValue({ user: mockAnonUser });
+    mockGetDoc.mockResolvedValue({ exists: () => false });
+
+    const result = await loginAnonymously();
+
+    expect(result.user.uid).toBe('anon-uid');
+    expect(mockSignInAnonymously).toHaveBeenCalled();
+    expect(mockSetDoc).toHaveBeenCalled();
   });
 });

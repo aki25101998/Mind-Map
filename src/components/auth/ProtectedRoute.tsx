@@ -1,11 +1,12 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
+import { auth } from '../../lib/firebase';
 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
 
-  if (loading) {
+  if (loading || (!user && auth?.currentUser)) {
     return (
       <div style={{
         display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', 

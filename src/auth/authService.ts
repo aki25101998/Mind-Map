@@ -4,7 +4,8 @@ import {
   signOut as firebaseSignOut,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithCredential
+  signInWithCredential,
+  signInAnonymously
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -30,8 +31,11 @@ export const loginWithGoogle = async () => {
   return userCredential;
 };
 
-export const loginWithGoogleCredential = async (idToken: string, accessToken?: string) => {
-  const credential = GoogleAuthProvider.credential(idToken, accessToken || null);
+export const loginWithGoogleCredential = async (idToken?: string | null, accessToken?: string | null) => {
+  if (!idToken && !accessToken) {
+    throw new Error('Không tìm thấy thông tin xác thực Google.');
+  }
+  const credential = GoogleAuthProvider.credential(idToken || null, accessToken || null);
   const userCredential = await signInWithCredential(auth, credential);
   const user = userCredential.user;
   
@@ -40,6 +44,23 @@ export const loginWithGoogleCredential = async (idToken: string, accessToken?: s
   if (!snapshot.exists()) {
     await setDoc(userRef, {
       email: user.email,
+      createdAt: Date.now()
+    });
+  }
+  
+  return userCredential;
+};
+
+export const loginAnonymously = async () => {
+  const userCredential = await signInAnonymously(auth);
+  const user = userCredential.user;
+  
+  const userRef = doc(db, 'users', user.uid);
+  const snapshot = await getDoc(userRef);
+  if (!snapshot.exists()) {
+    await setDoc(userRef, {
+      email: null,
+      isAnonymous: true,
       createdAt: Date.now()
     });
   }
@@ -57,8 +78,8 @@ export const handleDeepLinkUrl = async (urlStr: string): Promise<boolean> => {
   const idToken = params.get('idToken');
   const accessToken = params.get('accessToken');
 
-  if (idToken) {
-    await loginWithGoogleCredential(idToken, accessToken || undefined);
+  if (idToken || accessToken) {
+    await loginWithGoogleCredential(idToken, accessToken);
     return true;
   }
   return false;

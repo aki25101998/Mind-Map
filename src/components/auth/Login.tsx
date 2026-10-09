@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { login, loginWithGoogle } from '../../auth/authService';
+import { login, loginWithGoogle, loginAnonymously } from '../../auth/authService';
 import { useAuth } from '../../auth/useAuth';
 import { useAuthDeepLink } from '../../auth/useAuthDeepLink';
 
@@ -19,7 +19,7 @@ export const Login: React.FC = () => {
 
   React.useEffect(() => {
     if (user) {
-      navigate('/mindmaps');
+      navigate('/mindmaps', { replace: true });
     }
   }, [user, navigate]);
 
@@ -54,6 +54,21 @@ export const Login: React.FC = () => {
     }
   };
 
+  const handleGuestLogin = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      await loginAnonymously();
+      navigate('/mindmaps', { replace: true });
+    } catch (err: unknown) {
+      console.error(err);
+      const fbErr = err as { code?: string; message?: string };
+      setError(fbErr.message || 'Không thể đăng nhập ẩn danh. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -61,7 +76,7 @@ export const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate('/mindmaps');
+      navigate('/mindmaps', { replace: true });
     } catch (err: unknown) {
       console.error(err);
       const fbErr = err as { code?: string; message?: string };
@@ -169,6 +184,22 @@ export const Login: React.FC = () => {
             <path d="M12 5.38C13.62 5.38 15.06 5.93 16.2 7.02L19.35 3.87C17.46 2.11 14.97 1 12 1C7.7 1 3.99 3.47 2.18 7.06L5.84 9.9C6.7 7.3 9.13 5.38 12 5.38Z" fill="#EA4335"/>
           </svg>
           Continue with Google
+        </button>
+
+        <button 
+          onClick={handleGuestLogin}
+          disabled={isLoading}
+          style={{
+            width: '100%', padding: '12px', borderRadius: 'var(--radius-lg)', background: 'transparent',
+            color: 'var(--text-secondary)', border: '1px dashed var(--border-subtle)', fontSize: '14px', fontWeight: '500',
+            cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.7 : 1,
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'all 0.2s',
+            marginTop: 'var(--space-3)'
+          }}
+          onMouseEnter={(e) => !isLoading && (e.currentTarget.style.color = 'var(--text-primary)')}
+          onMouseLeave={(e) => !isLoading && (e.currentTarget.style.color = 'var(--text-secondary)')}
+        >
+          <span>👤 Dùng thử ngay với tài khoản Khách</span>
         </button>
 
         <div style={{ marginTop: 'var(--space-6)', textAlign: 'center', fontSize: '14px', color: 'var(--text-secondary)' }}>

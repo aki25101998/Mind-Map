@@ -1,11 +1,12 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
+import { auth } from '../../lib/firebase';
 
 export const PublicRoute: React.FC = () => {
   const { user, loading } = useAuth();
 
-  if (loading) {
+  if (loading || (!user && auth?.currentUser)) {
     return (
       <div style={{
         display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', 

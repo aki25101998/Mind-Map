@@ -18,7 +18,7 @@ export const useAuthDeepLink = (
         if (setError) setError(null);
         const success = await handleDeepLinkUrl(url);
         if (success && isMounted) {
-          navigate('/mindmaps');
+          navigate('/mindmaps', { replace: true });
         }
       } catch (err: unknown) {
         console.error('Deep link auth error:', err);
