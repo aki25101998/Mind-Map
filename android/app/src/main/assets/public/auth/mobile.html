@@ -80,9 +80,13 @@
       transform: scale(0.98);
     }
     .btn-return {
-      background: #f97316;
+      background: #22c55e;
       color: #ffffff;
       margin-top: 16px;
+      font-size: 16px;
+    }
+    .btn-return:hover {
+      background: #16a34a;
     }
     .status-box {
       margin-top: 20px;
@@ -129,7 +133,7 @@
       </svg>
     </div>
     <h1>Freeform Mind Map</h1>
-    <p id="desc">Xác thực tài khoản Google an toàn để tiếp tục sử dụng ứng dụng di động.</p>
+    <p id="desc">Đang tiến hành xác thực tài khoản Google an toàn...</p>
 
     <button id="btn-login" class="btn">
       <svg width="20" height="20" viewBox="0 0 24 24">
@@ -138,16 +142,16 @@
         <path d="M5.84 14.1C5.62 13.44 5.5 12.74 5.5 12C5.5 11.26 5.62 10.56 5.84 9.9V7.06H2.18C1.43 8.55 1 10.22 1 12C1 13.78 1.43 15.45 2.18 16.94L5.84 14.1Z" fill="#FBBC05"/>
         <path d="M12 5.38C13.62 5.38 15.06 5.93 16.2 7.02L19.35 3.87C17.46 2.11 14.97 1 12 1C7.7 1 3.99 3.47 2.18 7.06L5.84 9.9C6.7 7.3 9.13 5.38 12 5.38Z" fill="#EA4335"/>
       </svg>
-      <span>Đăng nhập với Google</span>
+      <span>Bấm để đăng nhập Google</span>
     </button>
 
     <div id="status" class="status-box"></div>
-    <a id="btn-return" class="btn btn-return" style="display: none;">Quay lại ứng dụng</a>
+    <a id="btn-return" class="btn btn-return" style="display: none;">🚀 Mở ứng dụng Freeform Mind Map</a>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBa-VjXKmN9SsdBEUZTU6hiAojirVLfH5I",
@@ -174,71 +178,75 @@
       statusBox.innerText = text;
     }
 
-    function handleSuccess(result) {
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const idToken = credential?.idToken;
-      const accessToken = credential?.accessToken;
+    function returnToApp(idToken, accessToken) {
+      const intentUrl = `intent://oauth?idToken=${encodeURIComponent(idToken)}${accessToken ? `&accessToken=${encodeURIComponent(accessToken)}` : ''}#Intent;scheme=com.yoogi.mindmap;package=com.yoogi.mindmap;end;`;
+      const fallbackScheme = `com.yoogi.mindmap://oauth?idToken=${encodeURIComponent(idToken)}${accessToken ? `&accessToken=${encodeURIComponent(accessToken)}` : ''}`;
 
-      if (!idToken) {
-        showStatus("Không tìm thấy mã xác thực Google. Vui lòng thử lại.", "error");
-        return;
-      }
-
-      const returnUrl = `com.yoogi.mindmap://oauth?idToken=${encodeURIComponent(idToken)}${accessToken ? `&accessToken=${encodeURIComponent(accessToken)}` : ''}`;
-      
       btnLogin.style.display = 'none';
-      desc.innerText = "Xác thực thành công! Đang chuyển hướng về ứng dụng Freeform Mind Map...";
-      showStatus("Thành công! Đang mở ứng dụng...", "success");
+      desc.innerText = "Xác thực Google thành công!";
+      showStatus("Đã đăng nhập thành công! Bấm nút bên dưới để quay lại ứng dụng.", "success");
       
       btnReturn.style.display = 'inline-flex';
-      btnReturn.href = returnUrl;
-      btnReturn.innerText = "Bấm vào đây để mở ứng dụng";
+      btnReturn.href = intentUrl;
+      btnReturn.onclick = () => {
+        setTimeout(() => {
+          window.location.href = fallbackScheme;
+        }, 300);
+      };
 
-      // Auto redirect to native app
-      window.location.href = returnUrl;
+      // Try automatic redirect
+      window.location.href = intentUrl;
       setTimeout(() => {
-        window.location.href = returnUrl;
+        window.location.href = fallbackScheme;
       }, 500);
     }
 
-    // Check if returning from redirect
-    getRedirectResult(auth).then((result) => {
-      if (result) {
-        handleSuccess(result);
-      }
-    }).catch((err) => {
-      console.error(err);
-      showStatus(err.message || "Lỗi khi xử lý chuyển hướng đăng nhập.", "error");
-    });
+    // Step 1: Check if user just returned from Google redirect
+    try {
+      showStatus("Đang kiểm tra kết quả đăng nhập...", "info");
+      const result = await getRedirectResult(auth);
+      if (result && result.user) {
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const idToken = credential?.idToken;
+        const accessToken = credential?.accessToken;
 
-    async function triggerLogin() {
-      btnLogin.disabled = true;
-      btnLogin.innerHTML = '<span class="spinner"></span> <span>Đang kết nối Google...</span>';
-      try {
-        const result = await signInWithPopup(auth, provider);
-        handleSuccess(result);
-      } catch (err) {
-        console.error(err);
-        if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
-          showStatus("Trình duyệt chặn pop-up. Đang chuyển hướng...", "info");
-          await signInWithRedirect(auth, provider);
-        } else if (err.code !== 'auth/popup-closed-by-user') {
-          showStatus(err.message || "Đăng nhập thất bại. Vui lòng thử lại.", "error");
-          btnLogin.disabled = false;
-          btnLogin.innerHTML = '<span>Thử lại với Google</span>';
+        if (idToken) {
+          returnToApp(idToken, accessToken);
         } else {
-          btnLogin.disabled = false;
-          btnLogin.innerHTML = '<span>Đăng nhập với Google</span>';
+          showStatus("Không tìm thấy token Google. Vui lòng thử lại.", "error");
+        }
+      } else {
+        // Not returned from redirect yet. Check if auto=true
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto') === 'true') {
+          showStatus("Đang chuyển hướng sang Google...", "info");
+          btnLogin.disabled = true;
+          btnLogin.innerHTML = '<span class="spinner"></span> <span>Đang mở Google...</span>';
+          await signInWithRedirect(auth, provider);
+        } else {
+          statusBox.style.display = 'none';
         }
       }
+    } catch (err) {
+      console.error("Auth redirect error:", err);
+      showStatus(err.message || "Lỗi khi xử lý đăng nhập Google.", "error");
+      btnLogin.disabled = false;
+      btnLogin.innerHTML = '<span>Thử lại với Google</span>';
     }
 
-    btnLogin.addEventListener('click', triggerLogin);
-
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('auto') === 'true') {
-      triggerLogin();
-    }
+    btnLogin.addEventListener('click', async () => {
+      btnLogin.disabled = true;
+      btnLogin.innerHTML = '<span class="spinner"></span> <span>Đang mở Google...</span>';
+      showStatus("Đang chuyển hướng sang Google...", "info");
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch (err) {
+        console.error(err);
+        showStatus(err.message || "Lỗi khi chuyển hướng đăng nhập.", "error");
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = '<span>Bấm để đăng nhập Google</span>';
+      }
+    });
   </script>
 </body>
 </html>

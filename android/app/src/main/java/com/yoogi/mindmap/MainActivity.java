@@ -4,7 +4,9 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
+import androidx.browser.customtabs.CustomTabsIntent;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -57,10 +59,17 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void openSystemBrowser(String url) {
             try {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivity(intent);
+                CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder()
+                    .setShowTitle(true)
+                    .build();
+                customTabsIntent.launchUrl(MainActivity.this, Uri.parse(url));
             } catch (Exception e) {
-                e.printStackTrace();
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    startActivity(intent);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         }
 
@@ -76,9 +85,14 @@ public class MainActivity extends BridgeActivity {
     protected void load() {
         super.load();
         if (getBridge() != null && getBridge().getWebView() != null) {
-            getBridge().getWebView().addJavascriptInterface(new AndroidAuthBridge(), "AndroidAuth");
-            getBridge().getWebView().postDelayed(this::checkAndDispatchDeepLink, 1000);
-            getBridge().getWebView().postDelayed(this::checkAndDispatchDeepLink, 2500);
+            WebView webView = getBridge().getWebView();
+            WebSettings settings = webView.getSettings();
+            settings.setDomStorageEnabled(true);
+            settings.setJavaScriptEnabled(true);
+
+            webView.addJavascriptInterface(new AndroidAuthBridge(), "AndroidAuth");
+            webView.postDelayed(this::checkAndDispatchDeepLink, 800);
+            webView.postDelayed(this::checkAndDispatchDeepLink, 2000);
         }
     }
 }
