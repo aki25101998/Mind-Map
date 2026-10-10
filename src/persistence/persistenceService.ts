@@ -2,17 +2,23 @@ import {
   saveCloudDocument, 
   getCloudDocument, 
   getCloudDocuments, 
-  deleteCloudDocument 
+  deleteCloudDocument,
+  saveCloudProject,
+  getCloudProjects,
+  deleteCloudProject
 } from './firestore';
 import { 
   saveDocument as saveLocalDocument, 
   getDocument as getLocalDocument,
   getAllDocuments as getAllLocalDocuments,
-  deleteDocument as deleteLocalDocument
+  deleteDocument as deleteLocalDocument,
+  saveProject as saveLocalProject,
+  getAllProjects as getAllLocalProjects,
+  deleteProject as deleteLocalProject
 } from './idb';
-import type { MindMapDocument } from '../types';
+import type { MindMapDocument, Project } from '../types';
 import { auth } from '../lib/firebase';
-import { sanitizeDocumentForPersistence } from './sanitize';
+import { sanitizeDocumentForPersistence, sanitizeProject } from './sanitize';
 
 export interface SyncResult {
   success: boolean;
@@ -161,4 +167,103 @@ export const removeDocument = async (id: string): Promise<void> => {
     }
   }
 };
+
+export const syncProject = async (project: Project): Promise<SyncResult> => {
+  const sanitized = sanitizeProject(project);
+  const user = auth?.currentUser;
+
+  const projectToSave = user ? ({ ...sanitized, uid: user.uid } as any) : sanitized;
+  await saveLocalProject(projectToSave);
+
+  let cloudSaved = false;
+  let cloudError: Error | undefined;
+
+  if (user) {
+    try {
+      await withTimeout(saveCloudProject(sanitized));
+      cloudSaved = true;
+    } catch (err: any) {
+      console.warn('Failed to sync project to cloud, but saved locally:', err);
+      cloudError = err instanceof Error ? err : new Error(String(err));
+    }
+  }
+
+  return {
+    success: !user || cloudSaved,
+    localSaved: true,
+    cloudSaved,
+    error: cloudError
+  };
+};
+
+export const loadAllProjects = async (): Promise<Project[]> => {
+  const user = auth?.currentUser;
+
+  if (user) {
+    try {
+      const [cloudProjects, localProjects] = await Promise.all([
+        withTimeout(getCloudProjects()).catch(err => {
+          console.warn('Failed to load projects from cloud, falling back to local:', err);
+          return [] as Project[];
+        }),
+        getAllLocalProjects(user.uid)
+      ]);
+
+      const projectMap = new Map<string, Project>();
+
+      for (const p of localProjects) {
+        projectMap.set(p.id, p);
+      }
+
+      for (const p of cloudProjects) {
+        const local = projectMap.get(p.id);
+        if (!local || p.updatedAt >= local.updatedAt) {
+          projectMap.set(p.id, p);
+          saveLocalProject({ ...p, uid: user.uid } as any).catch(console.error);
+        } else {
+          withTimeout(saveCloudProject(local)).catch(err => console.warn('Failed to push newer local project to cloud:', err));
+        }
+      }
+
+      return Array.from(projectMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+    } catch (err) {
+      console.warn('Failed to load all projects, falling back to local:', err);
+      return await getAllLocalProjects(user.uid);
+    }
+  }
+
+  return await getAllLocalProjects();
+};
+
+export const removeProject = async (id: string, deleteContainedMaps: boolean = false): Promise<void> => {
+  const user = auth?.currentUser;
+
+  // Handle contained mind maps
+  const allDocs = await loadAllDocuments();
+  const containedDocs = allDocs.filter(d => d.projectId === id);
+
+  for (const doc of containedDocs) {
+    if (deleteContainedMaps) {
+      await removeDocument(doc.id);
+    } else {
+      // Unassign: remove projectId and re-sync document
+      const updatedDoc = { ...doc };
+      delete updatedDoc.projectId;
+      await syncDocument(updatedDoc);
+    }
+  }
+
+  // Remove project locally
+  await deleteLocalProject(id);
+
+  // Remove project from cloud
+  if (user) {
+    try {
+      await withTimeout(deleteCloudProject(id));
+    } catch (err) {
+      console.warn('Failed to delete project from cloud:', err);
+    }
+  }
+};
+
 

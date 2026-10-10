@@ -1,7 +1,35 @@
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, orderBy, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import type { MindMapDocument, ShareConfig } from '../types';
-import { sanitizeDocumentForPersistence } from './sanitize';
+import type { MindMapDocument, ShareConfig, Project } from '../types';
+import { sanitizeDocumentForPersistence, sanitizeProject } from './sanitize';
+
+export const saveCloudProject = async (project: Project): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Authentication required');
+
+  const sanitized = sanitizeProject(project);
+  const docRef = doc(db, 'users', user.uid, 'projects', sanitized.id);
+  await setDoc(docRef, sanitized);
+};
+
+export const getCloudProjects = async (): Promise<Project[]> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Authentication required');
+
+  const projectsRef = collection(db, 'users', user.uid, 'projects');
+  const q = query(projectsRef, orderBy('updatedAt', 'desc'));
+  const snapshot = await getDocs(q);
+  
+  return snapshot.docs.map(doc => doc.data() as Project);
+};
+
+export const deleteCloudProject = async (id: string): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Authentication required');
+
+  const docRef = doc(db, 'users', user.uid, 'projects', id);
+  await deleteDoc(docRef);
+};
 
 export const saveCloudDocument = async (document: MindMapDocument): Promise<void> => {
   const user = auth.currentUser;
