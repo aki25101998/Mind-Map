@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { useShallow } from 'zustand/react/shallow';
-import { loadAllDocuments, removeDocument, syncDocument } from '../persistence/persistenceService';
-import type { MindMapDocument } from '../types';
-import { FileText, Home, Plus, Trash2, X } from 'lucide-react';
+import { loadAllDocuments, loadAllProjects, removeDocument, syncDocument } from '../persistence/persistenceService';
+import type { MindMapDocument, Project } from '../types';
+import { FileText, Home, Plus, Trash2, X, Layers } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,19 +22,21 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
     setDeletedDocumentId: state.setDeletedDocumentId
   })));
   const [documents, setDocuments] = useState<MindMapDocument[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
 
   const loadRecentDocs = () => {
-    loadAllDocuments()
-      .then(docs => {
+    Promise.all([loadAllDocuments(), loadAllProjects()])
+      .then(([docs, projs]) => {
         setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
+        setProjects(projs);
         setError(null);
       })
       .catch(err => {
-        console.error('Failed to load recent docs:', err);
+        console.error('Failed to load recent docs & projects:', err);
         setError('Unable to load documents. Please retry.');
       });
   };
@@ -42,10 +44,11 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
   useEffect(() => {
     let mounted = true;
     if (isOpen) {
-      loadAllDocuments()
-        .then(docs => {
+      Promise.all([loadAllDocuments(), loadAllProjects()])
+        .then(([docs, projs]) => {
           if (mounted) {
             setDocuments(docs.sort((a, b) => b.updatedAt - a.updatedAt));
+            setProjects(projs);
             setError(null);
           }
         })
@@ -130,6 +133,51 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
     navigate('/mindmaps');
   };
 
+  const renderDocCard = (doc: MindMapDocument, accentColor?: string) => {
+    const isCurrent = doc.id === documentId;
+    return (
+      <div 
+        key={doc.id}
+        onClick={() => handleOpenDoc(doc)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+          background: isCurrent ? 'var(--accent-soft)' : 'transparent',
+          border: isCurrent ? (accentColor ? `1.5px solid ${accentColor}` : '1px solid var(--border-subtle)') : '1px solid transparent',
+          transition: 'background var(--transition-fast)'
+        }}
+        onMouseEnter={e => {
+          if (!isCurrent) e.currentTarget.style.background = 'var(--social-bg)';
+        }}
+        onMouseLeave={e => {
+          if (!isCurrent) e.currentTarget.style.background = 'transparent';
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', overflow: 'hidden' }}>
+          <FileText size={16} color={accentColor || "var(--text-secondary)"} />
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {doc.title}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {new Date(doc.updatedAt).toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+        
+        <button 
+          type="button"
+          onClick={(e) => handleDeleteClick(e, doc)}
+          title="Delete Mind Map"
+          aria-label="Delete Mind Map"
+          style={{ background: 'transparent', border: 'none', color: 'var(--node-color-red)', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    );
+  };
+
   if (!isOpen) return null;
 
   const content = (
@@ -195,63 +243,70 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-4)' }}>
-          <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 'var(--space-3)', fontWeight: '600', letterSpacing: '0.05em' }}>
-            Recent Maps
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {documents.map(doc => (
-              <div 
-                key={doc.id}
-                onClick={() => handleOpenDoc(doc)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                  background: doc.id === documentId ? 'var(--accent-soft)' : 'transparent',
-                  border: doc.id === documentId ? '1px solid var(--border-subtle)' : '1px solid transparent',
-                  transition: 'background var(--transition-fast)'
-                }}
-                onMouseEnter={e => {
-                  if (doc.id !== documentId) e.currentTarget.style.background = 'var(--social-bg)';
-                }}
-                onMouseLeave={e => {
-                  if (doc.id !== documentId) e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', overflow: 'hidden' }}>
-                  <FileText size={16} color="var(--text-secondary)" />
-                  <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {doc.title}
+          {error ? (
+            <div style={{ color: 'var(--node-color-red)', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>
+              {error}
+            </div>
+          ) : documents.length === 0 ? (
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>
+              No documents found.
+            </div>
+          ) : projects.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Projects Groups */}
+              {projects.map(proj => {
+                const projDocs = documents.filter(d => d.projectId === proj.id);
+                if (projDocs.length === 0) return null;
+                return (
+                  <div key={proj.id}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      fontSize: '11px', textTransform: 'uppercase', color: proj.color,
+                      marginBottom: '8px', fontWeight: '700', letterSpacing: '0.04em'
+                    }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: proj.color, flexShrink: 0 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{proj.name}</span>
+                      <span style={{ color: 'var(--text-muted)', marginLeft: 'auto', fontSize: '10px' }}>({projDocs.length})</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {new Date(doc.updatedAt).toLocaleDateString()}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                      {projDocs.map(doc => renderDocCard(doc, proj.color))}
                     </div>
                   </div>
-                </div>
-                
-                <button 
-                  type="button"
-                  onClick={(e) => handleDeleteClick(e, doc)}
-                  title="Delete Mind Map"
-                  aria-label="Delete Mind Map"
-                  style={{ background: 'transparent', border: 'none', color: 'var(--node-color-red)', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Trash2 size={14} />
-                </button>
+                );
+              })}
+
+              {/* Uncategorized Group */}
+              {(() => {
+                const uncategorizedDocs = documents.filter(d => !d.projectId);
+                if (uncategorizedDocs.length === 0) return null;
+                return (
+                  <div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)',
+                      marginBottom: '8px', fontWeight: '700', letterSpacing: '0.04em'
+                    }}>
+                      <Layers size={13} />
+                      <span>Chưa phân loại</span>
+                      <span style={{ marginLeft: 'auto', fontSize: '10px' }}>({uncategorizedDocs.length})</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                      {uncategorizedDocs.map(doc => renderDocCard(doc))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 'var(--space-3)', fontWeight: '600', letterSpacing: '0.05em' }}>
+                Recent Maps
               </div>
-            ))}
-            
-            {error ? (
-              <div style={{ color: 'var(--node-color-red)', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>
-                {error}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                {documents.map(doc => renderDocCard(doc))}
               </div>
-            ) : documents.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>
-                No documents found.
-              </div>
-            ) : null}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
