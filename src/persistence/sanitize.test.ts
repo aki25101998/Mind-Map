@@ -138,7 +138,6 @@ describe('sanitizeDocumentForPersistence', () => {
       updatedAt: 2000
     };
 
-    // @ts-expect-error test sanitizeProject before implementation
     const sanitized = sanitizeProject(rawProject);
     expect(sanitized.id).toBe('proj-1');
     expect(sanitized.name).toBe('Marketing Campaign');
