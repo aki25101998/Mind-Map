@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useMindMapStore } from '../store/useMindMapStore';
 import { getNodesBounds, type Node } from '@xyflow/react';
 import { 
   calculateVisibleNodesCenter, 
   calculateViewportForCenter, 
-  normalizeNodesForBounds 
+  normalizeNodesForBounds,
+  performResetView
 } from './viewUtils';
 import type { MindMapNode } from '../types';
 
@@ -239,5 +240,37 @@ describe('Reset View (viewUtils & scenarios)', () => {
 
     const center = calculateVisibleNodesCenter([unmeasuredNode]);
     expect(center).toEqual({ x: 50 + 110, y: 50 + 45 });
+  });
+
+  // Scenario 9: performResetView triggers setCenter with center and zoom 1
+  it('Scenario 9: performResetView calls setCenter with correct center coordinates and zoom = 1', () => {
+    const node: Node = {
+      id: 'node-test',
+      position: { x: 200, y: 100 },
+      measured: { width: 100, height: 60 },
+      data: { label: 'Center Me' },
+    };
+
+    const mockSetCenter = vi.fn();
+    const mockSetViewport = vi.fn();
+
+    performResetView([node], mockSetCenter, mockSetViewport, 450);
+
+    expect(mockSetCenter).toHaveBeenCalledWith(200 + 50, 100 + 30, {
+      zoom: 1,
+      duration: 450,
+    });
+    expect(mockSetViewport).not.toHaveBeenCalled();
+  });
+
+  // Scenario 10: performResetView falls back to origin when no visible nodes
+  it('Scenario 10: performResetView calls setViewport with { x: 0, y: 0, zoom: 1 } when empty', () => {
+    const mockSetCenter = vi.fn();
+    const mockSetViewport = vi.fn();
+
+    performResetView([], mockSetCenter, mockSetViewport, 400);
+
+    expect(mockSetViewport).toHaveBeenCalledWith({ x: 0, y: 0, zoom: 1 }, { duration: 400 });
+    expect(mockSetCenter).not.toHaveBeenCalled();
   });
 });

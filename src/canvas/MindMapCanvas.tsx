@@ -33,6 +33,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { MindMapNode, MindMapEdge } from '../types';
 import { isValidConnection } from '../utils/graphUtils';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { performResetView } from '../utils/viewUtils';
 
 const nodeTypes: NodeTypes = {
   main: MainNode,
@@ -52,6 +53,7 @@ const PRO_OPTIONS = { hideAttribution: true };
 
 const CanvasInner = () => {
   const { 
+    documentId,
     nodes, 
     edges, 
     onNodesChange, 
@@ -78,6 +80,7 @@ const CanvasInner = () => {
     theme,
     isReadOnly
   } = useMindMapStore(useShallow(state => ({
+    documentId: state.documentId,
     nodes: state.nodes,
     edges: state.edges,
     onNodesChange: state.onNodesChange,
@@ -107,7 +110,7 @@ const CanvasInner = () => {
   
   const isDraggingRef = useRef(false);
   
-  const { setViewport: rfSetViewport, screenToFlowPosition, fitView, setCenter } = useReactFlow();
+  const { setViewport: rfSetViewport, screenToFlowPosition, setCenter, getNodes } = useReactFlow();
   
   const [localNodes, setLocalNodes, onLocalNodesChange] = useNodesState(nodes || []);
   
@@ -151,22 +154,82 @@ const CanvasInner = () => {
     }
   }, [onLocalNodesChange, onNodesChange, editingNodeId]);
 
-  const initialized = useRef(false);
+  const triggerReset = useCallback((duration = 400) => {
+    const currentNodes = getNodes().length > 0 ? getNodes() : nodes;
+    performResetView(currentNodes, setCenter, rfSetViewport, duration);
+  }, [getNodes, nodes, setCenter, rfSetViewport]);
+
+  const lastDocumentIdRef = useRef<string | null>(null);
   const nodesInitialized = useNodesInitialized();
 
-  // Restore viewport or auto-fit on document load once nodes are initialized
+  // Auto Reset View when opening or switching to a mind map
   useEffect(() => {
-    if (initialized.current || !nodesInitialized) return;
-    initialized.current = true;
+    if (!nodesInitialized || !documentId) return;
 
-    const initialViewport = useMindMapStore.getState().viewport;
-    
-    if (initialViewport && (initialViewport.x !== 0 || initialViewport.y !== 0 || initialViewport.zoom !== 1)) {
-      rfSetViewport(initialViewport);
-    } else {
-      fitView({ padding: 0.2 });
+    if (lastDocumentIdRef.current !== documentId) {
+      lastDocumentIdRef.current = documentId;
+      const timer = setTimeout(() => {
+        triggerReset(0);
+      }, 50);
+      return () => clearTimeout(timer);
     }
-  }, [rfSetViewport, fitView, nodesInitialized]);
+  }, [documentId, nodesInitialized, triggerReset]);
+
+  // Auto Reset View on screen orientation change (portrait <-> landscape)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let lastOrientation = window.innerWidth >= window.innerHeight ? 'landscape' : 'portrait';
+
+    const handleOrientationChange = () => {
+      const currentOrientation = window.innerWidth >= window.innerHeight ? 'landscape' : 'portrait';
+      if (currentOrientation !== lastOrientation) {
+        lastOrientation = currentOrientation;
+        // Wait for mobile rotation transition & viewport re-layout to stabilize
+        setTimeout(() => {
+          triggerReset(400);
+        }, 120);
+      }
+    };
+
+    if (window.screen?.orientation) {
+      window.screen.orientation.addEventListener('change', handleOrientationChange);
+    }
+    window.addEventListener('orientationchange', handleOrientationChange);
+
+    let mql: MediaQueryList | null = null;
+    let handleMql: (() => void) | null = null;
+    if (typeof window.matchMedia === 'function') {
+      try {
+        mql = window.matchMedia('(orientation: portrait)');
+        handleMql = () => handleOrientationChange();
+        if (mql.addEventListener) {
+          mql.addEventListener('change', handleMql);
+        } else if ((mql as any).addListener) {
+          (mql as any).addListener(handleMql);
+        }
+      } catch {
+        // Safe fallback in test or restricted environments
+      }
+    }
+
+    window.addEventListener('resize', handleOrientationChange);
+
+    return () => {
+      if (window.screen?.orientation) {
+        window.screen.orientation.removeEventListener('change', handleOrientationChange);
+      }
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      if (mql && handleMql) {
+        if (mql.removeEventListener) {
+          mql.removeEventListener('change', handleMql);
+        } else if ((mql as any).removeListener) {
+          (mql as any).removeListener(handleMql);
+        }
+      }
+      window.removeEventListener('resize', handleOrientationChange);
+    };
+  }, [triggerReset]);
 
   // Keyboard shortcuts
   useEffect(() => {

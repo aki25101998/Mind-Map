@@ -61,3 +61,26 @@ export function calculateViewportForCenter(
     zoom,
   };
 }
+
+/**
+ * Executes a standard Reset View (1:1 zoom centered on visible nodes).
+ * If visible nodes exist, centers their bounding box at zoom 1.
+ * If no nodes exist, resets viewport to { x: 0, y: 0, zoom: 1 }.
+ */
+export function performResetView(
+  nodes: Node[],
+  setCenter: (x: number, y: number, options?: { zoom?: number; duration?: number }) => void,
+  setViewport: (viewport: { x: number; y: number; zoom: number }, options?: { duration?: number }) => void,
+  duration = 400
+) {
+  const center = calculateVisibleNodesCenter(nodes);
+  if (!center) {
+    setViewport({ x: 0, y: 0, zoom: 1 }, { duration });
+    return;
+  }
+  setCenter(center.x, center.y, {
+    zoom: 1,
+    duration,
+  });
+}
+

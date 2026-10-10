@@ -198,16 +198,28 @@ export const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
         style={{
           position: 'fixed', left: 0, top: 0, bottom: 0, width: '300px', maxWidth: '85vw',
           paddingLeft: 'var(--safe-left)',
+          paddingBottom: 'var(--safe-bottom)',
           background: 'var(--panel-bg)', borderRight: '1px solid var(--panel-border)',
           zIndex: 'var(--z-sidebar, 500)', display: 'flex', flexDirection: 'column',
           boxShadow: 'var(--shadow-lg)', color: 'var(--text-primary)'
         }}
       >
-        <div style={{ padding: 'var(--space-4)', borderBottom: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{
+          paddingTop: 'max(calc(var(--safe-top, 0px) + 14px), 48px)',
+          paddingBottom: 'var(--space-4)',
+          paddingLeft: 'var(--space-4)',
+          paddingRight: 'var(--space-4)',
+          borderBottom: '1px solid var(--panel-border)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Documents</h2>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: 'var(--radius-sm)' }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--social-bg)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            aria-label="Close sidebar"
+            title="Close sidebar"
           >
             <X size={20} />
           </button>
