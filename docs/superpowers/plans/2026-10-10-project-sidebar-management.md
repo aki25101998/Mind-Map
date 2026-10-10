@@ -17,18 +17,18 @@
 - Modify: `src/persistence/sanitize.ts`
 - Modify: `src/persistence/sanitize.test.ts`
 
-- [ ] **Step 1: Write unit tests in `src/persistence/sanitize.test.ts` for Project and `projectId`**
+- [x] **Step 1: Write unit tests in `src/persistence/sanitize.test.ts` for Project and `projectId`**
 
 Thêm các ca kiểm thử:
 - `sanitizeProject`: làm sạch các trường hợp lệ, loại bỏ các trường `undefined`.
 - `sanitizeDocumentForPersistence`: bảo toàn `projectId` hợp lệ, nhưng loại bỏ key `projectId` nếu giá trị là `undefined` hoặc chuỗi rỗng.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cmd.exe /c npm test`
 Expected: FAIL (hàm `sanitizeProject` chưa được export / định nghĩa).
 
-- [ ] **Step 3: Implement data model and sanitize functions**
+- [x] **Step 3: Implement data model and sanitize functions**
 
 1. Trong `src/types.ts`:
    - Thêm `export interface Project { id: string; name: string; color: string; description?: string; createdAt: number; updatedAt: number; }`
@@ -37,12 +37,12 @@ Expected: FAIL (hàm `sanitizeProject` chưa được export / định nghĩa).
    - Cung cấp `sanitizeProject(project: Partial<Project>): Project`
    - Trong `sanitizeDocumentForPersistence`: xử lý `projectId`. Nếu `doc.projectId` tồn tại và là string không rỗng thì gán vào payload, ngược lại không tạo key `projectId`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `cmd.exe /c npm test`
 Expected: PASS (100% tests pass).
 
-- [ ] **Step 5: Commit changes**
+- [x] **Step 5: Commit changes**
 
 ```powershell
 git add src/types.ts src/persistence/sanitize.ts src/persistence/sanitize.test.ts ; git commit -m "feat(models): add Project interface, extend MindMapDocument with projectId, and implement sanitization"
@@ -58,19 +58,19 @@ git add src/types.ts src/persistence/sanitize.ts src/persistence/sanitize.test.t
 - Modify: `src/persistence/persistenceService.ts`
 - Modify: `src/persistence/persistenceService.test.ts`
 
-- [ ] **Step 1: Write unit tests in `src/persistence/persistenceService.test.ts` for Project CRUD**
+- [x] **Step 1: Write unit tests in `src/persistence/persistenceService.test.ts` for Project CRUD**
 
 Thêm các test case:
 - `syncProject` lưu vào local và cloud thành công.
 - `loadAllProjects` tải và hợp nhất giữa local và cloud dựa trên `updatedAt`.
 - `removeProject` với tùy chọn giữ lại mind map (chuyển về Chưa phân loại) và tùy chọn xóa triệt để.
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run: `cmd.exe /c npm test`
 Expected: FAIL (các hàm `syncProject`, `loadAllProjects`, `removeProject` chưa tồn tại).
 
-- [ ] **Step 3: Implement IndexedDB v3 upgrade and Project operations in `idb.ts`**
+- [x] **Step 3: Implement IndexedDB v3 upgrade and Project operations in `idb.ts`**
 
 1. Nâng version `openDB<MyDB>('MindMapDB', 3, ...)`
 2. Thêm store `projects`:
@@ -82,14 +82,14 @@ Expected: FAIL (các hàm `syncProject`, `loadAllProjects`, `removeProject` chư
    - `getAllProjects(uid?: string): Promise<Project[]>`
    - `deleteProject(id: string): Promise<void>`
 
-- [ ] **Step 4: Implement Firestore Project operations in `firestore.ts`**
+- [x] **Step 4: Implement Firestore Project operations in `firestore.ts`**
 
 Export:
 - `saveCloudProject(project: Project): Promise<void>`
 - `getCloudProjects(): Promise<Project[]>`
 - `deleteCloudProject(id: string): Promise<void>`
 
-- [ ] **Step 5: Implement `persistenceService.ts` Project sync & removal logic**
+- [x] **Step 5: Implement `persistenceService.ts` Project sync & removal logic**
 
 Export:
 - `syncProject(project: Project): Promise<SyncResult>`
@@ -99,12 +99,12 @@ Export:
   - Nếu `deleteContainedMaps` là `true`: Xóa toàn bộ các document thuộc project đó.
   - Sau đó gọi `deleteProject(projectId)` ở local và cloud.
 
-- [ ] **Step 6: Run tests to verify all pass**
+- [x] **Step 6: Run tests to verify all pass**
 
 Run: `cmd.exe /c npm test`
 Expected: PASS.
 
-- [ ] **Step 7: Commit changes**
+- [x] **Step 7: Commit changes**
 
 ```powershell
 git add src/persistence/idb.ts src/persistence/firestore.ts src/persistence/persistenceService.ts src/persistence/persistenceService.test.ts ; git commit -m "feat(persistence): implement IndexedDB v3, Firestore sync and persistence service for Projects"
@@ -120,7 +120,7 @@ git add src/persistence/idb.ts src/persistence/firestore.ts src/persistence/pers
 - Create: `src/components/project/DeleteProjectModal.tsx`
 - Create: `src/components/project/ProjectSidebar.tsx`
 
-- [ ] **Step 1: Create `ProjectModal.tsx`**
+- [x] **Step 1: Create `ProjectModal.tsx`**
 
 Modal cho phép:
 - Nhập tên Project (bắt buộc, trim >= 1 ký tự).
@@ -128,14 +128,14 @@ Modal cho phép:
 - Nhập mô tả (tùy chọn).
 - Hỗ trợ cả 2 chế độ: Tạo mới (`mode: 'create'`) hoặc Chỉnh sửa (`mode: 'edit'`).
 
-- [ ] **Step 2: Create `MoveToProjectModal.tsx`**
+- [x] **Step 2: Create `MoveToProjectModal.tsx`**
 
 Modal cho phép:
 - Hiển thị danh sách tất cả các Project hiện có + Tùy chọn "📂 Chưa phân loại (Unassigned)".
 - Hiển thị dấu tích chọn cho Project hiện tại của sơ đồ.
 - Khi bấm chọn, cập nhật `projectId` của Mind Map và gọi `onSelect(projectId)`.
 
-- [ ] **Step 3: Create `DeleteProjectModal.tsx`**
+- [x] **Step 3: Create `DeleteProjectModal.tsx`**
 
 Modal xác nhận xóa Project:
 - Hiển thị tên Project và số lượng Mind Map đang nằm trong Project.
@@ -144,7 +144,7 @@ Modal xác nhận xóa Project:
   1. *(Khuyên dùng)* Giữ lại các sơ đồ và chuyển về mục "Chưa phân loại".
   2. Xóa vĩnh viễn Project kèm toàn bộ các sơ đồ bên trong.
 
-- [ ] **Step 4: Create `ProjectSidebar.tsx`**
+- [x] **Step 4: Create `ProjectSidebar.tsx`**
 
 Thanh Sidebar bên trái:
 - Section ĐIỀU HƯỚNG:
@@ -156,12 +156,12 @@ Thanh Sidebar bên trái:
   - Nút `+ Tạo Project Mới`.
 - Hỗ trợ nút thu gọn (Collapse) và Drawer trượt trên màn hình di động (`isMobile`).
 
-- [ ] **Step 5: Verify build & lint**
+- [x] **Step 5: Verify build & lint**
 
 Run: `cmd.exe /c npm run lint`
 Expected: 0 errors, 0 warnings.
 
-- [ ] **Step 6: Commit changes**
+- [x] **Step 6: Commit changes**
 
 ```powershell
 git add src/components/project/ ; git commit -m "feat(ui): add ProjectModal, MoveToProjectModal, DeleteProjectModal, and ProjectSidebar components"
@@ -174,7 +174,7 @@ git add src/components/project/ ; git commit -m "feat(ui): add ProjectModal, Mov
 **Files:**
 - Modify: `src/pages/Dashboard.tsx`
 
-- [ ] **Step 1: Integrate `ProjectSidebar` and project filtering into `Dashboard.tsx`**
+- [x] **Step 1: Integrate `ProjectSidebar` and project filtering into `Dashboard.tsx`**
 
 1. State quản lý:
    - `projects: Project[]`
@@ -194,13 +194,13 @@ git add src/components/project/ ; git commit -m "feat(ui): add ProjectModal, Mov
 6. Cập nhật `handleSelectTemplate` và `handleImport`:
    - Nếu đang ở trong một Project cụ thể (`activeFilter !== 'all' && activeFilter !== 'uncategorized'`), sơ đồ mới sẽ tự động nhận `projectId: activeFilter`.
 
-- [ ] **Step 2: Verify tests and run lint**
+- [x] **Step 2: Verify tests and run lint**
 
 Run: `cmd.exe /c npm test`
 Run: `cmd.exe /c npm run lint`
 Expected: All tests PASS, 0 lint warnings.
 
-- [ ] **Step 3: Commit changes**
+- [x] **Step 3: Commit changes**
 
 ```powershell
 git add src/pages/Dashboard.tsx ; git commit -m "feat(dashboard): integrate ProjectSidebar, project filtering, and move-to-project functionality"
@@ -213,7 +213,7 @@ git add src/pages/Dashboard.tsx ; git commit -m "feat(dashboard): integrate Proj
 **Files:**
 - Modify: `src/components/DocumentSidebar.tsx`
 
-- [ ] **Step 1: Group documents by project in `DocumentSidebar.tsx`**
+- [x] **Step 1: Group documents by project in `DocumentSidebar.tsx`**
 
 1. Tải cả `projects` khi mở `DocumentSidebar`.
 2. Phân nhóm danh sách documents:
@@ -221,13 +221,13 @@ git add src/pages/Dashboard.tsx ; git commit -m "feat(dashboard): integrate Proj
    - Nhóm "Chưa phân loại" cho các sơ đồ không có `projectId`.
 3. Thao tác tạo "New Document": nếu đang chọn xem project nào hoặc có thể tạo mặc định.
 
-- [ ] **Step 2: Verify tests and run lint**
+- [x] **Step 2: Verify tests and run lint**
 
 Run: `cmd.exe /c npm test`
 Run: `cmd.exe /c npm run lint`
 Expected: All tests PASS, 0 lint warnings.
 
-- [ ] **Step 3: Commit changes**
+- [x] **Step 3: Commit changes**
 
 ```powershell
 git add src/components/DocumentSidebar.tsx ; git commit -m "feat(editor): group mind maps by project in DocumentSidebar"
@@ -240,7 +240,7 @@ git add src/components/DocumentSidebar.tsx ; git commit -m "feat(editor): group 
 **Files:**
 - All modified files
 
-- [ ] **Step 1: Run 3-Phase Verification Gate**
+- [x] **Step 1: Run 3-Phase Verification Gate**
 
 1. Unit tests:
    ```powershell
@@ -258,7 +258,7 @@ git add src/components/DocumentSidebar.tsx ; git commit -m "feat(editor): group 
    ```
    *Yêu cầu:* `tsc -b` không phát sinh lỗi, Vite bundle hoàn tất.
 
-- [ ] **Step 2: Auto-Push & Firebase Deploy**
+- [x] **Step 2: Auto-Push & Firebase Deploy**
 
 Theo Điều 10 của Hiến pháp và AGENTS.md:
 ```powershell
