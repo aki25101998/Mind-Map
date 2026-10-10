@@ -28,7 +28,9 @@ import {
   ArrowLeft, 
   Pencil, 
   Plus, 
-  Folder 
+  Folder,
+  FolderOpen,
+  ChevronRight
 } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -74,6 +76,7 @@ export const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>('all'); // 'all' | 'uncategorized' | projectId
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isOpenMobileSidebar, setIsOpenMobileSidebar] = useState(false);
   
   // Modals state
   const [showProjectModal, setShowProjectModal] = useState(false);
@@ -229,6 +232,12 @@ export const Dashboard = () => {
   };
 
   // Project Handlers
+  const handleOpenCreateProject = () => {
+    setProjectModalMode('create');
+    setEditingProject(null);
+    setShowProjectModal(true);
+  };
+
   const handleSaveProject = async (data: { name: string; color: string; description?: string }) => {
     const now = Date.now();
     if (projectModalMode === 'create') {
@@ -310,11 +319,7 @@ export const Dashboard = () => {
         documents={documents}
         activeFilter={activeFilter}
         onSelectFilter={setActiveFilter}
-        onNewProject={() => {
-          setProjectModalMode('create');
-          setEditingProject(null);
-          setShowProjectModal(true);
-        }}
+        onNewProject={handleOpenCreateProject}
         onEditProject={(proj) => {
           setProjectModalMode('edit');
           setEditingProject(proj);
@@ -326,6 +331,8 @@ export const Dashboard = () => {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         isMobile={isMobile}
+        isOpenMobile={isOpenMobileSidebar}
+        onCloseMobile={() => setIsOpenMobileSidebar(false)}
       />
 
       {/* Main Content Area */}
@@ -423,6 +430,183 @@ export const Dashboard = () => {
               </button>
             </div>
           </div>
+
+          {/* Mobile Project Horizontal Filter Bar */}
+          {isMobile && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              overflowX: 'auto',
+              padding: '0 2px 14px 2px',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch',
+              flexShrink: 0
+            }}>
+              {/* Button to open full drawer */}
+              <button
+                type="button"
+                onClick={() => setIsOpenMobileSidebar(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: 'var(--radius-pill)',
+                  background: 'var(--panel-bg)',
+                  border: '1.5px solid var(--panel-border)',
+                  color: 'var(--text-primary)',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  boxShadow: 'var(--shadow-sm)',
+                  whiteSpace: 'nowrap'
+                }}
+                title="Mở danh sách Projects"
+              >
+                <FolderOpen size={14} color="var(--accent)" />
+                <span>Projects ({projects.length})</span>
+                <ChevronRight size={13} color="var(--text-muted)" />
+              </button>
+
+              {/* Quick Filter: Tất cả */}
+              <button
+                type="button"
+                onClick={() => setActiveFilter('all')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: 'var(--radius-pill)',
+                  background: activeFilter === 'all' ? 'var(--accent-soft)' : 'var(--panel-bg)',
+                  border: activeFilter === 'all' ? '1.5px solid rgba(249, 115, 22, 0.4)' : '1.5px solid var(--panel-border)',
+                  color: activeFilter === 'all' ? 'var(--accent)' : 'var(--text-secondary)',
+                  fontSize: '12.5px',
+                  fontWeight: activeFilter === 'all' ? '700' : '500',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  transition: 'all var(--transition-fast)'
+                }}
+              >
+                <span>Tất cả</span>
+                <span style={{
+                  fontSize: '11px',
+                  padding: '1px 6px',
+                  borderRadius: '10px',
+                  background: activeFilter === 'all' ? 'rgba(249, 115, 22, 0.2)' : 'var(--social-bg)',
+                  color: activeFilter === 'all' ? 'var(--accent)' : 'var(--text-muted)'
+                }}>
+                  {documents.length}
+                </span>
+              </button>
+
+              {/* Quick Filter: Chưa phân loại */}
+              <button
+                type="button"
+                onClick={() => setActiveFilter('uncategorized')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: 'var(--radius-pill)',
+                  background: activeFilter === 'uncategorized' ? 'var(--accent-secondary-soft)' : 'var(--panel-bg)',
+                  border: activeFilter === 'uncategorized' ? '1.5px solid var(--accent-secondary-border)' : '1.5px solid var(--panel-border)',
+                  color: activeFilter === 'uncategorized' ? 'var(--accent-secondary)' : 'var(--text-secondary)',
+                  fontSize: '12.5px',
+                  fontWeight: activeFilter === 'uncategorized' ? '700' : '500',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  transition: 'all var(--transition-fast)'
+                }}
+              >
+                <span>Chưa phân loại</span>
+                <span style={{
+                  fontSize: '11px',
+                  padding: '1px 6px',
+                  borderRadius: '10px',
+                  background: activeFilter === 'uncategorized' ? 'var(--accent-secondary-border)' : 'var(--social-bg)',
+                  color: activeFilter === 'uncategorized' ? 'var(--accent-secondary)' : 'var(--text-muted)'
+                }}>
+                  {documents.filter(d => !d.projectId).length}
+                </span>
+              </button>
+
+              {/* Project pills */}
+              {projects.map((proj) => {
+                const count = documents.filter(d => d.projectId === proj.id).length;
+                const isActive = activeFilter === proj.id;
+                return (
+                  <button
+                    key={proj.id}
+                    type="button"
+                    onClick={() => setActiveFilter(proj.id)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '7px 12px',
+                      borderRadius: 'var(--radius-pill)',
+                      background: isActive ? `${proj.color}1c` : 'var(--panel-bg)',
+                      border: isActive ? `1.5px solid ${proj.color}` : '1.5px solid var(--panel-border)',
+                      color: isActive ? proj.color : 'var(--text-secondary)',
+                      fontSize: '12.5px',
+                      fontWeight: isActive ? '700' : '500',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap',
+                      transition: 'all var(--transition-fast)'
+                    }}
+                  >
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: proj.color, flexShrink: 0 }} />
+                    <span style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {proj.name}
+                    </span>
+                    <span style={{
+                      fontSize: '11px',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      background: isActive ? `${proj.color}25` : 'var(--social-bg)',
+                      color: isActive ? proj.color : 'var(--text-muted)'
+                    }}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {/* Add Project Pill */}
+              <button
+                type="button"
+                onClick={handleOpenCreateProject}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '7px 12px',
+                  borderRadius: 'var(--radius-pill)',
+                  background: 'transparent',
+                  border: '1.5px dashed var(--accent)',
+                  color: 'var(--accent)',
+                  fontSize: '12.5px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  transition: 'all var(--transition-fast)'
+                }}
+                title="Tạo Project mới"
+              >
+                <Plus size={14} />
+                <span>Tạo mới</span>
+              </button>
+            </div>
+          )}
 
           {/* VIEW 1: ALL MIND MAPS (Default Dashboard View - Preserves 100% of Recent Maps & Templates) */}
           {activeFilter === 'all' && (

@@ -8,7 +8,8 @@ import {
   Trash2, 
   ChevronLeft, 
   ChevronRight, 
-  FolderOpen
+  FolderOpen,
+  X
 } from 'lucide-react';
 import type { Project, MindMapDocument } from '../../types';
 
@@ -23,6 +24,8 @@ export interface ProjectSidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   isMobile: boolean;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
@@ -36,6 +39,8 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   isCollapsed,
   onToggleCollapse,
   isMobile,
+  isOpenMobile,
+  onCloseMobile,
 }) => {
   const [activeMenuProjectId, setActiveMenuProjectId] = useState<string | null>(null);
 
@@ -49,6 +54,9 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
   const handleSelect = (filterId: string) => {
     onSelectFilter(filterId);
+    if (isMobile && onCloseMobile) {
+      onCloseMobile();
+    }
   };
 
   const handleMenuClick = (e: React.MouseEvent, projId: string) => {
@@ -65,6 +73,427 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
     return () => window.removeEventListener('click', handleWindowClick);
   }, []);
 
+  // 1. MOBILE VIEW: Off-canvas overlay drawer with backdrop
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile Backdrop */}
+        {isOpenMobile && (
+          <div
+            onClick={onCloseMobile}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.55)',
+              backdropFilter: 'blur(3px)',
+              zIndex: 999,
+              transition: 'opacity 0.2s ease',
+            }}
+          />
+        )}
+
+        {/* Mobile Slide-over Drawer Panel */}
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            bottom: 0,
+            width: '280px',
+            maxWidth: '85vw',
+            height: '100%',
+            background: 'var(--panel-bg)',
+            borderRight: '1px solid var(--panel-border)',
+            boxShadow: isOpenMobile ? 'var(--shadow-xl)' : 'none',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            transform: isOpenMobile ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+            visibility: isOpenMobile ? 'visible' : 'hidden',
+            pointerEvents: isOpenMobile ? 'auto' : 'none',
+            color: 'var(--text-primary)',
+            boxSizing: 'border-box',
+            userSelect: 'none',
+          }}
+        >
+          {/* Mobile Drawer Header */}
+          <div
+            style={{
+              padding: '16px 18px',
+              borderBottom: '1px solid var(--panel-border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              minHeight: '58px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FolderOpen size={20} color="var(--accent)" />
+              <span style={{ fontWeight: '800', fontSize: '16px', letterSpacing: '-0.02em' }}>
+                Projects
+              </span>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  padding: '2px 8px',
+                  borderRadius: 'var(--radius-pill)',
+                  background: 'var(--social-bg)',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                {projects.length}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              title="Đóng menu"
+              style={{
+                background: 'var(--social-bg)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Navigation Section */}
+          <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {/* All Mind Maps */}
+            <button
+              type="button"
+              onClick={() => handleSelect('all')}
+              title="Tất cả Mind Maps"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: activeFilter === 'all' ? 'var(--accent-soft)' : 'transparent',
+                border: activeFilter === 'all' ? '1px solid rgba(249, 115, 22, 0.25)' : '1px solid transparent',
+                color: activeFilter === 'all' ? 'var(--accent)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: activeFilter === 'all' ? '700' : '500',
+                transition: 'all var(--transition-fast)',
+                width: '100%',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Folder size={18} color={activeFilter === 'all' ? 'var(--accent)' : 'var(--text-secondary)'} />
+                <span>Tất cả Mind Maps</span>
+              </div>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  padding: '2px 7px',
+                  borderRadius: '10px',
+                  background: activeFilter === 'all' ? 'rgba(249, 115, 22, 0.2)' : 'var(--social-bg)',
+                  color: activeFilter === 'all' ? 'var(--accent)' : 'var(--text-muted)',
+                }}
+              >
+                {totalCount}
+              </span>
+            </button>
+
+            {/* Uncategorized */}
+            <button
+              type="button"
+              onClick={() => handleSelect('uncategorized')}
+              title="Chưa phân loại"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: activeFilter === 'uncategorized' ? 'var(--accent-secondary-soft)' : 'transparent',
+                border: activeFilter === 'uncategorized' ? '1px solid var(--accent-secondary-border)' : '1px solid transparent',
+                color: activeFilter === 'uncategorized' ? 'var(--accent-secondary)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: activeFilter === 'uncategorized' ? '700' : '500',
+                transition: 'all var(--transition-fast)',
+                width: '100%',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Layers size={18} color={activeFilter === 'uncategorized' ? 'var(--accent-secondary)' : 'var(--text-secondary)'} />
+                <span>Chưa phân loại</span>
+              </div>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  padding: '2px 7px',
+                  borderRadius: '10px',
+                  background: activeFilter === 'uncategorized' ? 'var(--accent-secondary-soft)' : 'var(--social-bg)',
+                  color: activeFilter === 'uncategorized' ? 'var(--accent-secondary)' : 'var(--text-muted)',
+                }}
+              >
+                {uncategorizedCount}
+              </span>
+            </button>
+          </div>
+
+          <div style={{ height: '1px', background: 'var(--panel-border)', margin: '0 12px' }} />
+
+          {/* Projects List */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '10px',
+                padding: '0 4px',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  fontWeight: '700',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Danh sách Projects
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  onNewProject();
+                  if (onCloseMobile) onCloseMobile();
+                }}
+                title="Tạo Project mới"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--accent)',
+                  cursor: 'pointer',
+                  padding: '3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {projects.map((proj) => {
+                const count = getProjectMapCount(proj.id);
+                const isActive = activeFilter === proj.id;
+                const isMenuOpen = activeMenuProjectId === proj.id;
+
+                return (
+                  <div key={proj.id} style={{ position: 'relative' }}>
+                    <div
+                      onClick={() => handleSelect(proj.id)}
+                      title={proj.name}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        borderRadius: 'var(--radius-md)',
+                        background: isActive ? `${proj.color}1a` : 'transparent',
+                        border: isActive ? `1.5px solid ${proj.color}55` : '1.5px solid transparent',
+                        cursor: 'pointer',
+                        transition: 'all var(--transition-fast)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                        <span
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: proj.color,
+                            flexShrink: 0,
+                            boxShadow: `0 0 6px ${proj.color}88`,
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: isActive ? '700' : '500',
+                            color: isActive ? proj.color : 'var(--text-primary)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: '150px',
+                          }}
+                        >
+                          {proj.name}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            padding: '2px 7px',
+                            borderRadius: '10px',
+                            background: 'var(--social-bg)',
+                            color: 'var(--text-muted)',
+                          }}
+                        >
+                          {count}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleMenuClick(e, proj.id)}
+                          title="Tùy chọn Project"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            padding: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            borderRadius: 'var(--radius-sm)',
+                          }}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Context menu for project */}
+                    {isMenuOpen && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          position: 'absolute',
+                          right: '8px',
+                          top: '100%',
+                          marginTop: '4px',
+                          background: 'var(--panel-bg)',
+                          border: '1.5px solid var(--panel-border)',
+                          borderRadius: 'var(--radius-md)',
+                          boxShadow: 'var(--shadow-lg)',
+                          padding: '4px',
+                          zIndex: 1010,
+                          minWidth: '130px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuProjectId(null);
+                            onEditProject(proj);
+                            if (onCloseMobile) onCloseMobile();
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            color: 'var(--text-primary)',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            width: '100%',
+                          }}
+                        >
+                          <Pencil size={14} /> Chỉnh sửa
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuProjectId(null);
+                            onDeleteProject(proj);
+                            if (onCloseMobile) onCloseMobile();
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            color: 'var(--node-color-red)',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            width: '100%',
+                          }}
+                        >
+                          <Trash2 size={14} /> Xóa
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Create Project Button inside drawer */}
+            <button
+              type="button"
+              onClick={() => {
+                onNewProject();
+                if (onCloseMobile) onCloseMobile();
+              }}
+              style={{
+                marginTop: '16px',
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                border: '1.5px dashed var(--border-subtle)',
+                color: 'var(--accent)',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+            >
+              <Plus size={16} />
+              <span>Tạo Project Mới</span>
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // 2. DESKTOP VIEW: Collapsible sidebar docked on left
   const sidebarContent = (
     <div
       style={{
@@ -73,7 +502,7 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         height: '100%',
         background: 'var(--panel-bg)',
         borderRight: '1px solid var(--panel-border)',
-        width: isMobile ? (isCollapsed ? '56px' : '220px') : (isCollapsed ? '68px' : '260px'),
+        width: isCollapsed ? '68px' : '260px',
         flexShrink: 0,
         transition: 'width var(--transition-normal)',
         color: 'var(--text-primary)',
