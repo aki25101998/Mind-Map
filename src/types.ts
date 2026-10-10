@@ -67,6 +67,15 @@ export interface Template {
   defaultEdges: MindMapEdge[];
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  color: string;
+  description?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface MindMapDocument {
   id: string;
   title: string;
@@ -74,6 +83,7 @@ export interface MindMapDocument {
   edges: MindMapEdge[];
   viewport: Viewport;
   templateId?: string;
+  projectId?: string;
   createdAt: number;
   updatedAt: number;
   shareEnabled?: boolean;

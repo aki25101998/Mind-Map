@@ -1,4 +1,4 @@
-import type { MindMapDocument, MindMapNode, MindMapEdge } from '../types';
+import type { MindMapDocument, MindMapNode, MindMapEdge, Project } from '../types';
 
 /**
  * Recursively removes undefined properties from an object or array.
@@ -23,6 +23,22 @@ export function removeUndefined<T>(obj: T): T {
   }
 
   return result as T;
+}
+
+/**
+ * Sanitizes a Project object for persistence, stripping undefined fields.
+ */
+export function sanitizeProject(project: Partial<Project>): Project {
+  const sanitized: Partial<Project> = {
+    id: project.id,
+    name: project.name || 'Untitled Project',
+    color: project.color || '#f97316',
+    description: project.description,
+    createdAt: project.createdAt || Date.now(),
+    updatedAt: project.updatedAt || Date.now()
+  };
+
+  return removeUndefined(sanitized) as Project;
 }
 
 /**
@@ -56,6 +72,7 @@ export function sanitizeDocumentForPersistence(doc: MindMapDocument): MindMapDoc
     edges: sanitizedEdges,
     viewport: doc.viewport || { x: 0, y: 0, zoom: 1 },
     templateId: doc.templateId,
+    projectId: doc.projectId,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
     shareEnabled: doc.shareEnabled,

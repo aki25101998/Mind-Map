@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeDocumentForPersistence, removeUndefined } from './sanitize';
+import { sanitizeDocumentForPersistence, removeUndefined, sanitizeProject } from './sanitize';
 import type { MindMapDocument } from '../types';
 
 describe('sanitizeDocumentForPersistence', () => {
@@ -101,5 +101,49 @@ describe('sanitizeDocumentForPersistence', () => {
     expect('templateId' in sanitized).toBe(false);
     expect('shareId' in sanitized).toBe(false);
     expect('shareEnabled' in sanitized).toBe(false);
+    expect('projectId' in sanitized).toBe(false);
+  });
+
+  it('preserves valid projectId and strips undefined projectId', () => {
+    const docWithProject: any = {
+      id: 'doc-3',
+      title: 'Doc With Project',
+      viewport: { x: 0, y: 0, zoom: 1 },
+      createdAt: 1000,
+      updatedAt: 2000,
+      projectId: 'proj-123',
+      nodes: [],
+      edges: []
+    };
+
+    const sanitized = sanitizeDocumentForPersistence(docWithProject);
+    expect(sanitized.projectId).toBe('proj-123');
+
+    const docWithUndefinedProject: any = {
+      ...docWithProject,
+      projectId: undefined
+    };
+    const sanitizedUndefined = sanitizeDocumentForPersistence(docWithUndefinedProject);
+    expect('projectId' in sanitizedUndefined).toBe(false);
+  });
+
+  it('sanitizes Project objects properly', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawProject: any = {
+      id: 'proj-1',
+      name: 'Marketing Campaign',
+      color: '#10b981',
+      description: undefined,
+      createdAt: 1000,
+      updatedAt: 2000
+    };
+
+    // @ts-expect-error test sanitizeProject before implementation
+    const sanitized = sanitizeProject(rawProject);
+    expect(sanitized.id).toBe('proj-1');
+    expect(sanitized.name).toBe('Marketing Campaign');
+    expect(sanitized.color).toBe('#10b981');
+    expect('description' in sanitized).toBe(false);
   });
 });
+
