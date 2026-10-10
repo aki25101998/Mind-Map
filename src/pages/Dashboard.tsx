@@ -29,8 +29,7 @@ import {
   Pencil, 
   Plus, 
   Folder,
-  FolderOpen,
-  ChevronRight
+  Menu
 } from 'lucide-react';
 import { validateDocument } from '../utils/validation';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -342,57 +341,91 @@ export const Dashboard = () => {
         height: '100vh',
         overflowY: 'auto',
         overflowX: 'hidden',
-        padding: isMobile ? '16px 14px 40px 14px' : '32px 32px 60px 32px',
+        paddingTop: isMobile ? 'max(calc(var(--safe-top, 0px) + 14px), 48px)' : '32px',
+        paddingLeft: isMobile ? 'max(var(--safe-left, 0px), 16px)' : '32px',
+        paddingRight: isMobile ? 'max(var(--safe-right, 0px), 16px)' : '32px',
+        paddingBottom: isMobile ? 'max(calc(var(--safe-bottom, 0px) + 40px), 60px)' : '60px',
         color: 'var(--text-primary)',
         transition: 'background var(--transition-normal), color var(--transition-normal)'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
           
-          {/* Top Header Row with Menu Toggle, User Pill & Controls */}
+          {/* Top Header Row with Menu Toggle, User Pill & Controls (ChatGPT-style single row) */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px',
-            flexWrap: 'wrap'
+            gap: '10px',
+            marginBottom: isMobile ? '20px' : '24px',
+            flexWrap: 'nowrap',
+            width: '100%'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 auto', minWidth: 0 }}>
-              {user ? (
-                <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '6px 14px',
-                    borderRadius: 'var(--radius-pill)',
-                    background: 'var(--accent-soft)',
-                    border: '1.5px solid rgba(249, 115, 22, 0.25)',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: 'var(--accent)',
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, boxShadow: '0 0 8px var(--accent)' }} />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      Workspace of <strong>{user.email}</strong>
-                    </span>
-                  </span>
-                </div>
-              ) : null}
-            </div>
+            {/* Left: Hamburger menu toggle button (ChatGPT-style circular button) */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isMobile) {
+                  setIsOpenMobileSidebar(true);
+                } else {
+                  setIsSidebarCollapsed(!isSidebarCollapsed);
+                }
+              }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'var(--panel-bg)',
+                color: 'var(--text-primary)',
+                border: '1.5px solid var(--panel-border)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'var(--shadow-sm)',
+                flexShrink: 0,
+                transition: 'all var(--transition-fast)'
+              }}
+              title="Menu Projects & Sơ đồ"
+            >
+              <Menu size={20} />
+            </button>
 
-            {/* Theme & Settings Buttons */}
-            <div style={{ display: 'flex', gap: '10px', flexShrink: 0, marginLeft: 'auto' }}>
+            {/* Center: User Workspace Pill (Single line, text-overflow ellipsis) */}
+            {user ? (
+              <div style={{ minWidth: 0, flex: '1 1 auto', overflow: 'hidden' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: 'var(--radius-pill)',
+                  background: 'var(--accent-soft)',
+                  border: '1.5px solid rgba(249, 115, 22, 0.25)',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: 'var(--accent)',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, boxShadow: '0 0 6px var(--accent)' }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isMobile ? user.email : <>Workspace of <strong>{user.email}</strong></>}
+                  </span>
+                </span>
+              </div>
+            ) : <div style={{ flex: 1 }} />}
+
+            {/* Right: Theme & Settings Buttons */}
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
               <button
+                type="button"
                 onClick={toggleTheme}
                 style={{
                   width: '40px',
                   height: '40px',
-                  borderRadius: '12px',
+                  borderRadius: '50%',
                   background: 'var(--panel-bg)',
                   color: 'var(--text-primary)',
                   border: '1.5px solid var(--panel-border)',
@@ -409,11 +442,12 @@ export const Dashboard = () => {
               </button>
               
               <button
+                type="button"
                 onClick={() => navigate('/settings')}
                 style={{
                   width: '40px',
                   height: '40px',
-                  borderRadius: '12px',
+                  borderRadius: '50%',
                   background: 'var(--panel-bg)',
                   color: 'var(--text-primary)',
                   border: '1.5px solid var(--panel-border)',
@@ -431,182 +465,7 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          {/* Mobile Project Horizontal Filter Bar */}
-          {isMobile && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              overflowX: 'auto',
-              padding: '0 2px 14px 2px',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              WebkitOverflowScrolling: 'touch',
-              flexShrink: 0
-            }}>
-              {/* Button to open full drawer */}
-              <button
-                type="button"
-                onClick={() => setIsOpenMobileSidebar(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 12px',
-                  borderRadius: 'var(--radius-pill)',
-                  background: 'var(--panel-bg)',
-                  border: '1.5px solid var(--panel-border)',
-                  color: 'var(--text-primary)',
-                  fontSize: '12.5px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  boxShadow: 'var(--shadow-sm)',
-                  whiteSpace: 'nowrap'
-                }}
-                title="Mở danh sách Projects"
-              >
-                <FolderOpen size={14} color="var(--accent)" />
-                <span>Projects ({projects.length})</span>
-                <ChevronRight size={13} color="var(--text-muted)" />
-              </button>
 
-              {/* Quick Filter: Tất cả */}
-              <button
-                type="button"
-                onClick={() => setActiveFilter('all')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 12px',
-                  borderRadius: 'var(--radius-pill)',
-                  background: activeFilter === 'all' ? 'var(--accent-soft)' : 'var(--panel-bg)',
-                  border: activeFilter === 'all' ? '1.5px solid rgba(249, 115, 22, 0.4)' : '1.5px solid var(--panel-border)',
-                  color: activeFilter === 'all' ? 'var(--accent)' : 'var(--text-secondary)',
-                  fontSize: '12.5px',
-                  fontWeight: activeFilter === 'all' ? '700' : '500',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                  transition: 'all var(--transition-fast)'
-                }}
-              >
-                <span>Tất cả</span>
-                <span style={{
-                  fontSize: '11px',
-                  padding: '1px 6px',
-                  borderRadius: '10px',
-                  background: activeFilter === 'all' ? 'rgba(249, 115, 22, 0.2)' : 'var(--social-bg)',
-                  color: activeFilter === 'all' ? 'var(--accent)' : 'var(--text-muted)'
-                }}>
-                  {documents.length}
-                </span>
-              </button>
-
-              {/* Quick Filter: Chưa phân loại */}
-              <button
-                type="button"
-                onClick={() => setActiveFilter('uncategorized')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 12px',
-                  borderRadius: 'var(--radius-pill)',
-                  background: activeFilter === 'uncategorized' ? 'var(--accent-secondary-soft)' : 'var(--panel-bg)',
-                  border: activeFilter === 'uncategorized' ? '1.5px solid var(--accent-secondary-border)' : '1.5px solid var(--panel-border)',
-                  color: activeFilter === 'uncategorized' ? 'var(--accent-secondary)' : 'var(--text-secondary)',
-                  fontSize: '12.5px',
-                  fontWeight: activeFilter === 'uncategorized' ? '700' : '500',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                  transition: 'all var(--transition-fast)'
-                }}
-              >
-                <span>Chưa phân loại</span>
-                <span style={{
-                  fontSize: '11px',
-                  padding: '1px 6px',
-                  borderRadius: '10px',
-                  background: activeFilter === 'uncategorized' ? 'var(--accent-secondary-border)' : 'var(--social-bg)',
-                  color: activeFilter === 'uncategorized' ? 'var(--accent-secondary)' : 'var(--text-muted)'
-                }}>
-                  {documents.filter(d => !d.projectId).length}
-                </span>
-              </button>
-
-              {/* Project pills */}
-              {projects.map((proj) => {
-                const count = documents.filter(d => d.projectId === proj.id).length;
-                const isActive = activeFilter === proj.id;
-                return (
-                  <button
-                    key={proj.id}
-                    type="button"
-                    onClick={() => setActiveFilter(proj.id)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '7px 12px',
-                      borderRadius: 'var(--radius-pill)',
-                      background: isActive ? `${proj.color}1c` : 'var(--panel-bg)',
-                      border: isActive ? `1.5px solid ${proj.color}` : '1.5px solid var(--panel-border)',
-                      color: isActive ? proj.color : 'var(--text-secondary)',
-                      fontSize: '12.5px',
-                      fontWeight: isActive ? '700' : '500',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      whiteSpace: 'nowrap',
-                      transition: 'all var(--transition-fast)'
-                    }}
-                  >
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: proj.color, flexShrink: 0 }} />
-                    <span style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {proj.name}
-                    </span>
-                    <span style={{
-                      fontSize: '11px',
-                      padding: '1px 6px',
-                      borderRadius: '10px',
-                      background: isActive ? `${proj.color}25` : 'var(--social-bg)',
-                      color: isActive ? proj.color : 'var(--text-muted)'
-                    }}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-
-              {/* Add Project Pill */}
-              <button
-                type="button"
-                onClick={handleOpenCreateProject}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '7px 12px',
-                  borderRadius: 'var(--radius-pill)',
-                  background: 'transparent',
-                  border: '1.5px dashed var(--accent)',
-                  color: 'var(--accent)',
-                  fontSize: '12.5px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                  transition: 'all var(--transition-fast)'
-                }}
-                title="Tạo Project mới"
-              >
-                <Plus size={14} />
-                <span>Tạo mới</span>
-              </button>
-            </div>
-          )}
 
           {/* VIEW 1: ALL MIND MAPS (Default Dashboard View - Preserves 100% of Recent Maps & Templates) */}
           {activeFilter === 'all' && (
@@ -702,10 +561,157 @@ export const Dashboard = () => {
               {/* Recent Mind Maps Section (Preserved 100%) */}
               {displayedDocuments.length > 0 ? (
                 <div style={{ marginBottom: '48px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
                     <Sparkles size={20} color="var(--accent)" />
                     <h2 style={{ fontSize: '22px', fontWeight: '700', letterSpacing: '-0.02em', margin: 0 }}>Recent Maps</h2>
                     <span style={{ fontSize: '13px', color: 'var(--text-secondary)', marginLeft: '6px', fontWeight: '600' }}>({displayedDocuments.length})</span>
+                  </div>
+
+                  {/* Horizontal Project Filter Chips for Quick 1-tap switching */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    overflowX: 'auto',
+                    padding: '0 2px 16px 2px',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    WebkitOverflowScrolling: 'touch',
+                    flexShrink: 0
+                  }}>
+                    {/* Tất cả (Currently Active in this view) */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveFilter('all')}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: 'var(--radius-pill)',
+                        background: 'var(--accent-soft)',
+                        border: '1.5px solid rgba(249, 115, 22, 0.4)',
+                        color: 'var(--accent)',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                        transition: 'all var(--transition-fast)'
+                      }}
+                    >
+                      <span>Tất cả</span>
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '1px 6px',
+                        borderRadius: '10px',
+                        background: 'rgba(249, 115, 22, 0.2)',
+                        color: 'var(--accent)'
+                      }}>
+                        {documents.length}
+                      </span>
+                    </button>
+
+                    {/* Chưa phân loại */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveFilter('uncategorized')}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: 'var(--radius-pill)',
+                        background: 'var(--panel-bg)',
+                        border: '1.5px solid var(--panel-border)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                        transition: 'all var(--transition-fast)'
+                      }}
+                    >
+                      <span>Chưa phân loại</span>
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '1px 6px',
+                        borderRadius: '10px',
+                        background: 'var(--social-bg)',
+                        color: 'var(--text-muted)'
+                      }}>
+                        {documents.filter(d => !d.projectId).length}
+                      </span>
+                    </button>
+
+                    {/* Project pills */}
+                    {projects.map((proj) => {
+                      const count = documents.filter(d => d.projectId === proj.id).length;
+                      return (
+                        <button
+                          key={proj.id}
+                          type="button"
+                          onClick={() => setActiveFilter(proj.id)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px',
+                            borderRadius: 'var(--radius-pill)',
+                            background: 'var(--panel-bg)',
+                            border: '1.5px solid var(--panel-border)',
+                            color: 'var(--text-secondary)',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            whiteSpace: 'nowrap',
+                            transition: 'all var(--transition-fast)'
+                          }}
+                        >
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: proj.color, flexShrink: 0 }} />
+                          <span style={{ maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {proj.name}
+                          </span>
+                          <span style={{
+                            fontSize: '11px',
+                            padding: '1px 6px',
+                            borderRadius: '10px',
+                            background: 'var(--social-bg)',
+                            color: 'var(--text-muted)'
+                          }}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+
+                    {/* Add Project Pill */}
+                    <button
+                      type="button"
+                      onClick={handleOpenCreateProject}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '6px 12px',
+                        borderRadius: 'var(--radius-pill)',
+                        background: 'transparent',
+                        border: '1.5px dashed var(--accent)',
+                        color: 'var(--accent)',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                        transition: 'all var(--transition-fast)'
+                      }}
+                      title="Tạo Project mới"
+                    >
+                      <Plus size={13} />
+                      <span>Tạo mới</span>
+                    </button>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '18px' }}>

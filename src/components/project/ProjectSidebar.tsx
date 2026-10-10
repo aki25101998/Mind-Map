@@ -120,12 +120,14 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
           {/* Mobile Drawer Header */}
           <div
             style={{
-              padding: '16px 18px',
+              paddingTop: 'max(calc(var(--safe-top, 0px) + 14px), 48px)',
+              paddingLeft: '18px',
+              paddingRight: '18px',
+              paddingBottom: '16px',
               borderBottom: '1px solid var(--panel-border)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              minHeight: '58px',
               boxSizing: 'border-box',
             }}
           >
