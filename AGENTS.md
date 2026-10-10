@@ -39,7 +39,7 @@ Trước khi kết thúc câu trả lời hoặc tiến hành deploy, AI **BẮT
    ```powershell
    cmd.exe /c npm test
    ```
-   *Yêu cầu:* Toàn bộ 11 test suites (103+ bài test) phải hiển thị chữ `PASS`. Không được phép có bất kỳ bài test nào FAIL.
+   *Yêu cầu:* Toàn bộ 13 test suites (119+ bài test) phải hiển thị chữ `PASS`. Không được phép có bất kỳ bài test nào FAIL.
 2. **Bước 2 - Linter (Clean Code):**
    ```powershell
    cmd.exe /c npm run lint

@@ -14,16 +14,16 @@
   - **Bảng vẽ Canvas:** `@xyflow/react` v12 (React Flow)
   - **Quản lý State:** Zustand v5 (kiến trúc đa Slice: `documentSlice`, `nodeEdgeSlice`, `editorSlice`, `historySlice`)
   - **Thuật toán Bố cục:** Dagre, thuật toán cây phân cấp phân nhánh tự chế (`hierarchyLayout.ts`, `layoutUtils.ts`)
-  - **Lưu trữ:** IndexedDB cục bộ (`idb` v8) làm primary offline cache; Google Cloud Firestore làm cloud sync & chia sẻ
-  - **Kiểm thử & Chất lượng:** Vitest v5 (103+ unit & scenario tests), Oxlint v1 (0 warning policy)
+  - **Lưu trữ:** IndexedDB cục bộ (`idb` v8, schema v3 quản lý `documents` & `projects`) làm primary offline cache; Google Cloud Firestore làm cloud sync & chia sẻ
+  - **Kiểm thử & Chất lượng:** Vitest v5 (119+ unit & scenario tests, 13 suites), Oxlint v1 (0 warning policy)
   - **Triển khai & CI/CD:** Firebase Hosting, GitHub Actions
 - **Link Repository:** [https://github.com/aki25101998/Mind-Map.git](https://github.com/aki25101998/Mind-Map.git)
 
 ---
 
-## 2. Mười Điều Răn Cốt Lõi (The Ten Golden Laws)
+## 2. Mười Hai Điều Răn Cốt Lõi (The Twelve Golden Laws)
 
-Mọi thao tác can thiệp mã nguồn **BẮT BUỘC** phải tuân theo 10 điều bất biến dưới đây. Tuyệt đối không được tự ý sửa đổi gây sai lệch hành vi:
+Mọi thao tác can thiệp mã nguồn **BẮT BUỘC** phải tuân theo 12 điều bất biến dưới đây. Tuyệt đối không được tự ý sửa đổi gây sai lệch hành vi:
 
 ### Điều 1: Bất Biến Node Gốc (Root Node Immunity)
 Node gốc (`type: 'main'`) là trái tim của mind map. Cấm xóa node gốc bằng thao tác phím tắt hoặc nút xóa hàng loạt nếu trên canvas vẫn còn các node con. Cấm tạo node anh/em cho node gốc (`createSiblingNode`).
@@ -44,19 +44,22 @@ Component soạn thảo văn bản `NodeTextEditor.tsx` bắt buộc sử dụng
 Thuật toán Auto Layout không được tự ý hoán đổi hướng nhánh (`layoutSide: 'left' | 'right'`) mà người dùng đã định hình. Bố cục cây dọc (Top-Down Tree) và bố cục ngang (Horizontal Two-Way) phải được xử lý độc lập, không trộn lẫn hệ tọa độ.
 
 ### Điều 7: Khử Sạch Trường Undefined Trước Khi Lưu (Mandatory Sanitization)
-Google Cloud Firestore từ chối mọi document chứa trường `undefined`. Bắt buộc chạy qua `sanitizeDocument()` trong `src/persistence/sanitize.ts` trước khi ghi dữ liệu xuống IndexedDB hoặc Firestore.
+Google Cloud Firestore từ chối mọi document chứa trường `undefined`. Bắt buộc chạy qua `sanitizeDocument()` và `sanitizeProject()` trong `src/persistence/sanitize.ts` trước khi ghi dữ liệu xuống IndexedDB hoặc Firestore. Trường `projectId` trên mind map document phải được loại bỏ triệt để nếu undefined.
 
 ### Điều 8: Ưu Tiên Offline-First & Giải Quyết Xung Đột Theo Thời Gian
-Dữ liệu luôn được lưu an toàn xuống IndexedDB tức thì. Khi đồng bộ với Firestore, tài liệu có nhãn thời gian `updatedAt` mới hơn sẽ được ưu tiên sử dụng. Người dùng không bao giờ bị mất dữ liệu do mất kết nối mạng.
+Dữ liệu luôn được lưu an toàn xuống IndexedDB tức thì. Khi đồng bộ với Firestore, tài liệu hoặc project có nhãn thời gian `updatedAt` mới hơn sẽ được ưu tiên sử dụng. Người dùng không bao giờ bị mất dữ liệu do mất kết nối mạng.
 
 ### Điều 9: Chuẩn Lệnh Môi Trường Windows (`cmd.exe /c` Requirement)
 Do chính sách bảo mật PowerShell trên Windows chặn chạy file script `.ps1`, mọi lệnh gọi `npm` hoặc `npx` bắt buộc phải chạy qua tiền tố `cmd.exe /c` (ví dụ: `cmd.exe /c npm test`, `cmd.exe /c npm run build`).
 
 ### Điều 10: Tự Động Kiểm Định & Triển Khai (3-Phase Gate & Firebase Deploy)
-Không hoàn tất nhiệm vụ khi chưa vượt qua Cổng Kiểm Định 3 Pha: 103 bài test Vitest PASS 100% -> Oxlint 0 lỗi -> Build thành công. Sau khi pass, AI bắt buộc tự động commit, push GitHub và deploy lên Firebase Hosting.
+Không hoàn tất nhiệm vụ khi chưa vượt qua Cổng Kiểm Định 3 Pha: 119+ bài test Vitest PASS 100% -> Oxlint 0 lỗi -> Build thành công. Sau khi pass, AI bắt buộc tự động commit, push GitHub và deploy lên Firebase Hosting.
 
 ### Điều 11: Đóng Gói Mobile & Biên Dịch Đám Mây (Mobile Packaging & Cloud Build Pipeline)
 Toàn bộ quy trình đóng gói ứng dụng di động Android (Capacitor) phải được tự động hóa biên dịch qua GitHub Actions đám mây và đồng bộ về nhánh `build-output`. Khi người dùng yêu cầu file APK, AI có trách nhiệm tự động lấy file APK về máy, sao chép ra Desktop/Downloads và hiển thị vị trí lưu.
+
+### Điều 12: Phân Loại Sơ Đồ & Bảo Toàn Dữ Liệu Project (Project Organization & Safe Deletion)
+Mind Map hỗ trợ phân loại theo Project (mô hình 1 cấp phẳng). Khi xóa một Project, mặc định áp dụng chính sách xóa an toàn (Safe Unassign) đưa các mind map liên quan về nhóm Không phân loại (Uncategorized) để ngăn chặn mất mát dữ liệu ngoài ý muốn. Chỉ xóa vĩnh viễn sơ đồ con khi người dùng xác nhận lựa chọn xóa tất cả.
 
 ---
 
@@ -69,8 +72,8 @@ Toàn bộ quy trình đóng gói ứng dụng di động Android (Capacitor) ph
 | **01** | **Toàn Vẹn Đồ Thị** | [`docs/constitution/01-graph-invariants.md`](file:///d:/Project/Mind%20map/docs/constitution/01-graph-invariants.md) | DAG rules, Root immunity, Cạnh cấu trúc vs Cạnh quan hệ, Cascade deletion |
 | **02** | **Ổn Định Hình Học** | [`docs/constitution/02-canvas-geometry.md`](file:///d:/Project/Mind%20map/docs/constitution/02-canvas-geometry.md) | Ghost Mirror, Canonical dimensions, Chống biến dạng duplicate/edit, Min/Max bounds |
 | **03** | **Bố Cục & Layout** | [`docs/constitution/03-layout-engine.md`](file:///d:/Project/Mind%20map/docs/constitution/03-layout-engine.md) | Bảo toàn nhánh Trái/Phải, Tree Top-down, Org layout, Chống va chạm spiral search |
-| **04** | **Lưu Trữ & Dữ Liệu** | [`docs/constitution/04-persistence-data.md`](file:///d:/Project/Mind%20map/docs/constitution/04-persistence-data.md) | Sanitization sạch undefined, IndexedDB offline-first, Timestamp conflict resolution |
-| **05** | **Kiểm Định & CI/CD** | [`docs/constitution/05-verification-quality.md`](file:///d:/Project/Mind%20map/docs/constitution/05-verification-quality.md) | Cổng 3 pha (Vitest + Oxlint + Build), Lệnh Windows `cmd.exe /c`, Tự động Deploy Firebase |
+| **04** | **Lưu Trữ & Dữ Liệu** | [`docs/constitution/04-persistence-data.md`](file:///d:/Project/Mind%20map/docs/constitution/04-persistence-data.md) | Sanitization sạch undefined, IndexedDB v3 offline-first, Quản lý Project, Timestamp conflict resolution |
+| **05** | **Kiểm Định & CI/CD** | [`docs/constitution/05-verification-quality.md`](file:///d:/Project/Mind%20map/docs/constitution/05-verification-quality.md) | Cổng 3 pha (Vitest 119+ tests + Oxlint + Build), Lệnh Windows `cmd.exe /c`, Tự động Deploy Firebase |
 | **06** | **Đóng Gói Mobile APK** | [`docs/constitution/06-mobile-build-pipeline.md`](file:///d:/Project/Mind%20map/docs/constitution/06-mobile-build-pipeline.md) | Capacitor Android, GitHub Actions Cloud Build, Nhánh build-output, Tự động kéo APK về máy |
 
 ---
@@ -78,6 +81,6 @@ Toàn bộ quy trình đóng gói ứng dụng di động Android (Capacitor) ph
 ## 4. Tuyên Bố Bắt Buộc Đối Với AI (Mandate for AI Assistants)
 
 Bất kỳ AI nào khi nhận nhiệm vụ liên quan đến mã nguồn của dự án này phải:
-1. Đọc và đối chiếu với các nguyên tắc trong file này và 5 bộ luật chi tiết.
-2. Từ chối thực hiện bất kỳ gợi ý nào vi phạm 10 Điều Răn Cốt Lõi, trừ khi có chỉ thị bằng văn bản rõ ràng của chủ dự án.
-3. Luôn bảo toàn tính toàn vẹn của 103 bài test hiện có và bổ sung bài test mới tương ứng khi thêm tính năng.
+1. Đọc và đối chiếu với các nguyên tắc trong file này và 6 bộ luật chi tiết.
+2. Từ chối thực hiện bất kỳ gợi ý nào vi phạm 12 Điều Răn Cốt Lõi, trừ khi có chỉ thị bằng văn bản rõ ràng của chủ dự án.
+3. Luôn bảo toàn tính toàn vẹn của 119+ bài test hiện có và bổ sung bài test mới tương ứng khi thêm tính năng.

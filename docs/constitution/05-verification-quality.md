@@ -31,7 +31,7 @@
 Trước khi kết thúc bất kỳ lượt trả lời nào có sửa code, AI bắt buộc phải hoàn thành 3 pha kiểm định sau:
 1. **Pha 1 - Kiểm thử Đơn vị & Tình huống:**
    - Lệnh: `cmd.exe /c npm test`
-   - Tiêu chuẩn: 11 test suites (103+ bài test) phải PASS toàn bộ.
+   - Tiêu chuẩn: 13 test suites (119+ bài test) phải PASS toàn bộ.
 2. **Pha 2 - Kiểm tra Cú pháp & Clean Code:**
    - Lệnh: `cmd.exe /c npm run lint`
    - Tiêu chuẩn: Oxlint báo 0 errors và 0 warnings.

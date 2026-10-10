@@ -9,6 +9,11 @@
   - `src/persistence/sanitize.test.ts`
   - `src/persistence/persistenceService.test.ts`
   - `src/hooks/useAutosave.ts`
+  - `src/types.ts`
+  - `src/components/project/ProjectSidebar.tsx`
+  - `src/components/project/ProjectModal.tsx`
+  - `src/components/project/MoveToProjectModal.tsx`
+  - `src/components/project/DeleteProjectModal.tsx`
 
 ---
 
@@ -52,9 +57,24 @@
   - `'offline'`: Đã lưu nội bộ, không có kết nối cloud.
   - `'error'`: Có sự cố lưu trữ (phải ghi log chi tiết nhưng không được chặn người dùng tiếp tục thao tác).
 
+### 2.5 Bất Biến 5: Cấu Trúc Quản Lý Project & Xóa An Toàn (Project Management & Safe Deletion Invariant)
+- **Mô hình thực thể Project (`src/types.ts`):**
+  - Thực thể `Project` gồm các trường chuẩn: `id`, `name`, `color`, `createdAt`, `updatedAt`, `uid?`.
+  - `MindMapDocument` liên kết phân nhóm thông qua trường tùy chọn `projectId?: string`. Cấu trúc phân loại là mô hình phẳng 1 cấp (không hỗ trợ sub-project lồng nhau để giữ UI/UX tinh gọn).
+- **Nâng cấp Schema IndexedDB v3 (`src/persistence/idb.ts`):**
+  - Cơ sở dữ liệu IndexedDB được nâng cấp lên version 3, bổ sung object store `projects` với `keyPath: 'id'`, cùng các index truy vấn nhanh: `updatedAt`, `uid`, `uid_updatedAt`.
+- **Làm sạch dữ liệu (`sanitizeProject` & `projectId` zero-undefined):**
+  - Mọi project trước khi lưu xuống IndexedDB hoặc Firestore bắt buộc phải qua `sanitizeProject(project)`.
+  - Khi lưu `MindMapDocument`, trường `projectId` nếu rỗng hoặc `undefined` phải bị loại bỏ hoàn toàn (`delete sanitized.projectId`), tuyệt đối không được ghi trường có giá trị `undefined` lên Firestore.
+- **Chính sách xóa an toàn (Safe Deletion Policy):**
+  - Khi người dùng xóa một Project qua `removeProject(projectId, deleteContainedMaps)`:
+    - **Mặc định (`deleteContainedMaps = false`):** Toàn bộ mind map bên trong được unassign an toàn (`projectId = undefined`) và tự động chuyển về danh mục "Không phân loại" (Uncategorized).
+    - **Xóa triệt để (`deleteContainedMaps = true`):** Chỉ khi người dùng chủ động tích chọn xác nhận xóa vĩnh viễn cả sơ đồ con trong `DeleteProjectModal`, hệ thống mới xóa cascade các tài liệu liên quan.
+
 ---
 
 ## 3. Checklist Dành Cho AI Khi Can Thiệp Lưu Trữ & Schema
-- [ ] Bất kỳ trường mới nào thêm vào `NodeData` hoặc `EdgeData` trong `src/types.ts` có giá trị `undefined` không?
-- [ ] Đã thêm logic làm sạch trường mới đó trong `src/persistence/sanitize.ts` chưa?
+- [ ] Bất kỳ trường mới nào thêm vào `NodeData`, `EdgeData`, `MindMapDocument` hoặc `Project` có giá trị `undefined` không?
+- [ ] Đã thêm logic làm sạch trường mới đó trong `src/persistence/sanitize.ts` (`sanitizeDocument`, `sanitizeProject`) chưa?
+- [ ] Khi thao tác với Project, đã đảm bảo cơ chế Safe Unassign để tránh làm mất mind map của người dùng chưa?
 - [ ] Chạy lệnh `cmd.exe /c npm test` để đảm bảo 100% test trong `sanitize.test.ts` và `persistenceService.test.ts` đều PASS.
