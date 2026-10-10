@@ -24,7 +24,6 @@ import {
   Sparkles, 
   Layers, 
   Clock, 
-  Menu, 
   FolderSymlink, 
   ArrowLeft, 
   Pencil, 
@@ -75,7 +74,6 @@ export const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>('all'); // 'all' | 'uncategorized' | projectId
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isOpenMobileSidebar, setIsOpenMobileSidebar] = useState(false);
   
   // Modals state
   const [showProjectModal, setShowProjectModal] = useState(false);
@@ -328,8 +326,6 @@ export const Dashboard = () => {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         isMobile={isMobile}
-        isOpenMobile={isOpenMobileSidebar}
-        onCloseMobile={() => setIsOpenMobileSidebar(false)}
       />
 
       {/* Main Content Area */}
@@ -355,35 +351,6 @@ export const Dashboard = () => {
             flexWrap: 'wrap'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 auto', minWidth: 0 }}>
-              {/* Sidebar toggle button */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (isMobile) {
-                    setIsOpenMobileSidebar(true);
-                  } else {
-                    setIsSidebarCollapsed(!isSidebarCollapsed);
-                  }
-                }}
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '12px',
-                  background: 'var(--panel-bg)',
-                  color: 'var(--text-primary)',
-                  border: '1.5px solid var(--panel-border)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: 'var(--shadow-sm)',
-                  flexShrink: 0
-                }}
-                title="Quản lý Projects"
-              >
-                <Menu size={19} />
-              </button>
-
               {user ? (
                 <div style={{ minWidth: 0, overflow: 'hidden' }}>
                   <span style={{

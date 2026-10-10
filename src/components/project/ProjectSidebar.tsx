@@ -8,7 +8,6 @@ import {
   Trash2, 
   ChevronLeft, 
   ChevronRight, 
-  X,
   FolderOpen
 } from 'lucide-react';
 import type { Project, MindMapDocument } from '../../types';
@@ -24,8 +23,6 @@ export interface ProjectSidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   isMobile: boolean;
-  isOpenMobile: boolean;
-  onCloseMobile: () => void;
 }
 
 export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
@@ -39,8 +36,6 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   isCollapsed,
   onToggleCollapse,
   isMobile,
-  isOpenMobile,
-  onCloseMobile,
 }) => {
   const [activeMenuProjectId, setActiveMenuProjectId] = useState<string | null>(null);
 
@@ -54,9 +49,6 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
   const handleSelect = (filterId: string) => {
     onSelectFilter(filterId);
-    if (isMobile) {
-      onCloseMobile();
-    }
   };
 
   const handleMenuClick = (e: React.MouseEvent, projId: string) => {
@@ -80,10 +72,10 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         flexDirection: 'column',
         height: '100%',
         background: 'var(--panel-bg)',
-        borderRight: isMobile ? 'none' : '1px solid var(--panel-border)',
-        width: isMobile ? '280px' : isCollapsed ? '68px' : '260px',
-        maxWidth: isMobile ? '85vw' : '100%',
-        transition: 'width var(--transition-normal), transform var(--transition-normal)',
+        borderRight: '1px solid var(--panel-border)',
+        width: isMobile ? (isCollapsed ? '56px' : '220px') : (isCollapsed ? '68px' : '260px'),
+        flexShrink: 0,
+        transition: 'width var(--transition-normal)',
         color: 'var(--text-primary)',
         boxSizing: 'border-box',
         position: 'relative',
@@ -93,16 +85,16 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
       {/* Top Header */}
       <div
         style={{
-          padding: isCollapsed && !isMobile ? '16px 8px' : '18px 16px',
+          padding: isCollapsed ? '16px 8px' : '18px 16px',
           borderBottom: '1px solid var(--panel-border)',
           display: 'flex',
-          justifyContent: isCollapsed && !isMobile ? 'center' : 'space-between',
+          justifyContent: isCollapsed ? 'center' : 'space-between',
           alignItems: 'center',
           minHeight: '60px',
           boxSizing: 'border-box',
         }}
       >
-        {(!isCollapsed || isMobile) && (
+        {!isCollapsed && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
             <FolderOpen size={20} color="var(--accent)" />
             <span style={{ fontWeight: '800', fontSize: '15px', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
@@ -111,47 +103,29 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
           </div>
         )}
 
-        {isMobile ? (
-          <button
-            type="button"
-            onClick={onCloseMobile}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <X size={20} />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            title={isCollapsed ? 'Mở rộng Sidebar' : 'Thu gọn Sidebar'}
-            style={{
-              background: 'var(--social-bg)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              width: '28px',
-              height: '28px',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all var(--transition-fast)',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
-          >
-            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          title={isCollapsed ? 'Mở rộng Sidebar' : 'Thu gọn Sidebar'}
+          style={{
+            background: 'var(--social-bg)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            width: '28px',
+            height: '28px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all var(--transition-fast)',
+            flexShrink: 0
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+        >
+          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
       </div>
 
       {/* Navigation Section */}
@@ -519,29 +493,6 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
       </div>
     </div>
   );
-
-  // If Mobile, wrap in Drawer Modal overlay
-  if (isMobile) {
-    if (!isOpenMobile) return null;
-
-    return (
-      <div
-        onClick={onCloseMobile}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(3px)',
-          zIndex: 9999,
-          display: 'flex',
-        }}
-      >
-        <div onClick={(e) => e.stopPropagation()} style={{ height: '100%' }}>
-          {sidebarContent}
-        </div>
-      </div>
-    );
-  }
 
   return sidebarContent;
 };
